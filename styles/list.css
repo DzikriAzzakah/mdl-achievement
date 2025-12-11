@@ -1,0 +1,31 @@
+.achievement-list {
+  @apply w-full flex flex-col gap-4 py-6;
+
+  &__header {
+    @apply flex items-center justify-between gap-4;
+
+    &-info {
+      @apply flex flex-col flex-1;
+
+      h1 {
+        @apply text-xl font-semibold text-gray-900;
+      }
+
+      p {
+        @apply text-sm text-gray-400 font-normal;
+      }
+    }
+  }
+
+  &__filter {
+    @apply flex items-center justify-between gap-3;
+  }
+
+  &__action {
+    @apply flex gap-0.5;
+
+    &-button {
+      color: var(--color-gray-300);
+    }
+  }
+}
