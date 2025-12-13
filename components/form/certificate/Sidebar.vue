@@ -219,7 +219,7 @@
               :index="idx"
               :is-expanded="isContentExpanded(content.key)"
               @delete="handleDeleteContent(idx)"
-              @update:content-item="(updated) => handleUpdateContent(idx, updated)"
+              @update:content-item="(updated: ICertificateContentImageForm) => handleUpdateContent(idx, updated)"
               @header-click="handleContentClick(content.key)"
             />
             <ContentCertificateSignee
@@ -228,7 +228,7 @@
               :index="idx"
               :is-expanded="isContentExpanded(content.key)"
               @delete="handleDeleteContent(idx)"
-              @update:content-item="(updated) => handleUpdateContent(idx, updated)"
+              @update:content-item="(updated: ICertificateContentCertificateSigneeForm) => handleUpdateContent(idx, updated)"
               @header-click="handleContentClick(content.key)"
             />
             <ContentText
@@ -237,7 +237,7 @@
               :index="idx"
               :is-expanded="isContentExpanded(content.key)"
               @delete="handleDeleteContent(idx)"
-              @update:content-item="(updated) => handleUpdateContent(idx, updated)"
+              @update:content-item="(updated: ICertificateContentTextForm) => handleUpdateContent(idx, updated)"
               @header-click="handleContentClick(content.key)"
             />
             <ContentCertificateNumber
@@ -246,7 +246,7 @@
               :index="idx"
               :is-expanded="isContentExpanded(content.key)"
               @delete="handleDeleteContent(idx)"
-              @update:content-item="(updated) => handleUpdateContent(idx, updated)"
+              @update:content-item="(updated: ICertificateContentCertificateNumberForm) => handleUpdateContent(idx, updated)"
               @header-click="handleContentClick(content.key)"
             />
             <ContentFullName
@@ -255,7 +255,7 @@
               :index="idx"
               :is-expanded="isContentExpanded(content.key)"
               @delete="handleDeleteContent(idx)"
-              @update:content-item="(updated) => handleUpdateContent(idx, updated)"
+              @update:content-item="(updated: ICertificateContentFullNameForm) => handleUpdateContent(idx, updated)"
               @header-click="handleContentClick(content.key)"
             />
             <ContentEmployeeId
@@ -264,7 +264,7 @@
               :index="idx"
               :is-expanded="isContentExpanded(content.key)"
               @delete="handleDeleteContent(idx)"
-              @update:content-item="(updated) => handleUpdateContent(idx, updated)"
+              @update:content-item="(updated: ICertificateContentEmployeeIdForm) => handleUpdateContent(idx, updated)"
               @header-click="handleContentClick(content.key)"
             />
             <ContentEventTitle
@@ -273,7 +273,7 @@
               :index="idx"
               :is-expanded="isContentExpanded(content.key)"
               @delete="handleDeleteContent(idx)"
-              @update:content-item="(updated) => handleUpdateContent(idx, updated)"
+              @update:content-item="(updated: ICertificateContentEventTitleForm) => handleUpdateContent(idx, updated)"
               @header-click="handleContentClick(content.key)"
             />
             <ContentLocation
@@ -282,7 +282,7 @@
               :index="idx"
               :is-expanded="isContentExpanded(content.key)"
               @delete="handleDeleteContent(idx)"
-              @update:content-item="(updated) => handleUpdateContent(idx, updated)"
+              @update:content-item="(updated: ICertificateContentLocationForm) => handleUpdateContent(idx, updated)"
               @header-click="handleContentClick(content.key)"
             />
             <ContentValidThru
@@ -291,7 +291,7 @@
               :index="idx"
               :is-expanded="isContentExpanded(content.key)"
               @delete="handleDeleteContent(idx)"
-              @update:content-item="(updated) => handleUpdateContent(idx, updated)"
+              @update:content-item="(updated: ICertificateContentValidThruForm) => handleUpdateContent(idx, updated)"
               @header-click="handleContentClick(content.key)"
             />
           </template>
@@ -535,10 +535,23 @@ const handleCancelFetchImage = () => {
   emit('update:image', null);
 };
 
+const getTextDimensions = (text: string, font: string, fontSize: number, fontWeight: number) => {
+  const canvas = document.createElement('canvas');
+  const context = canvas.getContext('2d');
+  if (context) {
+    context.font = `${fontWeight} ${fontSize}px ${font}`;
+    const metrics = context.measureText(text);
+    return {
+      width: Math.ceil(metrics.width),
+      height: Math.ceil(fontSize * 1.2), // Approx line height
+    };
+  }
+  return { width: 200, height: 50 }; // Fallback
+};
+
 const addContent = (type: string) => {
   const newContents = [...props.contents];
   const layoutWidth = 842;
-  const safeZoneWidth = layoutWidth - (props.safeZone?.left || 0) - (props.safeZone?.right || 0);
 
   if (type === 'image') {
     contentIdCounter.value++;
@@ -577,21 +590,28 @@ const addContent = (type: string) => {
     emit('update:selectedContentKey', newContent.key);
   }
   else if (type === 'text') {
+    const defaultText = 'Input Text Here';
+    const defaultFont = '\'Montserrat\', sans-serif';
+    const defaultSize = 16;
+    const defaultWeight = 400;
+
+    const dims = getTextDimensions(defaultText, defaultFont, defaultSize, defaultWeight);
+
     contentIdCounter.value++;
     const newContent: ICertificateContentTextForm = {
       type: 'text',
       key: `text_${contentIdCounter.value}`,
-      value: 'Input Text Here',
+      value: defaultText,
       metadata: {
-        width: safeZoneWidth,
-        height: 100,
-        font_family: '\'Montserrat\', sans-serif',
-        font_size: 16,
-        font_weight: 400,
+        width: dims.width + 10, // Add little padding
+        height: dims.height,
+        font_family: defaultFont,
+        font_size: defaultSize,
+        font_weight: defaultWeight,
         alignment: 'left',
         color: '#000000',
-        vertical: 50,
-        horizontal: 50,
+        vertical: 50, // This is Y coordinate (px) now
+        horizontal: 50, // This is X coordinate (px) now
       },
     };
     newContents.push(newContent);
@@ -599,17 +619,24 @@ const addContent = (type: string) => {
     emit('update:selectedContentKey', newContent.key);
   }
   else if (type === 'certificate_number') {
+    const defaultText = '';
+    const defaultFont = '\'Montserrat\', sans-serif';
+    const defaultSize = 16;
+    const defaultWeight = 400;
+
+    const dims = getTextDimensions(defaultText, defaultFont, defaultSize, defaultWeight);
+
     contentIdCounter.value++;
     const newContent: ICertificateContentCertificateNumberForm = {
       type: 'certificate_number',
       key: `certificate_number_${contentIdCounter.value}`,
       value: '',
       metadata: {
-        width: safeZoneWidth,
-        height: 100,
-        font_family: '\'Montserrat\', sans-serif',
-        font_size: 16,
-        font_weight: 400,
+        width: dims.width + 10, // Add little padding
+        height: dims.height,
+        font_family: defaultFont,
+        font_size: defaultSize,
+        font_weight: defaultWeight,
         alignment: 'left',
         color: '#000000',
         vertical: 50,
@@ -621,17 +648,24 @@ const addContent = (type: string) => {
     emit('update:selectedContentKey', newContent.key);
   }
   else if (type === 'fullname') {
+    const defaultText = '{{ fullname }}';
+    const defaultFont = '\'Montserrat\', sans-serif';
+    const defaultSize = 16;
+    const defaultWeight = 400;
+
+    const dims = getTextDimensions(defaultText, defaultFont, defaultSize, defaultWeight);
+
     contentIdCounter.value++;
     const newContent: ICertificateContentFullNameForm = {
       type: 'fullname',
       key: `fullname_${contentIdCounter.value}`,
-      value: '{{ fullname }}',
+      value: defaultText,
       metadata: {
-        width: safeZoneWidth,
-        height: 100,
-        font_family: '\'Montserrat\', sans-serif',
-        font_size: 16,
-        font_weight: 400,
+        width: dims.width + 10, // Add little padding
+        height: dims.height,
+        font_family: defaultFont,
+        font_size: defaultSize,
+        font_weight: defaultWeight,
         alignment: 'left',
         color: '#000000',
         vertical: 50,
@@ -643,17 +677,24 @@ const addContent = (type: string) => {
     emit('update:selectedContentKey', newContent.key);
   }
   else if (type === 'employee_id') {
+    const defaultText = '{{ nik }}';
+    const defaultFont = '\'Montserrat\', sans-serif';
+    const defaultSize = 16;
+    const defaultWeight = 400;
+
+    const dims = getTextDimensions(defaultText, defaultFont, defaultSize, defaultWeight);
+
     contentIdCounter.value++;
     const newContent: ICertificateContentEmployeeIdForm = {
       type: 'employee_id',
       key: `employee_id_${contentIdCounter.value}`,
-      value: '{{ NIK }}',
+      value: defaultText,
       metadata: {
-        width: safeZoneWidth,
-        height: 100,
-        font_family: '\'Montserrat\', sans-serif',
-        font_size: 16,
-        font_weight: 400,
+        width: dims.width + 10, // Add little padding
+        height: dims.height,
+        font_family: defaultFont,
+        font_size: defaultSize,
+        font_weight: defaultWeight,
         alignment: 'left',
         color: '#000000',
         vertical: 50,
@@ -665,17 +706,24 @@ const addContent = (type: string) => {
     emit('update:selectedContentKey', newContent.key);
   }
   else if (type === 'event_title') {
+    const defaultText = '{{ event_title }}';
+    const defaultFont = '\'Montserrat\', sans-serif';
+    const defaultSize = 16;
+    const defaultWeight = 400;
+
+    const dims = getTextDimensions(defaultText, defaultFont, defaultSize, defaultWeight);
+
     contentIdCounter.value++;
     const newContent: ICertificateContentEventTitleForm = {
       type: 'event_title',
       key: `event_title_${contentIdCounter.value}`,
-      value: '{{ event_title }}',
+      value: defaultText,
       metadata: {
-        width: safeZoneWidth,
-        height: 100,
-        font_family: '\'Montserrat\', sans-serif',
-        font_size: 16,
-        font_weight: 400,
+        width: dims.width + 10, // Add little padding
+        height: dims.height,
+        font_family: defaultFont,
+        font_size: defaultSize,
+        font_weight: defaultWeight,
         alignment: 'left',
         color: '#000000',
         vertical: 50,
@@ -687,17 +735,24 @@ const addContent = (type: string) => {
     emit('update:selectedContentKey', newContent.key);
   }
   else if (type === 'location') {
+    const defaultText = '{{ location }}';
+    const defaultFont = '\'Montserrat\', sans-serif';
+    const defaultSize = 16;
+    const defaultWeight = 400;
+
+    const dims = getTextDimensions(defaultText, defaultFont, defaultSize, defaultWeight);
+
     contentIdCounter.value++;
     const newContent: ICertificateContentLocationForm = {
       type: 'location',
       key: `location_${contentIdCounter.value}`,
-      value: '{{ location }}',
+      value: defaultText,
       metadata: {
-        width: safeZoneWidth,
-        height: 100,
-        font_family: '\'Montserrat\', sans-serif',
-        font_size: 16,
-        font_weight: 400,
+        width: dims.width + 10, // Add little padding
+        height: dims.height,
+        font_family: defaultFont,
+        font_size: defaultSize,
+        font_weight: defaultWeight,
         alignment: 'left',
         color: '#000000',
         vertical: 50,
@@ -711,17 +766,24 @@ const addContent = (type: string) => {
     emit('update:selectedContentKey', newContent.key);
   }
   else if (type === 'valid_thru') {
+    const defaultText = '{{ valid_thru }}';
+    const defaultFont = '\'Montserrat\', sans-serif';
+    const defaultSize = 16;
+    const defaultWeight = 400;
+
+    const dims = getTextDimensions(defaultText, defaultFont, defaultSize, defaultWeight);
+
     contentIdCounter.value++;
     const newContent: ICertificateContentValidThruForm = {
       type: 'valid_thru',
       key: `valid_thru_${contentIdCounter.value}`,
-      value: '{{ valid_thru }}',
+      value: defaultText,
       metadata: {
-        width: safeZoneWidth,
-        height: 100,
-        font_family: '\'Montserrat\', sans-serif',
-        font_size: 16,
-        font_weight: 400,
+        width: dims.width + 10, // Add little padding
+        height: dims.height,
+        font_family: defaultFont,
+        font_size: defaultSize,
+        font_weight: defaultWeight,
         alignment: 'left',
         color: '#000000',
         vertical: 50,

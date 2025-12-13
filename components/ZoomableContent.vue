@@ -6,6 +6,8 @@ const props = defineProps({
   controlsDisabled: { type: Boolean, default: false },
 });
 
+const emit = defineEmits(['update:zoom']);
+
 const zoomContainer = ref<HTMLDivElement | null>(null);
 const zoomContent = ref<HTMLDivElement | null>(null);
 const zoomWrapper = ref<HTMLDivElement | null>(null);
@@ -37,6 +39,10 @@ let startX = 0;
 let startY = 0;
 let scrollLeft = 0;
 let scrollTop = 0;
+
+watch(currentZoom, (val) => {
+  emit('update:zoom', val);
+});
 
 const updateZoomDisplay = () => {
   if (zoomLevelText.value) {

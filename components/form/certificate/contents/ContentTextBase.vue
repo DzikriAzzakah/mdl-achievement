@@ -275,8 +275,6 @@ const emit = defineEmits<{
   'headerClick': [];
 }>();
 
-const store = useCertificateStore();
-
 const isCollapsed = computed(() => !props.isExpanded);
 
 const shouldShowField = (field: ContentTextField): boolean => {

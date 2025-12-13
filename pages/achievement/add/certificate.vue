@@ -59,6 +59,7 @@
               </div>
               <ZoomableContent
                 :controls-disabled="!imagePreview"
+                @update:zoom="(val) => currentZoomLevel = val"
               >
                 <div>
                   <div
@@ -104,19 +105,23 @@
                             {{ content.value }}
                           </div>
                         </template>
-                        <Moveable
-                          v-if="selectedContentKey && targetRef"
-                          :target="targetRef"
-                          :draggable="true"
-                          :resizable="true"
-                          :rotatable="false"
-                          :throttle-drag="0"
-                          :throttle-resize="0"
-                          :keep-ratio="false"
-                          :render-directions="['nw', 'n', 'ne', 'w', 'e', 'sw', 's', 'se']"
-                          @drag="onDrag"
-                          @resize="onResize"
-                        />
+                        <ClientOnly>
+                          <Moveable
+                            v-if="selectedContentKey && targetRef"
+                            :target="targetRef"
+                            :draggable="true"
+                            :resizable="true"
+                            :zoom="currentZoomLevel"
+                            :throttle-drag="0"
+                            :throttle-resize="0"
+                            :keep-ratio="false"
+                            :render-directions="['nw', 'n', 'ne', 'w', 'e', 'sw', 's', 'se']"
+                            :snappable="true"
+                            :snap-directions="{ top: true, left: true, bottom: true, right: true, center: true, middle: true }"
+                            @drag="onDrag"
+                            @resize="onResize"
+                          />
+                        </ClientOnly>
                       </div>
                     </div>
                     <div
@@ -188,6 +193,7 @@ const isLoading = ref<boolean>(false);
 const certificateId = ref<number | string | null>(null);
 const uploadedImageMeta = ref<any>(null);
 const selectedContentKey = ref<string | null>(null);
+const currentZoomLevel = ref<number>(1);
 
 const canvasRef = ref<HTMLElement | null>(null);
 const targetRef = ref<HTMLElement | null>(null);
