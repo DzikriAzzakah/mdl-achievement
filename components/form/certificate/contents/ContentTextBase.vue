@@ -204,60 +204,33 @@
         </div>
 
         <!-- Vertical field -->
-        <UiFormGroup
-          v-if="shouldShowField('vertical')"
-          label="Vertical"
-        >
-          <div class="flex items-center gap-2">
-            <UiSliderRange
-              :model-value="metadata.vertical"
-              :min="0"
-              :max="100"
-              :start-point="50"
-              @update:model-value="$emit('update:vertical', $event)"
-            />
-            <div class="w-32">
-              <UiInput
-                :model-value="metadata.vertical"
-                size="md"
-                @update:model-value="$emit('update:vertical', $event)"
-              >
-                <template #suffix>
-                  <span class="text-gray-500">%</span>
-                </template>
-              </UiInput>
-            </div>
-          </div>
-        </UiFormGroup>
-
-        <!-- Horizontal field -->
-        <UiFormGroup
-          v-if="shouldShowField('horizontal')"
-          label="Horizontal"
-        >
-          <div class="flex items-center gap-2">
-            <UiSliderRange
-              :disabled="isHorizontalDisabled"
+        <div class="flex items-center gap-4">
+          <UiFormGroup label="Position X">
+            <UiInput
+              type="number"
               :model-value="metadata.horizontal"
-              :min="0"
-              :max="100"
-              :start-point="50"
+              size="md"
               @update:model-value="$emit('update:horizontal', $event)"
-            />
-            <div class="w-32">
-              <UiInput
-                :model-value="metadata.horizontal"
-                size="md"
-                :disabled="isHorizontalDisabled"
-                @update:model-value="$emit('update:horizontal', $event)"
-              >
-                <template #suffix>
-                  <span class="text-gray-500">%</span>
-                </template>
-              </UiInput>
-            </div>
-          </div>
-        </UiFormGroup>
+            >
+              <template #suffix>
+                <span class="text-gray-500">px</span>
+              </template>
+            </UiInput>
+          </UiFormGroup>
+
+          <UiFormGroup label="Position Y">
+            <UiInput
+              type="number"
+              :model-value="metadata.vertical"
+              size="md"
+              @update:model-value="$emit('update:vertical', $event)"
+            >
+              <template #suffix>
+                <span class="text-gray-500">px</span>
+              </template>
+            </UiInput>
+          </UiFormGroup>
+        </div>
       </div>
     </div>
   </div>
@@ -267,7 +240,6 @@
 import type { ContentTextField, ICertificateContentLocationMetadata, ICertificateContentTextMetadata } from '#achievement/config/types';
 import UiButton from '#ui/components/atoms/button/index.vue';
 import UiInput from '#ui/components/atoms/input/index.vue';
-import UiSliderRange from '#ui/components/atoms/slider-range/index.vue';
 import UITextarea from '#ui/components/atoms/textarea/index.vue';
 import UiFormGroup from '#ui/components/molecules/form-group/index.vue';
 import UiSelect from '#ui/components/molecules/select/index.vue';
@@ -304,7 +276,6 @@ const emit = defineEmits<{
 }>();
 
 const store = useCertificateStore();
-const { safe_zone } = storeToRefs(store);
 
 const isCollapsed = computed(() => !props.isExpanded);
 
@@ -408,12 +379,6 @@ const handleAlignmentUpdate = (value: string | number | object | any[] | undefin
 
   emit('update:alignment', alignmentValue);
 };
-
-const isHorizontalDisabled = computed(() => {
-  const layoutWidth = 842;
-  const safeZoneWidth = layoutWidth - (safe_zone.value?.left || 0) - (safe_zone.value?.right || 0);
-  return props.metadata.width >= safeZoneWidth;
-});
 
 const handleDelete = () => {
   emit('delete', props.index);

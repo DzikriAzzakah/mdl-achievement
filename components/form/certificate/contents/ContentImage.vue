@@ -127,56 +127,35 @@
             />
           </div>
         </UiFormGroup>
-        <UiFormGroup label="Vertical">
-          <div class="flex items-center gap-2">
-            <CustomSlider
-              :model-value="contentItem.metadata.vertical"
-              :min="0"
-              :max="100"
-              :start-point="50"
-              :disabled="!hasImage"
-              @update:model-value="updateVertical"
-            />
-            <div class="w-32">
-              <UiInput
-                type="number"
-                :model-value="contentItem.metadata.vertical"
-                size="md"
-                :disabled="!hasImage"
-                @update:model-value="updateVertical"
-              >
-                <template #suffix>
-                  <span class="text-gray-500">%</span>
-                </template>
-              </UiInput>
-            </div>
-          </div>
-        </UiFormGroup>
-        <UiFormGroup label="Horizontal">
-          <div class="flex items-center gap-2">
-            <CustomSlider
+        <div class="flex items-center gap-4">
+          <UiFormGroup label="Position X">
+            <UiInput
+              type="number"
               :model-value="contentItem.metadata.horizontal"
-              :min="0"
-              :max="100"
-              :start-point="50"
+              size="md"
               :disabled="!hasImage"
               @update:model-value="updateHorizontal"
-            />
-            <div class="w-32">
-              <UiInput
-                type="number"
-                :model-value="contentItem.metadata.horizontal"
-                size="md"
-                :disabled="!hasImage"
-                @update:model-value="updateHorizontal"
-              >
-                <template #suffix>
-                  <span class="text-gray-500">%</span>
-                </template>
-              </UiInput>
-            </div>
-          </div>
-        </UiFormGroup>
+            >
+              <template #suffix>
+                <span class="text-gray-500">px</span>
+              </template>
+            </UiInput>
+          </UiFormGroup>
+
+          <UiFormGroup label="Position Y">
+            <UiInput
+              type="number"
+              :model-value="contentItem.metadata.vertical"
+              size="md"
+              :disabled="!hasImage"
+              @update:model-value="updateVertical"
+            >
+              <template #suffix>
+                <span class="text-gray-500">px</span>
+              </template>
+            </UiInput>
+          </UiFormGroup>
+        </div>
       </div>
     </div>
   </div>
@@ -186,7 +165,6 @@
 import type { ICertificateContentImageForm } from '#achievement/config/types.ts';
 import UiButton from '#ui/components/atoms/button/index.vue';
 import UiInput from '#ui/components/atoms/input/index.vue';
-import CustomSlider from '#ui/components/atoms/slider-range/index.vue';
 import UIFileUploadCompact from '#ui/components/molecules/fileupload/compact/index.vue';
 import UIFileUploadFiles from '#ui/components/molecules/fileupload/files/index.vue';
 import UiFormGroup from '#ui/components/molecules/form-group/index.vue';

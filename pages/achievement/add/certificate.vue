@@ -61,7 +61,10 @@
                 :controls-disabled="!imagePreview"
               >
                 <div>
-                  <div class="w-[842px] h-[594.5px] bg-white relative">
+                  <div
+                    ref="canvasRef"
+                    class="w-[842px] h-[594.5px] bg-white relative"
+                  >
                     <div
                       v-if="imagePreview || contents.length > 0"
                       class="absolute top-0 left-0 w-full h-full"
@@ -82,26 +85,38 @@
                         >
                           <img
                             v-if="content.type === 'image' || content.type === 'sertificate_signee'"
+                            :id="content.key"
                             :src="getContentImageSrc(content)"
                             :style="getContentImageStyle(content)"
-                            class="absolute cursor-pointer transition-all duration-200"
-                            :class="[
-                              selectedContentKey === content.key ? 'selected-content' : '',
-                            ]"
-                            @click.stop="handlePreviewItemClick(content.key)"
+                            class="absolute cursor-pointer transition-none"
+                            :class="[selectedContentKey === content.key ? 'selected-content' : '']"
+                            @click.stop="(e) => handleSelectContent(e, content.key)"
                           >
+
                           <div
                             v-else-if="['text', 'certificate_number', 'fullname', 'employee_id', 'event_title', 'location', 'valid_thru'].includes(content.type)"
+                            :id="content.key"
                             :style="getContentTextStyle(content)"
-                            class="cursor-pointer transition-all duration-200"
-                            :class="[
-                              selectedContentKey === content.key ? 'selected-content' : '',
-                            ]"
-                            @click.stop="handlePreviewItemClick(content.key)"
+                            class="cursor-pointer transition-none hover:border hover:border-blue-300"
+                            :class="[selectedContentKey === content.key ? 'selected-content' : '']"
+                            @click.stop="(e) => handleSelectContent(e, content.key)"
                           >
                             {{ content.value }}
                           </div>
                         </template>
+                        <Moveable
+                          v-if="selectedContentKey && targetRef"
+                          :target="targetRef"
+                          :draggable="true"
+                          :resizable="true"
+                          :rotatable="false"
+                          :throttle-drag="0"
+                          :throttle-resize="0"
+                          :keep-ratio="false"
+                          :render-directions="['nw', 'n', 'ne', 'w', 'e', 'sw', 's', 'se']"
+                          @drag="onDrag"
+                          @resize="onResize"
+                        />
                       </div>
                     </div>
                     <div
@@ -126,23 +141,25 @@
 
 <script setup lang="ts">
 import type { ICertificateContentCertificateNumberForm, ICertificateContentCertificateSigneeForm, ICertificateContentEmployeeIdForm, ICertificateContentEventTitleForm, ICertificateContentFullNameForm, ICertificateContentImageForm, ICertificateContentLocationForm, ICertificateContentTextForm, ICertificateContentValidThruForm } from '#achievement/config/types.ts';
-
 import { postAddCertificate } from '#achievement/api/api.ts';
-
 import Accessibility from '#achievement/components/form/certificate/Accessibility.vue';
 
 import Sidebar from '#achievement/components/form/certificate/Sidebar.vue';
+
 import ZoomableContent from '#achievement/components/ZoomableContent.vue';
 
 import { CREATE_STEPPER, TYPE_OPTIONS } from '#achievement/config/constants.ts';
 import { PERMISSION_CREATE, PERMISSION_LIST } from '#achievement/config/featureFlag.ts';
+
 import FormLayout from '#achievement/layouts/FormLayout.vue';
 import { postUploadFile } from '#core/api/upload.ts';
-
 import TemplateManageLayout from '#core/components/templates/ManageLayout.vue';
 import UiSwitch from '#ui/components/atoms/switch/index.vue';
 
 import { useMutation } from '@tanstack/vue-query';
+import { nextTick } from 'vue';
+
+import Moveable from 'vue3-moveable';
 
 const { $toast } = useNuxtApp();
 
@@ -171,6 +188,9 @@ const isLoading = ref<boolean>(false);
 const certificateId = ref<number | string | null>(null);
 const uploadedImageMeta = ref<any>(null);
 const selectedContentKey = ref<string | null>(null);
+
+const canvasRef = ref<HTMLElement | null>(null);
+const targetRef = ref<HTMLElement | null>(null);
 
 // === START: ADDED FOR SAFE ZONE TOGGLE ===
 const showSafeZone = ref<boolean>(true);
@@ -300,7 +320,8 @@ function getContentTextStyle(content: ICertificateContentTextForm | ICertificate
 
   return `
     position: absolute;
-    transform: translate(${translateX}px, ${translateY}px);
+    left: ${translateX}px;
+    top: ${translateY}px;
     width: ${constrainedWidth}px;
     height: ${constrainedHeight}px;
     font-family: ${font_family || '\'Montserrat\', sans-serif'};
@@ -311,9 +332,23 @@ function getContentTextStyle(content: ICertificateContentTextForm | ICertificate
     white-space: pre-wrap;
     overflow: hidden;
     box-sizing: border-box;
-    will-change: transform;
+    will-change: left, top, width, height;
     display: block;
   `;
+}
+
+function handleSelectContent(e: Event, key: string) {
+  selectedContentKey.value = key;
+
+  nextTick(() => {
+    const el = document.getElementById(key);
+    targetRef.value = el;
+  });
+}
+
+function handleClickOutsideContent() {
+  selectedContentKey.value = null;
+  targetRef.value = null;
 }
 
 const uploadImage = async (file: File) => {
@@ -440,13 +475,85 @@ const handleSubmit = async () => {
   }
 };
 
-function handleClickOutsideContent() {
-  selectedContentKey.value = null;
-}
+// --- LOGIC BARU: DRAG & DROP (Konversi Pixel ke Percentage) ---
+const onDrag = ({ target, _, left, top }: any) => {
+  // 1. Update visual langsung biar smooth
+  target.style.left = `${left}px`;
+  target.style.top = `${top}px`;
+  // Note: getContentTextStyle anda pakai translate, moveable pakai left/top.
+  // Moveable akan menimpa style inline, pastikan ini sinkron.
 
-function handlePreviewItemClick(key: string) {
-  selectedContentKey.value = key;
-}
+  // 2. Cari object content di store
+  const contentIndex = store.contents.findIndex(c => c.key === selectedContentKey.value);
+  if (contentIndex === -1) {
+    return;
+  }
+  const content = store.contents[contentIndex];
+
+  // 3. Kalkulasi Balik: Dari Pixel (Left/Top) ke Percentage (Vertical/Horizontal)
+  // Logic ini membalikkan rumus `getContentTextStyle` yang Anda buat.
+
+  const { width: layoutWidth, height: layoutHeight } = layoutDimensions;
+  const { width, height } = content.metadata;
+  const safeTop = safe_zone.value?.top || 0;
+  const safeLeft = safe_zone.value?.left || 0;
+  const safeRight = safe_zone.value?.right || 0;
+  const safeBottom = safe_zone.value?.bottom || 0;
+
+  const safeWidth = layoutWidth - safeLeft - safeRight;
+  const safeHeight = layoutHeight - safeTop - safeBottom;
+
+  const maxHorizontalOffset = Math.max(0, safeWidth - width);
+  const maxVerticalOffset = Math.max(0, safeHeight - height);
+
+  // Hitung posisi relatif terhadap Safe Zone
+  // left (pixel layar) = safeLeft + (horizontal% * maxOffset)
+  // Maka: horizontal% = (left - safeLeft) / maxOffset
+
+  let newHorizontalPercent = 0;
+  if (maxHorizontalOffset > 0) {
+    newHorizontalPercent = ((left - safeLeft) / maxHorizontalOffset) * 100;
+  }
+
+  let newVerticalPercent = 0;
+  if (maxVerticalOffset > 0) {
+    newVerticalPercent = ((top - safeTop) / maxVerticalOffset) * 100;
+  }
+
+  // Update Store (Reactivity akan mengupdate Sidebar slider)
+  // Clamp nilai 0-100 agar tidak keluar safe zone
+  store.contents[contentIndex].metadata.horizontal = Math.min(100, Math.max(0, newHorizontalPercent));
+  store.contents[contentIndex].metadata.vertical = Math.min(100, Math.max(0, newVerticalPercent));
+};
+
+// --- LOGIC BARU: RESIZE ---
+const onResize = ({ target, width, height, drag }: any) => {
+  // 1. Update visual
+  target.style.width = `${width}px`;
+  target.style.height = `${height}px`;
+  target.style.left = `${drag.left}px`;
+  target.style.top = `${drag.top}px`;
+
+  // 2. Update Store Width & Height
+  const contentIndex = store.contents.findIndex(c => c.key === selectedContentKey.value);
+  if (contentIndex === -1) {
+    return;
+  }
+
+  store.contents[contentIndex].metadata.width = width;
+  store.contents[contentIndex].metadata.height = height;
+
+  // Saat resize dari kiri/atas, posisi x/y juga berubah, jadi panggil logic drag update juga
+  onDrag({ target, left: drag.left, top: drag.top });
+};
+
+// function handleClickOutsideContent() {
+//   selectedContentKey.value = null;
+// }
+
+// function handlePreviewItemClick(key: string) {
+//   selectedContentKey.value = key;
+// }
 
 watch(isFormDirty, (value) => {
   preventLeave.value = value;
