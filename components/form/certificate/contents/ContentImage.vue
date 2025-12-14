@@ -97,7 +97,7 @@
                 @update:model-value="updateWidth"
               >
                 <template #suffix>
-                  <span class="text-gray-500">W</span>
+                  <!-- Add Fit/Fill/Fixed -->
                 </template>
               </UiInput>
             </div>
@@ -110,7 +110,7 @@
                 @update:model-value="updateHeight"
               >
                 <template #suffix>
-                  <span class="text-gray-500">H</span>
+                  <!-- Add Fit/Fill/Fixed -->
                 </template>
               </UiInput>
             </div>
