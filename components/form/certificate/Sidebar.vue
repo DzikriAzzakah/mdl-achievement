@@ -309,123 +309,103 @@
           v-if="isContentListOpen"
           class="w-full flex flex-col gap-1 mb-4 p-2 bg-white rounded-lg shadow-lg"
         >
-          <div class="flex items-center gap-2 p-3 rounded-lg">
-            <Icon
-              name="mdi:image"
-              class="text-gray-500 w-5 h-5"
-            />
-            <span class="text-sm font-medium text-gray-500">Image</span>
-          </div>
           <UiButton
             color="ghost"
+            icon="mdi:image"
             variant="transparent"
-            class="ml-[2rem] text-start"
+            class="text-start"
             @click="handleAddContent('image')"
           >
             Image
           </UiButton>
           <UiButton
             color="ghost"
+            icon="mdi:image"
             variant="transparent"
-            class="ml-[2rem] text-start"
+            class="text-start"
             @click="handleAddContent('sertificate_signee')"
           >
             Certificate Signee
           </UiButton>
-          <div class="flex items-center gap-2 p-3 rounded-lg">
-            <Icon
-              name="material-symbols:text-fields-rounded"
-              class="text-gray-500 w-5 h-5"
-            />
-            <span class="text-sm font-medium text-gray-500">Text</span>
-          </div>
           <UiButton
             color="ghost"
+            icon="material-symbols:text-fields-rounded"
             variant="transparent"
-            class="ml-[2rem] text-start"
+            class="text-start"
             @click="handleAddContent('text')"
           >
             Text Area
           </UiButton>
           <UiButton
             color="ghost"
+            icon="material-symbols:code-rounded"
             variant="transparent"
-            class="ml-[2rem] text-start"
+            class="text-start"
             @click="handleAddContent('certificate_number')"
           >
             Certificate Number
           </UiButton>
-          <div class="flex items-center gap-2 p-3 rounded-lg">
-            <Icon
-              name="material-symbols:code-rounded"
-              class="text-gray-500 w-5 h-5"
-            />
-            <span class="text-sm font-medium text-gray-500">Source</span>
-          </div>
           <UiButton
             color="ghost"
+            icon="material-symbols:code-rounded"
             variant="transparent"
-            class="ml-[2rem] text-start"
+            class="text-start"
             @click="handleAddContent('fullname')"
           >
             Fullname
           </UiButton>
           <UiButton
             color="ghost"
+            icon="material-symbols:code-rounded"
             variant="transparent"
-            class="ml-[2rem] text-start"
+            class="text-start"
             @click="handleAddContent('employee_id')"
           >
             Employee ID (NIK)
           </UiButton>
           <UiButton
             color="ghost"
+            icon="material-symbols:code-rounded"
             variant="transparent"
-            class="ml-[2rem] text-start"
+            class="text-start"
             @click="handleAddContent('event_title')"
           >
             Event Title
           </UiButton>
           <UiButton
             color="ghost"
+            icon="material-symbols:code-rounded"
             variant="transparent"
-            class="ml-[2rem] text-start"
+            class="text-start"
             @click="handleAddContent('location')"
           >
             Location
           </UiButton>
           <UiButton
             color="ghost"
+            icon="material-symbols:code-rounded"
             variant="transparent"
-            class="ml-[2rem] text-start"
+            class="text-start"
             @click="handleAddContent('barcode')"
           >
             Certificate Barcode
           </UiButton>
           <UiButton
             color="ghost"
+            icon="material-symbols:code-rounded"
             variant="transparent"
-            class="ml-[2rem] text-start"
+            class="text-start"
             @click="handleAddContent('valid_thru')"
           >
             Certificate Valid Thru
           </UiButton>
         </div>
         <UiButton
-          color="ghost"
-          variant="outline"
-          class="w-full bg-white py-4 !rounded-t-none"
+          class="w-full py-4 !rounded-t-none"
+          icon="mdi:plus"
           @click="isContentListOpen = !isContentListOpen"
         >
-          <div class="flex items-center justify-center gap-2">
-            <Icon
-              name="mdi:plus"
-              width="20"
-              height="20"
-              class="text-gray-300"
-            />
-            Add Content
-          </div>
+          Add Content
         </UiButton>
       </div>
     </div>
@@ -551,7 +531,6 @@ const getTextDimensions = (text: string, font: string, fontSize: number, fontWei
 
 const addContent = (type: string) => {
   const newContents = [...props.contents];
-  const layoutWidth = 842;
 
   if (type === 'image') {
     contentIdCounter.value++;
@@ -562,8 +541,8 @@ const addContent = (type: string) => {
       metadata: {
         width: 200,
         height: 100,
-        vertical: 50,
-        horizontal: 50,
+        vertical: 0,
+        horizontal: 0,
       },
       file: null,
     };
@@ -580,8 +559,8 @@ const addContent = (type: string) => {
       metadata: {
         width: 200,
         height: 100,
-        vertical: 50,
-        horizontal: 50,
+        vertical: 0,
+        horizontal: 0,
       },
       file: null,
     };
@@ -610,8 +589,8 @@ const addContent = (type: string) => {
         font_weight: defaultWeight,
         alignment: 'left',
         color: '#000000',
-        vertical: 50, // This is Y coordinate (px) now
-        horizontal: 50, // This is X coordinate (px) now
+        vertical: 0, // This is Y coordinate (px) now
+        horizontal: 0, // This is X coordinate (px) now
       },
     };
     newContents.push(newContent);
@@ -639,8 +618,8 @@ const addContent = (type: string) => {
         font_weight: defaultWeight,
         alignment: 'left',
         color: '#000000',
-        vertical: 50,
-        horizontal: 50,
+        vertical: 0,
+        horizontal: 0,
       },
     };
     newContents.push(newContent);
@@ -668,8 +647,8 @@ const addContent = (type: string) => {
         font_weight: defaultWeight,
         alignment: 'left',
         color: '#000000',
-        vertical: 50,
-        horizontal: 50,
+        vertical: 0,
+        horizontal: 0,
       },
     };
     newContents.push(newContent);
@@ -697,8 +676,8 @@ const addContent = (type: string) => {
         font_weight: defaultWeight,
         alignment: 'left',
         color: '#000000',
-        vertical: 50,
-        horizontal: 50,
+        vertical: 0,
+        horizontal: 0,
       },
     };
     newContents.push(newContent);
@@ -726,8 +705,8 @@ const addContent = (type: string) => {
         font_weight: defaultWeight,
         alignment: 'left',
         color: '#000000',
-        vertical: 50,
-        horizontal: 50,
+        vertical: 0,
+        horizontal: 0,
       },
     };
     newContents.push(newContent);
@@ -755,8 +734,8 @@ const addContent = (type: string) => {
         font_weight: defaultWeight,
         alignment: 'left',
         color: '#000000',
-        vertical: 50,
-        horizontal: 50,
+        vertical: 0,
+        horizontal: 0,
         location: '',
         date_format: 'DD/MM/YYYY',
       },
@@ -786,8 +765,8 @@ const addContent = (type: string) => {
         font_weight: defaultWeight,
         alignment: 'left',
         color: '#000000',
-        vertical: 50,
-        horizontal: 50,
+        vertical: 0,
+        horizontal: 0,
       },
     };
     newContents.push(newContent);

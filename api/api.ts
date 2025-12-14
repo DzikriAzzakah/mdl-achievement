@@ -83,3 +83,23 @@ export const patchEditBadge = async (
     method: 'patch',
   });
 };
+
+export const deleteCertificate = async (
+  id: number,
+  options: FetchOptions = {},
+): Promise<ICreateResponse> => {
+  return useNuxtApp().$apiGateway<ICreateResponse>(`/achievement/api/v1/cms/certificates/${id}`, {
+    ...options,
+    method: 'delete',
+  });
+};
+
+export const deleteBadge = async (
+  id: number,
+  options: FetchOptions = {},
+): Promise<ICreateResponse> => {
+  return useNuxtApp().$apiGateway<ICreateResponse>(`/achievement/api/v1/cms/badges/${id}`, {
+    ...options,
+    method: 'delete',
+  });
+};

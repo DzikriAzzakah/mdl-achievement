@@ -260,11 +260,11 @@ export interface IGetListResponse {
   data?: {
     contents?: any[];
     pagination?: {
-      total_row: number;
+      total_pages: number;
       per_page: number;
       current_page: number;
-      last_page: number;
-      is_last_page: boolean;
+      total_data: number;
+      end_of_page: boolean;
     };
     [key: string]: any;
   };

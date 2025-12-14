@@ -33,13 +33,13 @@
               :show-content-section="!!(imagePreview || contents.length > 0)"
               :uploaded-image-meta="uploadedImageMeta"
               :selected-content-key="selectedContentKey"
-              @update:title="(value) => store.title = value"
-              @update:certificate-type="(value) => store.certificate_type = value"
-              @update:safe-zone="(value) => store.safe_zone = value"
-              @update:image="(value) => store.image = value"
-              @update:contents="(value) => store.contents = value"
-              @update:uploaded-image-meta="(value) => uploadedImageMeta = value"
-              @update:selected-content-key="(value) => selectedContentKey = value"
+              @update:title="(value: string) => store.title = value"
+              @update:certificate-type="(value: string) => store.certificate_type = value"
+              @update:safe-zone="(value: any) => store.safe_zone = value"
+              @update:image="(value: File | string | null) => store.image = value"
+              @update:contents="(value: any[]) => store.contents = value"
+              @update:uploaded-image-meta="(value: any) => uploadedImageMeta = value"
+              @update:selected-content-key="(value: string | null) => selectedContentKey = value"
             />
           </template>
           <template #main-content>
@@ -59,7 +59,7 @@
               </div>
               <ZoomableContent
                 :controls-disabled="!imagePreview"
-                @update:zoom="(val) => currentZoomLevel = val"
+                @update:zoom="(val: number) => currentZoomLevel = val"
               >
                 <div>
                   <div
@@ -89,16 +89,15 @@
                             :id="content.key"
                             :src="getContentImageSrc(content)"
                             :style="getContentImageStyle(content)"
-                            class="absolute cursor-pointer transition-none"
+                            class="absolute cursor-pointer transition-none prevent-zoom-pan"
                             :class="[selectedContentKey === content.key ? 'selected-content' : '']"
                             @click.stop="(e) => handleSelectContent(e, content.key)"
                           >
-
                           <div
                             v-else-if="['text', 'certificate_number', 'fullname', 'employee_id', 'event_title', 'location', 'valid_thru'].includes(content.type)"
                             :id="content.key"
                             :style="getContentTextStyle(content)"
-                            class="cursor-pointer transition-none hover:border hover:border-blue-300"
+                            class="cursor-pointer transition-none hover:border hover:border-blue-300 prevent-zoom-pan"
                             :class="[selectedContentKey === content.key ? 'selected-content' : '']"
                             @click.stop="(e) => handleSelectContent(e, content.key)"
                           >
@@ -108,6 +107,7 @@
                         <ClientOnly>
                           <Moveable
                             v-if="selectedContentKey && targetRef"
+                            ref="moveableRef"
                             :target="targetRef"
                             :draggable="true"
                             :resizable="true"
@@ -119,7 +119,9 @@
                             :snappable="true"
                             :snap-directions="{ top: true, left: true, bottom: true, right: true, center: true, middle: true }"
                             @drag="onDrag"
+                            @drag-end="onDragEnd"
                             @resize="onResize"
+                            @resize-end="onResizeEnd"
                           />
                         </ClientOnly>
                       </div>
@@ -198,6 +200,8 @@ const currentZoomLevel = ref<number>(1);
 const canvasRef = ref<HTMLElement | null>(null);
 const targetRef = ref<HTMLElement | null>(null);
 
+const moveableRef = ref<any>(null);
+
 // === START: ADDED FOR SAFE ZONE TOGGLE ===
 const showSafeZone = ref<boolean>(true);
 
@@ -229,6 +233,7 @@ const isDisabledSubmitBtn = computed(() => {
     const isPrimaryDataValid = !!(store.title?.trim() && store.certificate_type && store.image);
     return !isPrimaryDataValid || Object.keys(errors.value).length > 0;
   }
+
   return false;
 });
 
@@ -266,34 +271,33 @@ function getContentImageSrc(content: ICertificateContentImageForm | ICertificate
   return '';
 }
 
+function getMargins() {
+  return {
+    left: safe_zone.value?.left || 0,
+    top: safe_zone.value?.top || 0,
+  };
+}
+
 function getContentImageStyle(content: ICertificateContentImageForm | ICertificateContentCertificateSigneeForm): string {
   if ((content.type !== 'image' && content.type !== 'sertificate_signee') || (!content.value && !content.file)) {
     return 'display: none;';
   }
 
-  const { width: layoutWidth, height: layoutHeight } = layoutDimensions;
   const { width, height, vertical, horizontal } = content.metadata;
-  const safeTop = safe_zone.value?.top || 0;
-  const safeRight = safe_zone.value?.right || 0;
-  const safeBottom = safe_zone.value?.bottom || 0;
-  const safeLeft = safe_zone.value?.left || 0;
-  const safeWidth = layoutWidth - safeLeft - safeRight;
-  const safeHeight = layoutHeight - safeTop - safeBottom;
+  const { left, top } = getMargins(); // Get Safe Zone Offsets
 
-  // Calculate position based on percentage (0-100)
-  // 0% = content at left/top edge, 100% = content at right/bottom edge
-  // Subtract content dimensions to ensure it stays within safe zone
-  const maxHorizontalOffset = Math.max(0, safeWidth - width);
-  const maxVerticalOffset = Math.max(0, safeHeight - height);
-
-  const translateX = safeLeft + (horizontal / 100) * maxHorizontalOffset;
-  const translateY = safeTop + (vertical / 100) * maxVerticalOffset;
+  // VISUAL POSITION = STORED VALUE + SAFE ZONE OFFSET
+  // If stored horizontal is 0, it renders at 'left' pixels (start of safe zone)
+  const renderX = (horizontal || 0) + left;
+  const renderY = (vertical || 0) + top;
 
   return `
     width: ${width}px;
     height: ${height}px;
-    transform: translate(${translateX}px, ${translateY}px);
-    will-change: transform;
+    position: absolute;
+    left: ${renderX}px;
+    top: ${renderY}px;
+    z-index: 10;
   `;
 }
 
@@ -302,34 +306,19 @@ function getContentTextStyle(content: ICertificateContentTextForm | ICertificate
     return 'display: none;';
   }
 
-  const { width: layoutWidth, height: layoutHeight } = layoutDimensions;
   const { width, height, font_family, font_size, font_weight, alignment, color, vertical, horizontal } = content.metadata;
-  const safeTop = safe_zone.value?.top || 0;
-  const safeRight = safe_zone.value?.right || 0;
-  const safeBottom = safe_zone.value?.bottom || 0;
-  const safeLeft = safe_zone.value?.left || 0;
-  const safeWidth = layoutWidth - safeLeft - safeRight;
-  const safeHeight = layoutHeight - safeTop - safeBottom;
+  const { left, top } = getMargins(); // Get Safe Zone Offsets
 
-  // Constrain width and height to safe zone boundaries
-  const constrainedWidth = Math.min(width, safeWidth);
-  const constrainedHeight = Math.min(height, safeHeight);
-
-  // Calculate position based on percentage (0-100)
-  // 0% = content at left/top edge, 100% = content at right/bottom edge
-  // Subtract content dimensions to ensure it stays within safe zone
-  const maxHorizontalOffset = Math.max(0, safeWidth - constrainedWidth);
-  const maxVerticalOffset = Math.max(0, safeHeight - constrainedHeight);
-
-  const translateX = safeLeft + (horizontal / 100) * maxHorizontalOffset;
-  const translateY = safeTop + (vertical / 100) * maxVerticalOffset;
+  // VISUAL POSITION = STORED VALUE + SAFE ZONE OFFSET
+  const renderX = (horizontal || 0) + left;
+  const renderY = (vertical || 0) + top;
 
   return `
     position: absolute;
-    left: ${translateX}px;
-    top: ${translateY}px;
-    width: ${constrainedWidth}px;
-    height: ${constrainedHeight}px;
+    left: ${renderX}px;
+    top: ${renderY}px;
+    width: ${width}px;
+    height: ${height}px;
     font-family: ${font_family || '\'Montserrat\', sans-serif'};
     font-size: ${font_size}px;
     font-weight: ${font_weight};
@@ -338,8 +327,8 @@ function getContentTextStyle(content: ICertificateContentTextForm | ICertificate
     white-space: pre-wrap;
     overflow: hidden;
     box-sizing: border-box;
-    will-change: left, top, width, height;
     display: block;
+    z-index: 10;
   `;
 }
 
@@ -397,7 +386,7 @@ const { mutate: submitCertificateForm } = useMutation({
     isLoading.value = true;
     showLoading('Creating certificate', 'Please wait while we create the certificate.');
 
-    const response = await postAddCertificate(payload).catch((err) => {
+    const response = await postAddCertificate(payload).catch((err: Error) => {
       hideLoading();
       $toast({ variant: 'error', title: 'Error', text: getApiErrorMessage(err as Error) || 'Failed to add certificate.' });
       throw err;
@@ -481,76 +470,67 @@ const handleSubmit = async () => {
   }
 };
 
-// --- LOGIC BARU: DRAG & DROP (Konversi Pixel ke Percentage) ---
-const onDrag = ({ target, _, left, top }: any) => {
-  // 1. Update visual langsung biar smooth
+// 1. VISUAL UPDATE (Runs 60fps - Extremely Fast)
+const onDrag = ({ target, left, top }: any) => {
   target.style.left = `${left}px`;
   target.style.top = `${top}px`;
-  // Note: getContentTextStyle anda pakai translate, moveable pakai left/top.
-  // Moveable akan menimpa style inline, pastikan ini sinkron.
+  // NO STORE UPDATE HERE
+};
 
-  // 2. Cari object content di store
+// 2. DATA COMMIT (Runs Once - When user releases mouse)
+const onDragEnd = ({ target }: any) => {
   const contentIndex = store.contents.findIndex(c => c.key === selectedContentKey.value);
   if (contentIndex === -1) {
     return;
   }
-  const content = store.contents[contentIndex];
 
-  // 3. Kalkulasi Balik: Dari Pixel (Left/Top) ke Percentage (Vertical/Horizontal)
-  // Logic ini membalikkan rumus `getContentTextStyle` yang Anda buat.
+  const { left: safeLeft, top: safeTop } = getMargins();
 
-  const { width: layoutWidth, height: layoutHeight } = layoutDimensions;
-  const { width, height } = content.metadata;
-  const safeTop = safe_zone.value?.top || 0;
-  const safeLeft = safe_zone.value?.left || 0;
-  const safeRight = safe_zone.value?.right || 0;
-  const safeBottom = safe_zone.value?.bottom || 0;
+  // Parse the final style values
+  const finalLeft = Number.parseFloat(target.style.left || 0);
+  const finalTop = Number.parseFloat(target.style.top || 0);
 
-  const safeWidth = layoutWidth - safeLeft - safeRight;
-  const safeHeight = layoutHeight - safeTop - safeBottom;
-
-  const maxHorizontalOffset = Math.max(0, safeWidth - width);
-  const maxVerticalOffset = Math.max(0, safeHeight - height);
-
-  // Hitung posisi relatif terhadap Safe Zone
-  // left (pixel layar) = safeLeft + (horizontal% * maxOffset)
-  // Maka: horizontal% = (left - safeLeft) / maxOffset
-
-  let newHorizontalPercent = 0;
-  if (maxHorizontalOffset > 0) {
-    newHorizontalPercent = ((left - safeLeft) / maxHorizontalOffset) * 100;
-  }
-
-  let newVerticalPercent = 0;
-  if (maxVerticalOffset > 0) {
-    newVerticalPercent = ((top - safeTop) / maxVerticalOffset) * 100;
-  }
-
-  // Update Store (Reactivity akan mengupdate Sidebar slider)
-  // Clamp nilai 0-100 agar tidak keluar safe zone
-  store.contents[contentIndex].metadata.horizontal = Math.min(100, Math.max(0, newHorizontalPercent));
-  store.contents[contentIndex].metadata.vertical = Math.min(100, Math.max(0, newVerticalPercent));
+  // Calculate relative to Safe Zone (0,0 = Safe Zone Corner)
+  store.contents[contentIndex].metadata.horizontal = Math.round(finalLeft - safeLeft);
+  store.contents[contentIndex].metadata.vertical = Math.round(finalTop - safeTop);
 };
 
-// --- LOGIC BARU: RESIZE ---
+// --- RESIZE LOGIC ---
+
+// 1. VISUAL UPDATE (Fast)
 const onResize = ({ target, width, height, drag }: any) => {
-  // 1. Update visual
   target.style.width = `${width}px`;
   target.style.height = `${height}px`;
   target.style.left = `${drag.left}px`;
   target.style.top = `${drag.top}px`;
+  // NO STORE UPDATE HERE
+};
 
-  // 2. Update Store Width & Height
+// 2. DATA COMMIT (Runs Once)
+const onResizeEnd = ({ target, _ }: any) => {
   const contentIndex = store.contents.findIndex(c => c.key === selectedContentKey.value);
   if (contentIndex === -1) {
     return;
   }
 
-  store.contents[contentIndex].metadata.width = width;
-  store.contents[contentIndex].metadata.height = height;
+  const { left: safeLeft, top: safeTop } = getMargins();
 
-  // Saat resize dari kiri/atas, posisi x/y juga berubah, jadi panggil logic drag update juga
-  onDrag({ target, left: drag.left, top: drag.top });
+  // Parse final values
+  const finalWidth = Number.parseFloat(target.style.width);
+  const finalHeight = Number.parseFloat(target.style.height);
+  const finalLeft = Number.parseFloat(target.style.left);
+  const finalTop = Number.parseFloat(target.style.top);
+
+  // Update Dimensions
+  store.contents[contentIndex].metadata.width = Math.round(finalWidth);
+  store.contents[contentIndex].metadata.height = Math.round(finalHeight);
+
+  // Update Position (Resizing from top/left changes position)
+  // Ensure we use the drag result for position, adjusted by safe zone
+  // Note: 'drag' object in resizeEnd might not have 'left' property directly in some versions,
+  // so relying on target.style is safer.
+  store.contents[contentIndex].metadata.horizontal = Math.round(finalLeft - safeLeft);
+  store.contents[contentIndex].metadata.vertical = Math.round(finalTop - safeTop);
 };
 
 // function handleClickOutsideContent() {
@@ -564,6 +544,18 @@ const onResize = ({ target, width, height, drag }: any) => {
 watch(isFormDirty, (value) => {
   preventLeave.value = value;
 });
+
+watch(
+  () => store.contents,
+  () => {
+    // Wait for Vue to update the DOM (move the element)
+    nextTick(() => {
+      // Tell Moveable to re-check the element's position
+      moveableRef.value?.updateRect();
+    });
+  },
+  { deep: true },
+);
 
 onBeforeMount(() => {
   store.$resetAll();

@@ -181,6 +181,11 @@ const resetZoom = () => {
 };
 
 const handleMouseDown = (e: MouseEvent) => {
+  const target = e.target as HTMLElement;
+  if (target.closest('.prevent-zoom-pan') || target.closest('.moveable-control-box')) {
+    return;
+  }
+
   if (e.button !== 0 || !canDrag.value || !zoomContainer.value) {
     return;
   }

@@ -72,7 +72,6 @@
         <!-- Size field -->
         <UiFormGroup
           v-if="shouldShowField('size')"
-          label="Size"
         >
           <div class="flex items-center gap-2">
             <div class="w-32">
@@ -83,7 +82,7 @@
                 @update:model-value="$emit('update:width', $event)"
               >
                 <template #suffix>
-                  <span class="text-gray-500">W</span>
+                  <!-- Add Fit/Fill/Fixed -->
                 </template>
               </UiInput>
             </div>
@@ -95,7 +94,7 @@
                 @update:model-value="$emit('update:height', $event)"
               >
                 <template #suffix>
-                  <span class="text-gray-500">H</span>
+                  <!-- Add Fit/Fill/Fixed -->
                 </template>
               </UiInput>
             </div>

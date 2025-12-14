@@ -220,7 +220,7 @@
 import type { IBadge, ICertificate, IFilterAchievement, ISortData } from '#achievement/config/types.ts';
 import type { TabItem } from '#ui/components/molecules/tabs/index.vue';
 
-import { getBadgeList, getCertificateList } from '#achievement/api/api.ts';
+import { deleteBadge, deleteCertificate, getBadgeList, getCertificateList } from '#achievement/api/api.ts';
 
 import { ACCESSIBILITY_OPTIONS, BADGE_COLUMNS, CERTIFICATE_COLUMNS, TYPE_OPTIONS } from '#achievement/config/constants.ts';
 import { PERMISSION_CREATE, PERMISSION_DELETE, PERMISSION_DETAIL, PERMISSION_EDIT, PERMISSION_LIST } from '#achievement/config/featureFlag.ts';
@@ -236,7 +236,7 @@ import UiFormGroup from '#ui/components/molecules/form-group/index.vue';
 import UiSelect from '#ui/components/molecules/select/index.vue';
 import UiSmarttable from '#ui/components/molecules/smart-table/index.vue';
 
-import { useQuery } from '@tanstack/vue-query';
+import { useMutation, useQuery } from '@tanstack/vue-query';
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 
@@ -258,8 +258,9 @@ definePageMeta({
 });
 
 const router = useRouter();
-const { $toast } = useNuxtApp();
+const { $toast, $popup } = useNuxtApp();
 const { debounce, getApiErrorMessage } = useUtility();
+const { showLoading, hideLoading } = useGlobalLoading();
 
 const breadcrumbs = [
   { text: 'Master Data', href: '', active: false },
@@ -373,8 +374,8 @@ const { data, error, isError, isLoading: isLoadingData, refetch } = useQuery({
       : await getBadgeList(apiParams);
 
     // Update pagination
-    pagination.value.totalData = response?.data?.pagination?.total_row || 0;
-    pagination.value.totalPages = response?.data?.pagination?.last_page || 1;
+    pagination.value.totalData = response?.data?.pagination?.total_data || 0;
+    pagination.value.totalPages = response?.data?.pagination?.total_pages || 1;
 
     return (response?.data?.contents || []) as (ICertificate | IBadge)[];
   },
@@ -474,9 +475,54 @@ function handleEditItem(item: ICertificate | IBadge) {
   }
 }
 
+const deleteMutation = useMutation({
+  mutationFn: async ({ id, type }: { id: number; type: 'certificate' | 'badge'; }) => {
+    if (type === 'certificate') {
+      return await deleteCertificate(id);
+    }
+    return await deleteBadge(id);
+  },
+  onSuccess: () => {
+    $toast({
+      variant: 'success',
+      title: 'Success',
+      text: `${isCertificates.value ? 'Certificate' : 'Badge'} successfully deleted.`,
+    });
+    refetch();
+  },
+  onError: (error) => {
+    $toast({
+      variant: 'error',
+      title: 'Error',
+      text: getApiErrorMessage(error) || 'An error occurred',
+    });
+  },
+  onMutate: () => {
+    showLoading();
+  },
+  onSettled: () => {
+    hideLoading();
+  },
+});
+
 function handleDeleteItem(item: ICertificate | IBadge) {
-  console.warn('Delete item:', item);
-  // Implement delete functionality
+  const itemType = isCertificates.value ? 'certificate' : 'badge';
+  const itemTitle = item.title;
+
+  $popup({
+    title: `Delete ${isCertificates.value ? 'Certificate' : 'Badge'}?`,
+    html: `Do you want to delete this ${itemType}? <br /> <b><i>${itemTitle}</i></b>`,
+    showCancelButton: true,
+    confirmButtonText: 'Delete',
+    icon: 'error',
+  }).then((result) => {
+    if (result.isConfirmed) {
+      deleteMutation.mutateAsync({
+        id: item.id,
+        type: itemType,
+      });
+    }
+  });
 }
 
 function getAccessibilityColor(accessibility: string) {
