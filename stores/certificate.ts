@@ -21,7 +21,7 @@ export const useCertificateStore = defineStore('certificate', () => {
         bottom: 50,
         left: 50,
       },
-    } as unknown as ICertificateForm,
+    } as ICertificateForm,
   });
 
   const getForm = computed(() => ({

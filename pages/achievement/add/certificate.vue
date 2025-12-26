@@ -31,10 +31,11 @@
               :safe-zone="safe_zone"
               :type-options="TYPE_OPTIONS"
               :show-content-section="!!(imagePreview || contents.length > 0)"
+              :show-layout-guid-section="!!(imagePreview || contents.length > 0)"
               :uploaded-image-meta="uploadedImageMeta"
               :selected-content-key="selectedContentKey"
               @update:title="(value: string) => store.title = value"
-              @update:certificate-type="(value: string) => store.certificate_type = value"
+              @update:certificate-type="(value: { label: string; value: string; }) => store.certificate_type = value"
               @update:safe-zone="(value: any) => store.safe_zone = value"
               @update:image="(value: File | string | null) => store.image = value"
               @update:contents="(value: any[]) => store.contents = value"
@@ -104,26 +105,24 @@
                             {{ content.value }}
                           </div>
                         </template>
-                        <ClientOnly>
-                          <Moveable
-                            v-if="selectedContentKey && targetRef"
-                            ref="moveableRef"
-                            :target="targetRef"
-                            :draggable="true"
-                            :resizable="true"
-                            :zoom="currentZoomLevel"
-                            :throttle-drag="0"
-                            :throttle-resize="0"
-                            :keep-ratio="false"
-                            :render-directions="['nw', 'n', 'ne', 'w', 'e', 'sw', 's', 'se']"
-                            :snappable="true"
-                            :snap-directions="{ top: true, left: true, bottom: true, right: true, center: true, middle: true }"
-                            @drag="onDrag"
-                            @drag-end="onDragEnd"
-                            @resize="onResize"
-                            @resize-end="onResizeEnd"
-                          />
-                        </ClientOnly>
+                        <Moveable
+                          v-if="selectedContentKey && targetRef"
+                          ref="moveableRef"
+                          :target="targetRef"
+                          :draggable="true"
+                          :resizable="true"
+                          :zoom="currentZoomLevel"
+                          :throttle-drag="0"
+                          :throttle-resize="0"
+                          :keep-ratio="selectedContentAspectRatioLocked"
+                          :render-directions="['nw', 'n', 'ne', 'w', 'e', 'sw', 's', 'se']"
+                          :snappable="true"
+                          :snap-directions="{ top: true, left: true, bottom: true, right: true, center: true, middle: true }"
+                          @drag="onDrag"
+                          @drag-end="onDragEnd"
+                          @resize="onResize"
+                          @resize-end="onResizeEnd"
+                        />
                       </div>
                     </div>
                     <div
@@ -224,6 +223,19 @@ const safeZoneStyle = computed(() => {
   `;
 });
 
+const selectedContentAspectRatioLocked = computed(() => {
+  if (!selectedContentKey.value) {
+    return false;
+  }
+
+  const selectedContent = store.contents.find(c => c.key === selectedContentKey.value);
+  if (!selectedContent) {
+    return false;
+  }
+
+  return selectedContent.metadata.isAspectRatioLocked ?? false;
+});
+
 function isFormDirty(): boolean {
   return !!(store.title?.trim() || store.certificate_type || store.image);
 }
@@ -322,8 +334,8 @@ function getContentTextStyle(content: ICertificateContentTextForm | ICertificate
     font-family: ${font_family || '\'Montserrat\', sans-serif'};
     font-size: ${font_size}px;
     font-weight: ${font_weight};
-    text-align: ${alignment || 'left'};
-    color: ${color};
+    text-align: ${alignment?.value || 'left'};
+    color: #${color};
     white-space: pre-wrap;
     overflow: hidden;
     box-sizing: border-box;

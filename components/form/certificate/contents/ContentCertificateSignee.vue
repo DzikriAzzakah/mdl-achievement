@@ -117,6 +117,8 @@
             <Icon
               name="mdi:lock"
               class="w-5 h-5 text-primary-500"
+              :class="{ 'text-gray-500': !isAspectRatioLocked }"
+              @click="toggleAspectRatioLock"
             />
           </div>
         </UiFormGroup>
@@ -198,6 +200,19 @@ const emit = defineEmits<{
 }>();
 
 const isCollapsed = computed(() => !props.isExpanded);
+const isAspectRatioLocked = computed({
+  get: () => props.contentItem.metadata.isAspectRatioLocked ?? false,
+  set: (value: boolean) => {
+    const updatedItem: ICertificateContentCertificateSigneeForm = {
+      ...props.contentItem,
+      metadata: {
+        ...props.contentItem.metadata,
+        isAspectRatioLocked: value,
+      },
+    };
+    emit('update:contentItem', updatedItem);
+  },
+});
 
 const hasImage = computed(() => {
   return !!(props.contentItem.value || props.contentItem.file);
@@ -238,9 +253,19 @@ const ratio = computed(() => {
   return originalHeight.value !== 0 ? originalWidth.value / originalHeight.value : 1;
 });
 
+const toggleAspectRatioLock = () => {
+  if (hasImage.value) {
+    isAspectRatioLocked.value = !isAspectRatioLocked.value;
+  }
+};
+
 const updateWidth = (value: number | string) => {
   const numValue = typeof value === 'string' ? Number(value) : value;
-  const newHeight = Math.round(numValue / ratio.value);
+  let newHeight = props.contentItem.metadata.height;
+
+  if (isAspectRatioLocked.value) {
+    newHeight = Math.round(numValue / ratio.value);
+  }
 
   const updatedItem: ICertificateContentCertificateSigneeForm = {
     ...props.contentItem,
@@ -255,7 +280,11 @@ const updateWidth = (value: number | string) => {
 
 const updateHeight = (value: number | string) => {
   const numValue = typeof value === 'string' ? Number(value) : value;
-  const newWidth = Math.round(numValue * ratio.value);
+  let newWidth = props.contentItem.metadata.width;
+
+  if (isAspectRatioLocked.value) {
+    newWidth = Math.round(numValue * ratio.value);
+  }
 
   const updatedItem: ICertificateContentCertificateSigneeForm = {
     ...props.contentItem,

@@ -54,32 +54,36 @@ export interface IBadgePayload {
 export interface ICertificate {
   id: number;
   title: string;
-  certificate_type: string;
+  certificate_type: { label: string; value: string; };
   accessibility: string;
   creator: string;
   created_at: string;
   updated_at: string;
 }
 
-export interface ICertificateContentImageMetadata {
-  width: number;
-  height: number;
+// Base metadata types for better reusability
+interface IContentMetadataBase {
   vertical: number;
   horizontal: number;
+  isAspectRatioLocked?: boolean;
+}
+
+export interface ICertificateContentImageMetadata extends IContentMetadataBase {
+  width: number;
+  height: number;
   originalWidth?: number;
   originalHeight?: number;
 }
 
-export interface ICertificateContentTextMetadata {
+export interface ICertificateContentTextMetadata extends IContentMetadataBase {
   width: number;
   height: number;
   color: string;
-  alignment: 'left' | 'center' | 'right';
+  alignment: { label: string; value: string; };
+  date_format?: string;
   font_size: number;
   font_weight: number;
   font_family: string;
-  vertical: number;
-  horizontal: number;
 }
 
 export interface ICertificateContentLocationMetadata extends ICertificateContentTextMetadata {
@@ -161,6 +165,102 @@ export interface ICertificateContentCertificateSigneeForm {
 
 export type ContentTextField = 'size' | 'fontFamily' | 'fontSize' | 'fontWeight' | 'alignment' | 'fontColor' | 'vertical' | 'horizontal';
 
+// Content type configurations for UI rendering
+export interface IContentTypeConfig {
+  title: string;
+  icon: string;
+  fields: ContentTextField[];
+  isSource: boolean; // Whether the content uses variable placeholders
+  hasCustomFields: boolean; // Whether it needs custom field slots
+}
+
+export const CONTENT_TYPE_CONFIGS: Record<string, IContentTypeConfig> = {
+  text: {
+    title: 'Text',
+    icon: 'material-symbols:text-fields-rounded',
+    fields: ['size', 'fontFamily', 'fontSize', 'fontWeight', 'alignment', 'fontColor'],
+    isSource: false,
+    hasCustomFields: false,
+  },
+  certificate_number: {
+    title: 'Certificate Number',
+    icon: 'material-symbols:code-rounded',
+    fields: ['size', 'fontFamily', 'fontSize', 'fontWeight', 'alignment', 'fontColor', 'vertical', 'horizontal'],
+    isSource: true,
+    hasCustomFields: true,
+  },
+  fullname: {
+    title: 'Full Name',
+    icon: 'material-symbols:code-rounded',
+    fields: ['size', 'fontFamily', 'fontSize', 'fontWeight', 'alignment', 'fontColor', 'vertical', 'horizontal'],
+    isSource: true,
+    hasCustomFields: false,
+  },
+  employee_id: {
+    title: 'Employee ID',
+    icon: 'material-symbols:code-rounded',
+    fields: ['size', 'fontFamily', 'fontSize', 'fontWeight', 'alignment', 'fontColor', 'vertical', 'horizontal'],
+    isSource: true,
+    hasCustomFields: false,
+  },
+  event_title: {
+    title: 'Event Title',
+    icon: 'material-symbols:code-rounded',
+    fields: ['size', 'fontFamily', 'fontSize', 'fontWeight', 'alignment', 'fontColor', 'vertical', 'horizontal'],
+    isSource: true,
+    hasCustomFields: false,
+  },
+  location: {
+    title: 'Location',
+    icon: 'material-symbols:code-rounded',
+    fields: ['size', 'fontFamily', 'fontSize', 'fontWeight', 'alignment', 'fontColor', 'vertical', 'horizontal'],
+    isSource: true,
+    hasCustomFields: true,
+  },
+  valid_thru: {
+    title: 'Valid Thru',
+    icon: 'material-symbols:code-rounded',
+    fields: ['size', 'fontFamily', 'fontSize', 'fontWeight', 'alignment', 'fontColor', 'vertical', 'horizontal'],
+    isSource: true,
+    hasCustomFields: false,
+  },
+};
+
+// Helper type guards for type narrowing
+export function isTextContent(content: ICertificateContentForm): content is ICertificateContentTextForm {
+  return content.type === 'text';
+}
+
+export function isLocationContent(content: ICertificateContentForm): content is ICertificateContentLocationForm {
+  return content.type === 'location';
+}
+
+export function isCertificateNumberContent(content: ICertificateContentForm): content is ICertificateContentCertificateNumberForm {
+  return content.type === 'certificate_number';
+}
+
+export function isImageContent(content: ICertificateContentForm): content is ICertificateContentImageForm {
+  return content.type === 'image';
+}
+
+export function isSigneeContent(content: ICertificateContentForm): content is ICertificateContentCertificateSigneeForm {
+  return content.type === 'sertificate_signee';
+}
+
+// Type guard for text-based content (not image/signee)
+export function isTextBasedContent(
+  content: ICertificateContentForm,
+): content is
+| ICertificateContentTextForm
+| ICertificateContentCertificateNumberForm
+| ICertificateContentLocationForm
+| ICertificateContentFullNameForm
+| ICertificateContentEmployeeIdForm
+| ICertificateContentEventTitleForm
+| ICertificateContentValidThruForm {
+  return ['text', 'certificate_number', 'location', 'fullname', 'employee_id', 'event_title', 'valid_thru'].includes(content.type);
+}
+
 export type ICertificateContentForm =
   | ICertificateContentImageForm
   | ICertificateContentTextForm
@@ -175,7 +275,7 @@ export type ICertificateContentForm =
 export interface ICertificateForm {
   title: string;
   description: string;
-  certificate_type: string;
+  certificate_type: { label: string; value: string; };
   image: File | string | null;
   contents: ICertificateContentForm[];
   safe_zone: ICertificateSafeZone;
@@ -185,7 +285,7 @@ export interface ICertificateDetail {
   id: number;
   title: string;
   description?: string;
-  certificate_type: string;
+  certificate_type: { label: string; value: string; };
   image_url?: string;
   created_at?: string;
   updated_at?: string;

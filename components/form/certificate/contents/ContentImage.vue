@@ -114,12 +114,14 @@
                 </template>
               </UiInput>
             </div>
-            <Icon
-              :name="isAspectRatioLocked ? 'mdi:lock' : 'mdi:aspect-ratio'"
-              class="w-5 h-5 transition-colors duration-200"
+            <UiButton
+              v-tooltip="isAspectRatioLocked ? 'Unlock Aspect Ratio' : 'Lock Aspect Ratio'"
+              square
+              size="md"
+              variant="soft"
+              icon="mdi:aspect-ratio"
+              :color="isAspectRatioLocked ? 'primary' : 'ghost'"
               :class="{
-                'text-primary-500': isAspectRatioLocked,
-                'text-gray-400 hover:text-primary-400': !isAspectRatioLocked,
                 'cursor-pointer': hasImage,
                 'cursor-not-allowed': !hasImage,
               }"
@@ -183,7 +185,19 @@ const emit = defineEmits<{
 }>();
 
 const isCollapsed = computed(() => !props.isExpanded);
-const isAspectRatioLocked = ref(false);
+const isAspectRatioLocked = computed({
+  get: () => props.contentItem.metadata.isAspectRatioLocked ?? false,
+  set: (value: boolean) => {
+    const updatedItem: ICertificateContentImageForm = {
+      ...props.contentItem,
+      metadata: {
+        ...props.contentItem.metadata,
+        isAspectRatioLocked: value,
+      },
+    };
+    emit('update:contentItem', updatedItem);
+  },
+});
 
 const hasImage = computed(() => {
   return !!(props.contentItem.value || props.contentItem.file);

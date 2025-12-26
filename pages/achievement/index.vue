@@ -402,6 +402,8 @@ const handleSearch = debounce((value: string) => {
 watch(search, (newVal: string) => handleSearch(newVal));
 
 watch(isError, (value: boolean) => {
+  console.error(value);
+  console.error(error);
   if (value) {
     $toast({
       variant: 'error',

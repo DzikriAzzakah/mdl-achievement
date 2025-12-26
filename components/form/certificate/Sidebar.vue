@@ -32,10 +32,9 @@
             :error="errors.title"
           >
             <UiInput
-              :model-value="title"
+              v-model="title"
               placeholder="Enter certificate title"
               :error="!!errors.title"
-              @update:model-value="$emit('update:title', $event)"
             />
           </UiFormGroup>
 
@@ -44,16 +43,15 @@
             :error="errors.certificate_type"
           >
             <UiSelect
-              :model-value="certificateType"
+              v-model="certificateType"
               placeholder="Select certificate type"
               :options="typeOptions"
               :error="!!errors.certificate_type"
-              @update:model-value="handleUpdateCertificateType"
             />
           </UiFormGroup>
 
           <UiFormGroup
-            label="Background Certificate"
+            label="Certificate Background"
             class="flex flex-col gap-3 w-full"
             :error="errors.image"
           >
@@ -82,13 +80,40 @@
                     Upload File
                   </div>
                   <div class="text-gray-400">
-                    Maximum file size: 500 x 500 up to 5 MB
+                    PNG, JPG, JPEG (A4 landscape up to 5 MB)
                   </div>
                 </div>
               </template>
             </UIFileUploadCompact>
           </UiFormGroup>
+        </div>
+      </div>
+    </div>
 
+    <!-- Layout Guid Section -->
+    <div
+      v-if="showLayoutGuidSection"
+      class="mb-4 flex-shrink-0 px-5"
+    >
+      <div
+        class="flex justify-between items-center w-full border-b-2 border-gray-50 pb-4 cursor-pointer"
+        @click="isLayoutGuidCollapsed = !isLayoutGuidCollapsed"
+      >
+        <h2 class="text-base font-semibold">
+          Layout Guidelines
+        </h2>
+        <Icon
+          name="mdi:chevron-down"
+          class="transition-transform duration-300"
+          :class="{ 'rotate-180': isLayoutGuidCollapsed }"
+        />
+      </div>
+
+      <div
+        class="overflow-hidden transition-all duration-300 ease-in-out"
+        :class="isLayoutGuidCollapsed ? 'max-h-0' : ''"
+      >
+        <div class="flex flex-col gap-4 w-full my-4">
           <UiFormGroup
             v-if="displayUploadedImage.length > 0"
             label="Safe Zone Margins"
@@ -96,11 +121,10 @@
           >
             <div class="grid grid-cols-2 gap-3">
               <UiInput
-                :model-value="safeZone.top"
+                v-model="safeZone.top"
                 type="number"
                 size="md"
                 placeholder="Top"
-                @update:model-value="$emit('update:safeZone', { ...safeZone, top: Number($event) })"
               >
                 <template #prefix>
                   <svg
@@ -117,11 +141,10 @@
                 </template>
               </UiInput>
               <UiInput
-                :model-value="safeZone.right"
+                v-model="safeZone.right"
                 type="number"
                 size="md"
                 placeholder="Right"
-                @update:model-value="$emit('update:safeZone', { ...safeZone, right: Number($event) })"
               >
                 <template #prefix>
                   <svg
@@ -138,11 +161,10 @@
                 </template>
               </UiInput>
               <UiInput
-                :model-value="safeZone.bottom"
+                v-model="safeZone.bottom"
                 type="number"
                 size="md"
                 placeholder="Bottom"
-                @update:model-value="$emit('update:safeZone', { ...safeZone, bottom: Number($event) })"
               >
                 <template #prefix>
                   <svg
@@ -159,11 +181,10 @@
                 </template>
               </UiInput>
               <UiInput
-                :model-value="safeZone.left"
+                v-model="safeZone.left"
                 type="number"
                 size="md"
                 placeholder="Left"
-                @update:model-value="$emit('update:safeZone', { ...safeZone, left: Number($event) })"
               >
                 <template #prefix>
                   <svg
@@ -188,14 +209,14 @@
     <!-- Content Section -->
     <div
       v-if="showContentSection"
-      class="flex flex-col flex-grow min-h-0 px-5 mb-10"
+      class="flex flex-col flex-grow min-h-0 px-5 mb-12"
     >
       <div
         class="flex justify-between items-center w-full border-b-2 border-gray-50 pb-4 mb-4 cursor-pointer flex-shrink-0"
         @click="isContentCollapsed = !isContentCollapsed"
       >
         <h2 class="text-base font-semibold">
-          Content
+          Contents
         </h2>
         <Icon
           name="mdi:chevron-down"
@@ -231,67 +252,13 @@
               @update:content-item="(updated: ICertificateContentCertificateSigneeForm) => handleUpdateContent(idx, updated)"
               @header-click="handleContentClick(content.key)"
             />
-            <ContentText
-              v-else-if="content.type === 'text'"
+            <ContentTextBase
+              v-else-if="isTextBasedContent(content)"
               :content-item="content"
               :index="idx"
               :is-expanded="isContentExpanded(content.key)"
               @delete="handleDeleteContent(idx)"
-              @update:content-item="(updated: ICertificateContentTextForm) => handleUpdateContent(idx, updated)"
-              @header-click="handleContentClick(content.key)"
-            />
-            <ContentCertificateNumber
-              v-else-if="content.type === 'certificate_number'"
-              :content-item="content"
-              :index="idx"
-              :is-expanded="isContentExpanded(content.key)"
-              @delete="handleDeleteContent(idx)"
-              @update:content-item="(updated: ICertificateContentCertificateNumberForm) => handleUpdateContent(idx, updated)"
-              @header-click="handleContentClick(content.key)"
-            />
-            <ContentFullName
-              v-else-if="content.type === 'fullname'"
-              :content-item="content"
-              :index="idx"
-              :is-expanded="isContentExpanded(content.key)"
-              @delete="handleDeleteContent(idx)"
-              @update:content-item="(updated: ICertificateContentFullNameForm) => handleUpdateContent(idx, updated)"
-              @header-click="handleContentClick(content.key)"
-            />
-            <ContentEmployeeId
-              v-else-if="content.type === 'employee_id'"
-              :content-item="content"
-              :index="idx"
-              :is-expanded="isContentExpanded(content.key)"
-              @delete="handleDeleteContent(idx)"
-              @update:content-item="(updated: ICertificateContentEmployeeIdForm) => handleUpdateContent(idx, updated)"
-              @header-click="handleContentClick(content.key)"
-            />
-            <ContentEventTitle
-              v-else-if="content.type === 'event_title'"
-              :content-item="content"
-              :index="idx"
-              :is-expanded="isContentExpanded(content.key)"
-              @delete="handleDeleteContent(idx)"
-              @update:content-item="(updated: ICertificateContentEventTitleForm) => handleUpdateContent(idx, updated)"
-              @header-click="handleContentClick(content.key)"
-            />
-            <ContentLocation
-              v-else-if="content.type === 'location'"
-              :content-item="content"
-              :index="idx"
-              :is-expanded="isContentExpanded(content.key)"
-              @delete="handleDeleteContent(idx)"
-              @update:content-item="(updated: ICertificateContentLocationForm) => handleUpdateContent(idx, updated)"
-              @header-click="handleContentClick(content.key)"
-            />
-            <ContentValidThru
-              v-else-if="content.type === 'valid_thru'"
-              :content-item="content"
-              :index="idx"
-              :is-expanded="isContentExpanded(content.key)"
-              @delete="handleDeleteContent(idx)"
-              @update:content-item="(updated: ICertificateContentValidThruForm) => handleUpdateContent(idx, updated)"
+              @update:content-item="(updated) => handleUpdateContent(idx, updated)"
               @header-click="handleContentClick(content.key)"
             />
           </template>
@@ -413,16 +380,12 @@
 </template>
 
 <script setup lang="ts">
-import type { ICertificateContentCertificateNumberForm, ICertificateContentCertificateSigneeForm, ICertificateContentEmployeeIdForm, ICertificateContentEventTitleForm, ICertificateContentForm, ICertificateContentFullNameForm, ICertificateContentImageForm, ICertificateContentLocationForm, ICertificateContentTextForm, ICertificateContentValidThruForm, ICertificateSafeZone } from '#achievement/config/types.ts';
-import ContentCertificateNumber from '#achievement/components/form/certificate/contents/ContentCertificateNumber.vue';
+import type { ICertificateContentCertificateSigneeForm, ICertificateContentForm, ICertificateContentImageForm, ICertificateSafeZone } from '#achievement/config/types.ts';
 import ContentCertificateSignee from '#achievement/components/form/certificate/contents/ContentCertificateSignee.vue';
-import ContentEmployeeId from '#achievement/components/form/certificate/contents/ContentEmployeeId.vue';
-import ContentEventTitle from '#achievement/components/form/certificate/contents/ContentEventTitle.vue';
-import ContentFullName from '#achievement/components/form/certificate/contents/ContentFullName.vue';
 import ContentImage from '#achievement/components/form/certificate/contents/ContentImage.vue';
-import ContentLocation from '#achievement/components/form/certificate/contents/ContentLocation.vue';
-import ContentText from '#achievement/components/form/certificate/contents/ContentText.vue';
-import ContentValidThru from '#achievement/components/form/certificate/contents/ContentValidThru.vue';
+import ContentTextBase from '#achievement/components/form/certificate/contents/ContentTextBase.vue';
+import { isTextBasedContent } from '#achievement/config/types.ts';
+import { createContent, generateContentKey } from '#achievement/utils/contentFactory';
 import UiButton from '#ui/components/atoms/button/index.vue';
 import UiInput from '#ui/components/atoms/input/index.vue';
 import UIFileUploadCompact from '#ui/components/molecules/fileupload/compact/index.vue';
@@ -432,43 +395,38 @@ import UiSelect from '#ui/components/molecules/select/index.vue';
 
 interface Props {
   errors: Record<string, any>;
-  title: string;
-  certificateType: string;
-  image: File | string | null;
-  contents: (ICertificateContentForm)[];
-  safeZone: ICertificateSafeZone;
   typeOptions: any[];
   showContentSection: boolean;
+  showLayoutGuidSection: boolean;
   uploadedImageMeta?: any;
-  selectedContentKey?: string | null;
 }
 
-const props = defineProps<Props>();
+defineProps<Props>();
 
-const emit = defineEmits<{
-  'update:title': [value: string];
-  'update:certificateType': [value: string];
-  'update:safeZone': [value: ICertificateSafeZone];
-  'update:image': [value: File | null];
-  'update:contents': [value: (ICertificateContentForm)[]];
-  'update:uploadedImageMeta': [value: any];
-  'update:selectedContentKey': [value: string | null];
-}>();
+// Use defineModel for all v-model bindings
+const title = defineModel<string>('title', { required: true });
+const certificateType = defineModel<{ label: string; value: string; }>('certificateType', { required: true });
+const image = defineModel<File | string | null>('image', { required: true });
+const contents = defineModel<ICertificateContentForm[]>('contents', { required: true });
+const safeZone = defineModel<ICertificateSafeZone>('safeZone', { required: true });
+const uploadedImageMeta = defineModel<any>('uploadedImageMeta');
+const selectedContentKey = defineModel<string | null>('selectedContentKey', {
+  required: true,
+});
 
-// Local state
 const isInfoCollapsed = ref<boolean>(false);
 const isContentCollapsed = ref<boolean>(false);
+const isLayoutGuidCollapsed = ref<boolean>(false);
 const isContentListOpen = ref<boolean>(false);
 const contentIdCounter = ref<number>(0);
 
-// Computed
 const displayUploadedImage = computed(() => {
-  if (!props.image) {
+  if (!image.value) {
     return [];
   }
 
-  if (props.image instanceof File) {
-    const file = props.image;
+  if (image.value instanceof File) {
+    const file = image.value;
     return [{
       id: '1',
       filename: file.name || '-',
@@ -479,15 +437,14 @@ const displayUploadedImage = computed(() => {
     }];
   }
 
-  // when edit mode or after success create certificate
-  if (typeof props.image === 'string' && props.uploadedImageMeta) {
-    const meta = props.uploadedImageMeta;
+  if (typeof image.value === 'string' && uploadedImageMeta.value) {
+    const meta = uploadedImageMeta.value;
     return [{
       id: '1',
       filename: meta.original_file_name || 'certificate-image',
       extension: meta.file_mime || 'png',
       size: undefined,
-      link: props.image,
+      link: image.value,
       isLoading: false,
     }];
   }
@@ -495,303 +452,51 @@ const displayUploadedImage = computed(() => {
   return [];
 });
 
-// Methods
-const handleUpdateCertificateType = (value: string | number | object | any[] | undefined) => {
-  emit('update:certificateType', String(value));
-};
-
 const handleChangeImage = (files: File[]) => {
   if (files && files.length > 0) {
-    emit('update:image', files[0]);
+    image.value = files[0];
   }
 };
 
 const handleRemoveImage = () => {
-  emit('update:image', null);
-  emit('update:uploadedImageMeta', null);
+  image.value = null;
+  uploadedImageMeta.value = null;
 };
 
 const handleCancelFetchImage = () => {
-  emit('update:image', null);
-};
-
-const getTextDimensions = (text: string, font: string, fontSize: number, fontWeight: number) => {
-  const canvas = document.createElement('canvas');
-  const context = canvas.getContext('2d');
-  if (context) {
-    context.font = `${fontWeight} ${fontSize}px ${font}`;
-    const metrics = context.measureText(text);
-    return {
-      width: Math.ceil(metrics.width),
-      height: Math.ceil(fontSize * 1.2), // Approx line height
-    };
-  }
-  return { width: 200, height: 50 }; // Fallback
+  image.value = null;
 };
 
 const addContent = (type: string) => {
-  const newContents = [...props.contents];
+  contentIdCounter.value++;
+  const key = generateContentKey(type, contentIdCounter.value);
+  const newContent = createContent(type, key);
 
-  if (type === 'image') {
-    contentIdCounter.value++;
-    const newContent: ICertificateContentImageForm = {
-      type: 'image',
-      key: `image_${contentIdCounter.value}`,
-      value: null,
-      metadata: {
-        width: 200,
-        height: 100,
-        vertical: 0,
-        horizontal: 0,
-      },
-      file: null,
-    };
-    newContents.push(newContent);
-    emit('update:contents', newContents);
-    emit('update:selectedContentKey', newContent.key);
-  }
-  else if (type === 'sertificate_signee') {
-    contentIdCounter.value++;
-    const newContent: ICertificateContentCertificateSigneeForm = {
-      type: 'sertificate_signee',
-      key: `sertificate_signee_${contentIdCounter.value}`,
-      value: null,
-      metadata: {
-        width: 200,
-        height: 100,
-        vertical: 0,
-        horizontal: 0,
-      },
-      file: null,
-    };
-    newContents.push(newContent);
-    emit('update:contents', newContents);
-    emit('update:selectedContentKey', newContent.key);
-  }
-  else if (type === 'text') {
-    const defaultText = 'Input Text Here';
-    const defaultFont = '\'Montserrat\', sans-serif';
-    const defaultSize = 16;
-    const defaultWeight = 400;
-
-    const dims = getTextDimensions(defaultText, defaultFont, defaultSize, defaultWeight);
-
-    contentIdCounter.value++;
-    const newContent: ICertificateContentTextForm = {
-      type: 'text',
-      key: `text_${contentIdCounter.value}`,
-      value: defaultText,
-      metadata: {
-        width: dims.width + 10, // Add little padding
-        height: dims.height,
-        font_family: defaultFont,
-        font_size: defaultSize,
-        font_weight: defaultWeight,
-        alignment: 'left',
-        color: '#000000',
-        vertical: 0, // This is Y coordinate (px) now
-        horizontal: 0, // This is X coordinate (px) now
-      },
-    };
-    newContents.push(newContent);
-    emit('update:contents', newContents);
-    emit('update:selectedContentKey', newContent.key);
-  }
-  else if (type === 'certificate_number') {
-    const defaultText = '';
-    const defaultFont = '\'Montserrat\', sans-serif';
-    const defaultSize = 16;
-    const defaultWeight = 400;
-
-    const dims = getTextDimensions(defaultText, defaultFont, defaultSize, defaultWeight);
-
-    contentIdCounter.value++;
-    const newContent: ICertificateContentCertificateNumberForm = {
-      type: 'certificate_number',
-      key: `certificate_number_${contentIdCounter.value}`,
-      value: '',
-      metadata: {
-        width: dims.width + 10, // Add little padding
-        height: dims.height,
-        font_family: defaultFont,
-        font_size: defaultSize,
-        font_weight: defaultWeight,
-        alignment: 'left',
-        color: '#000000',
-        vertical: 0,
-        horizontal: 0,
-      },
-    };
-    newContents.push(newContent);
-    emit('update:contents', newContents);
-    emit('update:selectedContentKey', newContent.key);
-  }
-  else if (type === 'fullname') {
-    const defaultText = '{{ fullname }}';
-    const defaultFont = '\'Montserrat\', sans-serif';
-    const defaultSize = 16;
-    const defaultWeight = 400;
-
-    const dims = getTextDimensions(defaultText, defaultFont, defaultSize, defaultWeight);
-
-    contentIdCounter.value++;
-    const newContent: ICertificateContentFullNameForm = {
-      type: 'fullname',
-      key: `fullname_${contentIdCounter.value}`,
-      value: defaultText,
-      metadata: {
-        width: dims.width + 10, // Add little padding
-        height: dims.height,
-        font_family: defaultFont,
-        font_size: defaultSize,
-        font_weight: defaultWeight,
-        alignment: 'left',
-        color: '#000000',
-        vertical: 0,
-        horizontal: 0,
-      },
-    };
-    newContents.push(newContent);
-    emit('update:contents', newContents);
-    emit('update:selectedContentKey', newContent.key);
-  }
-  else if (type === 'employee_id') {
-    const defaultText = '{{ nik }}';
-    const defaultFont = '\'Montserrat\', sans-serif';
-    const defaultSize = 16;
-    const defaultWeight = 400;
-
-    const dims = getTextDimensions(defaultText, defaultFont, defaultSize, defaultWeight);
-
-    contentIdCounter.value++;
-    const newContent: ICertificateContentEmployeeIdForm = {
-      type: 'employee_id',
-      key: `employee_id_${contentIdCounter.value}`,
-      value: defaultText,
-      metadata: {
-        width: dims.width + 10, // Add little padding
-        height: dims.height,
-        font_family: defaultFont,
-        font_size: defaultSize,
-        font_weight: defaultWeight,
-        alignment: 'left',
-        color: '#000000',
-        vertical: 0,
-        horizontal: 0,
-      },
-    };
-    newContents.push(newContent);
-    emit('update:contents', newContents);
-    emit('update:selectedContentKey', newContent.key);
-  }
-  else if (type === 'event_title') {
-    const defaultText = '{{ event_title }}';
-    const defaultFont = '\'Montserrat\', sans-serif';
-    const defaultSize = 16;
-    const defaultWeight = 400;
-
-    const dims = getTextDimensions(defaultText, defaultFont, defaultSize, defaultWeight);
-
-    contentIdCounter.value++;
-    const newContent: ICertificateContentEventTitleForm = {
-      type: 'event_title',
-      key: `event_title_${contentIdCounter.value}`,
-      value: defaultText,
-      metadata: {
-        width: dims.width + 10, // Add little padding
-        height: dims.height,
-        font_family: defaultFont,
-        font_size: defaultSize,
-        font_weight: defaultWeight,
-        alignment: 'left',
-        color: '#000000',
-        vertical: 0,
-        horizontal: 0,
-      },
-    };
-    newContents.push(newContent);
-    emit('update:contents', newContents);
-    emit('update:selectedContentKey', newContent.key);
-  }
-  else if (type === 'location') {
-    const defaultText = '{{ location }}';
-    const defaultFont = '\'Montserrat\', sans-serif';
-    const defaultSize = 16;
-    const defaultWeight = 400;
-
-    const dims = getTextDimensions(defaultText, defaultFont, defaultSize, defaultWeight);
-
-    contentIdCounter.value++;
-    const newContent: ICertificateContentLocationForm = {
-      type: 'location',
-      key: `location_${contentIdCounter.value}`,
-      value: defaultText,
-      metadata: {
-        width: dims.width + 10, // Add little padding
-        height: dims.height,
-        font_family: defaultFont,
-        font_size: defaultSize,
-        font_weight: defaultWeight,
-        alignment: 'left',
-        color: '#000000',
-        vertical: 0,
-        horizontal: 0,
-        location: '',
-        date_format: 'DD/MM/YYYY',
-      },
-    };
-    newContents.push(newContent);
-    emit('update:contents', newContents);
-    emit('update:selectedContentKey', newContent.key);
-  }
-  else if (type === 'valid_thru') {
-    const defaultText = '{{ valid_thru }}';
-    const defaultFont = '\'Montserrat\', sans-serif';
-    const defaultSize = 16;
-    const defaultWeight = 400;
-
-    const dims = getTextDimensions(defaultText, defaultFont, defaultSize, defaultWeight);
-
-    contentIdCounter.value++;
-    const newContent: ICertificateContentValidThruForm = {
-      type: 'valid_thru',
-      key: `valid_thru_${contentIdCounter.value}`,
-      value: defaultText,
-      metadata: {
-        width: dims.width + 10, // Add little padding
-        height: dims.height,
-        font_family: defaultFont,
-        font_size: defaultSize,
-        font_weight: defaultWeight,
-        alignment: 'left',
-        color: '#000000',
-        vertical: 0,
-        horizontal: 0,
-      },
-    };
-    newContents.push(newContent);
-    emit('update:contents', newContents);
-    emit('update:selectedContentKey', newContent.key);
+  if (!newContent) {
+    console.error(`Unknown content type: ${type}`);
+    return;
   }
 
+  const newContents = [...contents.value, newContent];
+  contents.value = newContents;
+  selectedContentKey.value = newContent.key;
   isContentListOpen.value = false;
 };
 
 const handleUpdateContent = (index: number, updatedContent: ICertificateContentForm) => {
-  const newContents = [...props.contents];
+  const newContents = [...contents.value];
   newContents[index] = updatedContent;
-  emit('update:contents', newContents);
+  contents.value = newContents;
 };
 
 const handleDeleteContent = (index: number) => {
-  const deletedKey = props.contents[index].key;
-  const newContents = [...props.contents];
+  const deletedKey = contents.value[index].key;
+  const newContents = [...contents.value];
   newContents.splice(index, 1);
-  emit('update:contents', newContents);
+  contents.value = newContents;
 
-  // If the deleted item was selected, clear selection
-  if (props.selectedContentKey === deletedKey) {
-    emit('update:selectedContentKey', null);
+  if (selectedContentKey.value === deletedKey) {
+    selectedContentKey.value = null;
   }
 };
 
@@ -800,40 +505,34 @@ const handleAddContent = (type: string) => {
 };
 
 const handleContentClick = (contentKey: string) => {
-  // If clicking the same item, deselect it
-  if (props.selectedContentKey === contentKey) {
-    emit('update:selectedContentKey', null);
+  if (selectedContentKey.value === contentKey) {
+    selectedContentKey.value = null;
   }
   else {
-    // Select the clicked item
-    emit('update:selectedContentKey', contentKey);
+    selectedContentKey.value = contentKey;
   }
 };
 
 const isContentExpanded = (contentKey: string) => {
-  return props.selectedContentKey === contentKey;
+  return selectedContentKey.value === contentKey;
 };
 
-// Watch for safe zone changes and adjust text widths automatically
-watch(() => props.safeZone, (newSafeZone, oldSafeZone) => {
+watch(() => safeZone.value, (newSafeZone, oldSafeZone) => {
   const layoutWidth = 842;
   const newSafeZoneWidth = layoutWidth - (newSafeZone?.left || 0) - (newSafeZone?.right || 0);
   const oldSafeZoneWidth = layoutWidth - (oldSafeZone?.left || 0) - (oldSafeZone?.right || 0);
 
-  // Only proceed if safe zone width actually changed
   if (newSafeZoneWidth === oldSafeZoneWidth) {
     return;
   }
 
-  const updatedContents = props.contents.map((content) => {
-    // Only process text content
+  const updatedContents = contents.value.map((content) => {
     if (content.type !== 'text') {
       return content;
     }
 
     const currentWidth = content.metadata.width;
 
-    // If current text width exceeds new safe zone width, shrink it to fit
     if (currentWidth > newSafeZoneWidth) {
       return {
         ...content,
@@ -844,7 +543,6 @@ watch(() => props.safeZone, (newSafeZone, oldSafeZone) => {
       };
     }
 
-    // If text width was at full width of old safe zone, resize to new safe zone width
     if (currentWidth === oldSafeZoneWidth) {
       return {
         ...content,
@@ -855,11 +553,10 @@ watch(() => props.safeZone, (newSafeZone, oldSafeZone) => {
       };
     }
 
-    // Otherwise, keep the current width unchanged
     return content;
   });
 
-  emit('update:contents', updatedContents);
+  contents.value = updatedContents;
 }, { deep: true });
 </script>
 
