@@ -1,7 +1,8 @@
 <template>
   <div class="bg-white border border-solid border-gray-50 shadow-sm rounded-xl p-4 w-full space-y-2">
     <div
-      class="flex justify-between items-center w-full border-b-2 border-gray-50 pb-2 cursor-pointer"
+      class="flex justify-between items-center w-full cursor-pointer"
+      :class="{ 'border-b-2 border-gray-50 pb-2': !isCollapsed }"
       @click="$emit('headerClick')"
     >
       <div class="flex items-center gap-2">

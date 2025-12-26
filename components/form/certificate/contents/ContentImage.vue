@@ -1,7 +1,8 @@
 <template>
   <div class="bg-white border border-solid border-gray-50 shadow-sm rounded-xl p-4 w-full space-y-2">
     <div
-      class="flex justify-between items-center w-full border-b-2 border-gray-50 pb-2 cursor-pointer"
+      class="flex justify-between items-center w-full cursor-pointer"
+      :class="{ 'border-b-2 border-gray-50 pb-2': !isCollapsed }"
       @click="$emit('headerClick')"
     >
       <div class="flex items-center gap-2">
@@ -65,13 +66,10 @@
           <UIFileUploadCompact
             v-else
             :id="`upload-content-${contentItem.key}`"
-            :supported-file-types="['JPG', 'JPEG', 'PNG', 'WEBP']"
-            :max-file-size="5"
+            :supported-file-types="CERTIFICATE_IMAGE_FILE_TYPES"
+            :max-file-size="CERTIFICATE_IMAGE_MAX_SIZE"
             :multiple="false"
-            :custom-error-messages="{
-              fileType: 'The Uploaded file type is not supported.',
-              fileSize: 'The File size exceeds limit of 5 MB.',
-            }"
+            :custom-error-messages="IMAGE_ERROR_MESSAGES"
             @modified="handleChangeImage"
           >
             <template #content>
@@ -80,7 +78,7 @@
                   Upload File
                 </div>
                 <div class="text-gray-400">
-                  Maximum file size: 500 x 500 up to 5 MB
+                  Maximum file size: {{ CERTIFICATE_IMAGE_MAX_DIMENSIONS.width }} x {{ CERTIFICATE_IMAGE_MAX_DIMENSIONS.height }} up to {{ CERTIFICATE_IMAGE_MAX_SIZE }} MB
                 </div>
               </div>
             </template>
@@ -165,6 +163,12 @@
 
 <script setup lang="ts">
 import type { ICertificateContentImageForm } from '#achievement/config/types.ts';
+import {
+  CERTIFICATE_IMAGE_FILE_TYPES,
+  CERTIFICATE_IMAGE_MAX_DIMENSIONS,
+  CERTIFICATE_IMAGE_MAX_SIZE,
+  IMAGE_ERROR_MESSAGES,
+} from '#achievement/config/constants.ts';
 import UiButton from '#ui/components/atoms/button/index.vue';
 import UiInput from '#ui/components/atoms/input/index.vue';
 import UIFileUploadCompact from '#ui/components/molecules/fileupload/compact/index.vue';

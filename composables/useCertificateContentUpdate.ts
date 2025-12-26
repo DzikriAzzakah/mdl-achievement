@@ -24,6 +24,7 @@ export function useCertificateContentUpdate<T extends ICertificateContentForm>(
   ) => {
     const updatedItem = {
       ...contentItem,
+      value: contentItem.value,
       metadata: {
         ...contentItem.metadata,
         [field]: value,

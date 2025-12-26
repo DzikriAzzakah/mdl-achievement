@@ -16,7 +16,7 @@ const DEFAULT_TEXT_CONFIG = {
   size: 16,
   weight: 400,
   color: '000000',
-  alignment: { label: 'Left', value: 'left' as const },
+  alignment: { label: 'Center', value: 'center' as const },
   padding: 20,
 };
 

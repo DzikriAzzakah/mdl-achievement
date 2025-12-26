@@ -1,7 +1,8 @@
 <template>
-  <div class="bg-white border border-solid border-gray-50 shadow-sm rounded-xl p-4 w-full space-y-2">
+  <div class="bg-white border border-solid border-gray-50 shadow-sm rounded-xl p-4 w-full">
     <div
-      class="flex justify-between items-center w-full border-b-2 border-gray-50 pb-2 cursor-pointer"
+      class="flex justify-between items-center w-full cursor-pointer"
+      :class="{ 'border-b-2 border-gray-50 pb-4': !isCollapsed }"
       @click="$emit('headerClick')"
     >
       <div class="flex items-center gap-2">
@@ -146,21 +147,9 @@
           class="flex items-center gap-4"
         >
           <UiFormGroup
-            v-if="shouldShowField('alignment')"
-            label="Alignment"
-          >
-            <UiSelect
-              :model-value="contentItem.metadata.alignment"
-              size="md"
-              class="w-32"
-              :options="alignmentOptions"
-              @update:model-value="handleAlignmentUpdate"
-            />
-          </UiFormGroup>
-
-          <UiFormGroup
             v-if="shouldShowField('fontColor')"
-            label="Font Color"
+            class="flex-1"
+            label="Color"
           >
             <UiInput
               type="text"
@@ -188,6 +177,18 @@
               </template>
             </UiInput>
           </UiFormGroup>
+          <UiFormGroup
+            v-if="shouldShowField('alignment')"
+            class="flex-1"
+            label="Alignment"
+          >
+            <UiSelect
+              :model-value="contentItem.metadata.alignment"
+              size="md"
+              :options="alignmentOptions"
+              @update:model-value="handleAlignmentUpdate"
+            />
+          </UiFormGroup>
         </div>
 
         <!-- Font Size and Font Weight fields -->
@@ -197,6 +198,7 @@
         >
           <UiFormGroup
             v-if="shouldShowField('fontSize')"
+            class="flex-1"
             label="Font Size"
           >
             <UiInput
@@ -214,12 +216,12 @@
 
           <UiFormGroup
             v-if="shouldShowField('fontWeight')"
+            class="flex-1"
             label="Font Weight"
           >
             <UiSelect
               :model-value="selectedFontWeightObject"
               size="md"
-              class="w-32"
               :options="fontWeightOptions"
               :select-props="{
                 trackBy: 'value',
@@ -239,22 +241,18 @@
           label="Size"
         >
           <div class="flex items-center gap-2">
-            <div class="w-32">
-              <UiInput
-                type="number"
-                :model-value="contentItem.metadata.width"
-                size="md"
-                @update:model-value="handleWidthUpdate"
-              />
-            </div>
-            <div class="w-32">
-              <UiInput
-                type="number"
-                :model-value="contentItem.metadata.height"
-                size="md"
-                @update:model-value="handleHeightUpdate"
-              />
-            </div>
+            <UiInput
+              type="number"
+              :model-value="contentItem.metadata.width"
+              size="md"
+              @update:model-value="handleWidthUpdate"
+            />
+            <UiInput
+              type="number"
+              :model-value="contentItem.metadata.height"
+              size="md"
+              @update:model-value="handleHeightUpdate"
+            />
             <UiButton
               v-tooltip="isAspectRatioLocked ? 'Unlock Aspect Ratio' : 'Lock Aspect Ratio'"
               square
@@ -312,6 +310,13 @@ import type {
   ICertificateContentValidThruForm,
 } from '#achievement/config/types';
 import { useCertificateContentUpdate } from '#achievement/composables/useCertificateContentUpdate';
+import {
+  ALIGNMENT_OPTIONS,
+  CERTIFICATE_NUMBER_VARIABLES,
+  DATE_FORMAT_OPTIONS,
+  FONT_OPTIONS,
+  FONT_WEIGHT_LABELS,
+} from '#achievement/config/constants';
 import { CONTENT_TYPE_CONFIGS, isCertificateNumberContent, isLocationContent } from '#achievement/config/types';
 import UiBadge from '#ui/components/atoms/badge/index.vue';
 import UiButton from '#ui/components/atoms/button/index.vue';
@@ -361,16 +366,8 @@ const shouldShowField = (field: ContentTextField): boolean => {
   return contentConfig.value.fields.includes(field);
 };
 
-// Certificate Number Variables
-const certificateNumberVariables = [
-  { label: 'NIK', value: '{{NIK}}' },
-  { label: 'Participant Name', value: '{{participant_name}}' },
-  { label: 'Year', value: '{{year}}' },
-  { label: 'Certificate Date', value: '{{certificate_date}}' },
-  { label: 'Email', value: '{{email}}' },
-  { label: 'Certificate Type', value: '{{certificate_type}}' },
-  { label: 'Serial Number', value: '{{serial_number}}' },
-];
+// Certificate Number Variables - now using constant
+const certificateNumberVariables = CERTIFICATE_NUMBER_VARIABLES;
 
 const selectedVariables = computed(() => {
   if (!isCertificateNumberContent(props.contentItem)) {
@@ -413,19 +410,8 @@ const handleBadgeClick = (variableValue: string) => {
   }
 };
 
-// Location Date Format
-const dateFormatOptions = [
-  { label: 'DD/MM/YYYY', value: 'DD/MM/YYYY' },
-  { label: 'MM/DD/YYYY', value: 'MM/DD/YYYY' },
-  { label: 'YYYY-MM-DD', value: 'YYYY-MM-DD' },
-  { label: 'DD-MM-YYYY', value: 'DD-MM-YYYY' },
-  { label: 'MM-DD-YYYY', value: 'MM-DD-YYYY' },
-  { label: 'YYYY/MM/DD', value: 'YYYY/MM/DD' },
-  { label: 'DD MMM YYYY', value: 'DD MMM YYYY' },
-  { label: 'MMM DD, YYYY', value: 'MMM DD, YYYY' },
-  { label: 'MMMM DD, YYYY', value: 'MMMM DD, YYYY' },
-  { label: 'DD MMMM YYYY', value: 'DD MMMM YYYY' },
-];
+// Location Date Format - now using constant
+const dateFormatOptions = DATE_FORMAT_OPTIONS;
 
 const selectedDateFormat = computed(() => {
   if (!isLocationContent(props.contentItem)) {
@@ -440,31 +426,10 @@ const handleDateFormatUpdate = (selectedOption: any) => {
   updateHandlers.updateDateFormat(dateFormat);
 };
 
-// Font options
-const fontOptions = [
-  { label: 'Great Vibes', value: '\'Great Vibes\', cursive', url: 'https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap', weights: [400] },
-  { label: 'Dancing Script', value: '\'Dancing Script\', cursive', url: 'https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;500;600;700&display=swap', weights: [400, 500, 600, 700] },
-  { label: 'EB Garamond', value: '\'EB Garamond\', serif', url: 'https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600;700;800&display=swap', weights: [400, 500, 600, 700, 800] },
-  { label: 'Playfair Display', value: '\'Playfair Display\', serif', url: 'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700;800;900&display=swap', weights: [400, 500, 600, 700, 800, 900] },
-  { label: 'Cormorant Garamond', value: '\'Cormorant Garamond\', serif', url: 'https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap', weights: [300, 400, 500, 600, 700] },
-  { label: 'Libre Baskerville', value: '\'Libre Baskerville\', serif', url: 'https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&display=swap', weights: [400, 700] },
-  { label: 'Merriweather', value: '\'Merriweather\', serif', url: 'https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700;900&display=swap', weights: [300, 400, 700, 900] },
-  { label: 'Cinzel', value: '\'Cinzel\', serif', url: 'https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700;800;900&display=swap', weights: [400, 500, 600, 700, 800, 900] },
-  { label: 'UnifrakturMaguntia', value: '\'UnifrakturMaguntia\', cursive', url: 'https://fonts.googleapis.com/css2?family=UnifrakturMaguntia&display=swap', weights: [400] },
-  { label: 'MedievalSharp', value: '\'MedievalSharp\', cursive', url: 'https://fonts.googleapis.com/css2?family=MedievalSharp&display=swap', weights: [400] },
-  { label: 'Montserrat', value: '\'Montserrat\', sans-serif', url: 'https://fonts.googleapis.com/css2?family=Montserrat:wght@100;200;300;400;500;600;700;800;900&display=swap', weights: [100, 200, 300, 400, 500, 600, 700, 800, 900] },
-  { label: 'Lato', value: '\'Lato\', sans-serif', url: 'https://fonts.googleapis.com/css2?family=Lato:wght@100;300;400;700;900&display=swap', weights: [100, 300, 400, 700, 900] },
-  { label: 'Raleway', value: '\'Raleway\', sans-serif', url: 'https://fonts.googleapis.com/css2?family=Raleway:wght@100;200;300;400;500;600;700;800;900&display=swap', weights: [100, 200, 300, 400, 500, 600, 700, 800, 900] },
-  { label: 'Times New Roman', value: '\'Times New Roman\', serif', url: '', weights: [400, 700] },
-  { label: 'Inter', value: '\'Inter\', sans-serif', url: 'https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap', weights: [100, 200, 300, 400, 500, 600, 700, 800, 900] },
-  { label: 'Arial', value: 'Arial, sans-serif', url: '', weights: [400, 700] },
-];
+// Font options - now using constant
+const fontOptions = FONT_OPTIONS;
 
-const alignmentOptions = [
-  { label: 'Left', value: 'left' },
-  { label: 'Center', value: 'center' },
-  { label: 'Right', value: 'right' },
-];
+const alignmentOptions = ALIGNMENT_OPTIONS;
 
 const loadFont = (fontUrl: string) => {
   if (!fontUrl) {
@@ -500,7 +465,6 @@ const getClosestFontWeight = (targetWeight: number, availableWeights: number[]):
 
 const handleFontFamilyUpdate = (selectedOption: any) => {
   const fontValue = selectedOption?.value || '\'Montserrat\', sans-serif';
-  updateHandlers.updateFontFamily(fontValue);
 
   const selectedFont = fontOptions.find(f => f.value === fontValue);
   const newAvailableWeights = selectedFont?.weights || [400];
@@ -537,18 +501,7 @@ const selectedFontObject = computed(() => {
 });
 
 const getFontWeightLabel = (weight: number): string => {
-  const labels: Record<number, string> = {
-    100: 'Thin',
-    200: 'Extra Light',
-    300: 'Light',
-    400: 'Regular',
-    500: 'Medium',
-    600: 'Semi Bold',
-    700: 'Bold',
-    800: 'Extra Bold',
-    900: 'Black',
-  };
-  return labels[weight] || 'Regular';
+  return FONT_WEIGHT_LABELS[weight] || 'Regular';
 };
 
 const fontWeightOptions = computed(() => {
@@ -569,7 +522,6 @@ const toggleAspectRatioLock = () => {
 };
 
 const handleWidthUpdate = (value: string | number) => {
-  updateHandlers.updateWidth(value);
   if (isAspectRatioLocked.value) {
     const aspectRatio = props.contentItem.metadata.width / props.contentItem.metadata.height;
     const newHeight = Number(value) / aspectRatio;
@@ -578,7 +530,6 @@ const handleWidthUpdate = (value: string | number) => {
 };
 
 const handleHeightUpdate = (value: string | number) => {
-  updateHandlers.updateHeight(value);
   if (isAspectRatioLocked.value) {
     const aspectRatio = props.contentItem.metadata.width / props.contentItem.metadata.height;
     const newWidth = Number(value) * aspectRatio;
