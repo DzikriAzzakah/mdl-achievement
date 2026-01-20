@@ -4,7 +4,6 @@ import { defineStore } from 'pinia';
 import { useForm, useIsFormValid } from 'vee-validate';
 
 export const useBadgeStore = defineStore('badge', () => {
-  // state
   const detailBadge = ref<IBadgeDetail>();
   const uploadedImageMeta = ref<IUploadedImageMetadata | null>(null);
 
@@ -24,7 +23,6 @@ export const useBadgeStore = defineStore('badge', () => {
   const isValid = useIsFormValid();
   const badgeResponse = ref<IBadgeResponse>();
 
-  // form fields
   const [title] = defineField('title');
   const [description] = defineField('description');
   const [image] = defineField('image');

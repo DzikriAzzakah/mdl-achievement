@@ -5,7 +5,6 @@
     @click="isContentListOpen = false"
   />
   <div class="flex flex-col h-full relative pt-5">
-    <!-- Certificate Information Section -->
     <div class="mb-4 flex-shrink-0 px-5">
       <div
         class="flex justify-between items-center w-full border-b-2 border-gray-50 pb-4 cursor-pointer"
@@ -29,31 +28,33 @@
           <UiFormGroup
             label="Certificate Title"
             class="w-full"
-            :error="errors.title"
+            required
           >
             <UiInput
               v-model="title"
               placeholder="Enter certificate title"
               :error="!!errors.title"
+              :error-message="errors.title"
             />
           </UiFormGroup>
 
           <UiFormGroup
             label="Certificate Type"
-            :error="errors.certificate_type"
+            required
           >
             <UiSelect
               v-model="certificateType"
               placeholder="Select certificate type"
               :options="typeOptions"
               :error="!!errors.certificate_type"
+              :error-message="errors.certificate_type"
             />
           </UiFormGroup>
 
           <UiFormGroup
             label="Certificate Background"
             class="flex flex-col gap-3 w-full"
-            :error="errors.image"
+            required
           >
             <UIFileUploadFiles
               v-if="image"
@@ -90,7 +91,6 @@
       </div>
     </div>
 
-    <!-- Layout Guid Section -->
     <div
       v-if="showLayoutGuidSection"
       class="mb-4 flex-shrink-0 px-5"
@@ -206,7 +206,6 @@
       </div>
     </div>
 
-    <!-- Content Section -->
     <div
       v-if="showContentSection"
       class="flex flex-col flex-grow min-h-0 px-5 mb-12"
@@ -225,7 +224,22 @@
         />
       </div>
 
+      <WebUiEmptyState
+        v-if="contents.length === 0"
+        title="No contents added yet."
+        description=" Click ''Add Content'' to get started."
+        class="overflow-hidden transition-all duration-300 ease-in-out flex-grow min-h-0 overflow-y-auto"
+        :class="isContentCollapsed ? 'max-h-0' : ''"
+      >
+        <template
+          #empty-image
+        >
+          <div />
+        </template>
+      </WebUiEmptyState>
+
       <div
+        v-else
         class="overflow-hidden transition-all duration-300 ease-in-out flex-grow min-h-0 overflow-y-auto"
         :class="isContentCollapsed ? 'max-h-0' : ''"
       >
@@ -235,28 +249,45 @@
             :key="content.key"
           >
             <ContentImage
-              v-if="content.type === 'image'"
+              v-if="content.type === 'image' || content.type === 'sertificate_signee'"
               :content-item="content"
               :index="idx"
               :is-expanded="isContentExpanded(content.key)"
+              :safe-zone-width="calculatedSafeZoneWidth"
+              :safe-zone-height="calculatedSafeZoneHeight"
               @delete="handleDeleteContent(idx)"
-              @update:content-item="(updated: ICertificateContentImageForm) => handleUpdateContent(idx, updated)"
+              @update:content-item="(updated) => handleUpdateContent(idx, updated)"
               @header-click="handleContentClick(content.key)"
             />
-            <ContentCertificateSignee
-              v-else-if="content.type === 'sertificate_signee'"
+            <ContentQRCode
+              v-else-if="isQRCodeContent(content)"
               :content-item="content"
               :index="idx"
               :is-expanded="isContentExpanded(content.key)"
+              :safe-zone-width="calculatedSafeZoneWidth"
+              :safe-zone-height="calculatedSafeZoneHeight"
               @delete="handleDeleteContent(idx)"
-              @update:content-item="(updated: ICertificateContentCertificateSigneeForm) => handleUpdateContent(idx, updated)"
+              @update:content-item="(updated) => handleUpdateContent(idx, updated)"
+              @header-click="handleContentClick(content.key)"
+            />
+            <ContentCertificateNumber
+              v-else-if="isCertificateNumberContent(content)"
+              :content-item="content"
+              :index="idx"
+              :is-expanded="isContentExpanded(content.key)"
+              :safe-zone-width="calculatedSafeZoneWidth"
+              :safe-zone-height="calculatedSafeZoneHeight"
+              @delete="handleDeleteContent(idx)"
+              @update:content-item="(updated) => handleUpdateContent(idx, updated)"
               @header-click="handleContentClick(content.key)"
             />
             <ContentTextBase
-              v-else-if="isTextBasedContent(content)"
+              v-else-if="isTextBasedContent(content) && !isCertificateNumberContent(content)"
               :content-item="content"
               :index="idx"
               :is-expanded="isContentExpanded(content.key)"
+              :safe-zone-width="calculatedSafeZoneWidth"
+              :safe-zone-height="calculatedSafeZoneHeight"
               @delete="handleDeleteContent(idx)"
               @update:content-item="(updated) => handleUpdateContent(idx, updated)"
               @header-click="handleContentClick(content.key)"
@@ -266,7 +297,6 @@
       </div>
     </div>
 
-    <!-- Add Content Button -->
     <div
       v-if="showContentSection"
       class="absolute bottom-0 left-0 w-full bg-white z-50"
@@ -277,94 +307,15 @@
           class="w-full flex flex-col gap-1 mb-4 p-2 bg-white rounded-lg shadow-lg"
         >
           <UiButton
+            v-for="contentType in availableContentTypes"
+            :key="contentType.type"
             color="ghost"
-            icon="mdi:image"
+            :icon="contentType.icon"
             variant="transparent"
             class="text-start"
-            @click="handleAddContent('image')"
+            @click="handleAddContent(contentType.type)"
           >
-            Image
-          </UiButton>
-          <UiButton
-            color="ghost"
-            icon="mdi:image"
-            variant="transparent"
-            class="text-start"
-            @click="handleAddContent('sertificate_signee')"
-          >
-            Certificate Signee
-          </UiButton>
-          <UiButton
-            color="ghost"
-            icon="material-symbols:text-fields-rounded"
-            variant="transparent"
-            class="text-start"
-            @click="handleAddContent('text')"
-          >
-            Text Area
-          </UiButton>
-          <UiButton
-            color="ghost"
-            icon="material-symbols:code-rounded"
-            variant="transparent"
-            class="text-start"
-            @click="handleAddContent('certificate_number')"
-          >
-            Certificate Number
-          </UiButton>
-          <UiButton
-            color="ghost"
-            icon="material-symbols:code-rounded"
-            variant="transparent"
-            class="text-start"
-            @click="handleAddContent('fullname')"
-          >
-            Fullname
-          </UiButton>
-          <UiButton
-            color="ghost"
-            icon="material-symbols:code-rounded"
-            variant="transparent"
-            class="text-start"
-            @click="handleAddContent('employee_id')"
-          >
-            Employee ID (NIK)
-          </UiButton>
-          <UiButton
-            color="ghost"
-            icon="material-symbols:code-rounded"
-            variant="transparent"
-            class="text-start"
-            @click="handleAddContent('event_title')"
-          >
-            Event Title
-          </UiButton>
-          <UiButton
-            color="ghost"
-            icon="material-symbols:code-rounded"
-            variant="transparent"
-            class="text-start"
-            @click="handleAddContent('location')"
-          >
-            Location
-          </UiButton>
-          <UiButton
-            color="ghost"
-            icon="material-symbols:code-rounded"
-            variant="transparent"
-            class="text-start"
-            @click="handleAddContent('barcode')"
-          >
-            Certificate Barcode
-          </UiButton>
-          <UiButton
-            color="ghost"
-            icon="material-symbols:code-rounded"
-            variant="transparent"
-            class="text-start"
-            @click="handleAddContent('valid_thru')"
-          >
-            Certificate Valid Thru
+            {{ contentType.label }}
           </UiButton>
         </div>
         <UiButton
@@ -380,11 +331,13 @@
 </template>
 
 <script setup lang="ts">
-import type { ICertificateContentCertificateSigneeForm, ICertificateContentForm, ICertificateContentImageForm, ICertificateSafeZone } from '#achievement/config/types.ts';
-import ContentCertificateSignee from '#achievement/components/form/certificate/contents/ContentCertificateSignee.vue';
+import type { ICertificateContentForm, ICertificateSafeZone } from '#achievement/config/types.ts';
+import ContentCertificateNumber from '#achievement/components/form/certificate/contents/ContentCertificateNumber.vue';
 import ContentImage from '#achievement/components/form/certificate/contents/ContentImage.vue';
+import ContentQRCode from '#achievement/components/form/certificate/contents/ContentQRCode.vue';
 import ContentTextBase from '#achievement/components/form/certificate/contents/ContentTextBase.vue';
-import { isTextBasedContent } from '#achievement/config/types.ts';
+import { CANVAS_HEIGHT, CANVAS_WIDTH } from '#achievement/config/constants.ts';
+import { isCertificateNumberContent, isQRCodeContent, isTextBasedContent } from '#achievement/config/types.ts';
 import { createContent, generateContentKey } from '#achievement/utils/contentFactory';
 import UiButton from '#ui/components/atoms/button/index.vue';
 import UiInput from '#ui/components/atoms/input/index.vue';
@@ -403,7 +356,6 @@ interface Props {
 
 defineProps<Props>();
 
-// Use defineModel for all v-model bindings
 const title = defineModel<string>('title', { required: true });
 const certificateType = defineModel<{ label: string; value: string; }>('certificateType', { required: true });
 const image = defineModel<File | string | null>('image', { required: true });
@@ -419,6 +371,19 @@ const isContentCollapsed = ref<boolean>(false);
 const isLayoutGuidCollapsed = ref<boolean>(false);
 const isContentListOpen = ref<boolean>(false);
 const contentIdCounter = ref<number>(0);
+
+const availableContentTypes = [
+  { type: 'image', label: 'Image', icon: 'mdi:image' },
+  { type: 'sertificate_signee', label: 'Certificate Signee', icon: 'mdi:image' },
+  { type: 'text', label: 'Text Area', icon: 'ic:round-text-fields' },
+  { type: 'certificate_number', label: 'Certificate Number', icon: 'mdi:code-tags' },
+  { type: 'fullname', label: 'Fullname', icon: 'mdi:code-tags' },
+  { type: 'employee_id', label: 'Employee ID (NIK)', icon: 'mdi:code-tags' },
+  { type: 'event_title', label: 'Event Title', icon: 'mdi:code-tags' },
+  { type: 'location', label: 'Location', icon: 'mdi:code-tags' },
+  { type: 'qr_code', label: 'QR Code', icon: 'mdi:qrcode' },
+  { type: 'valid_thru', label: 'Certificate Valid Thru', icon: 'mdi:code-tags' },
+];
 
 const displayUploadedImage = computed(() => {
   if (!image.value) {
@@ -516,6 +481,14 @@ const handleContentClick = (contentKey: string) => {
 const isContentExpanded = (contentKey: string) => {
   return selectedContentKey.value === contentKey;
 };
+
+const calculatedSafeZoneWidth = computed(() => {
+  return CANVAS_WIDTH - (safeZone.value?.left || 0) - (safeZone.value?.right || 0);
+});
+
+const calculatedSafeZoneHeight = computed(() => {
+  return CANVAS_HEIGHT - (safeZone.value?.top || 0) - (safeZone.value?.bottom || 0);
+});
 
 watch(() => safeZone.value, (newSafeZone, oldSafeZone) => {
   const layoutWidth = 842;

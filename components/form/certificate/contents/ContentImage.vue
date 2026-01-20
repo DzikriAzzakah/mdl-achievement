@@ -7,11 +7,11 @@
     >
       <div class="flex items-center gap-2">
         <Icon
-          name="mdi:image"
+          :name="displayConfig.icon"
           class="text-gray-500 w-5 h-5"
         />
         <p class="text-sm font-medium">
-          Image {{ index + 1 }}
+          {{ displayConfig.label }} {{ index + 1 }}
         </p>
       </div>
       <div class="flex items-center gap-2">
@@ -66,10 +66,10 @@
           <UIFileUploadCompact
             v-else
             :id="`upload-content-${contentItem.key}`"
-            :supported-file-types="CERTIFICATE_IMAGE_FILE_TYPES"
-            :max-file-size="CERTIFICATE_IMAGE_MAX_SIZE"
+            :supported-file-types="displayConfig.fileTypes"
+            :max-file-size="displayConfig.maxSize"
             :multiple="false"
-            :custom-error-messages="IMAGE_ERROR_MESSAGES"
+            :custom-error-messages="displayConfig.errorMessages"
             @modified="handleChangeImage"
           >
             <template #content>
@@ -78,7 +78,7 @@
                   Upload File
                 </div>
                 <div class="text-gray-400">
-                  Maximum file size: {{ CERTIFICATE_IMAGE_MAX_DIMENSIONS.width }} x {{ CERTIFICATE_IMAGE_MAX_DIMENSIONS.height }} up to {{ CERTIFICATE_IMAGE_MAX_SIZE }} MB
+                  {{ displayConfig.uploadHint }}
                 </div>
               </div>
             </template>
@@ -93,11 +93,7 @@
                 size="md"
                 :disabled="!hasImage"
                 @update:model-value="updateWidth"
-              >
-                <template #suffix>
-                  <!-- Add Fit/Fill/Fixed -->
-                </template>
-              </UiInput>
+              />
             </div>
             <div class="w-32">
               <UiInput
@@ -106,11 +102,7 @@
                 size="md"
                 :disabled="!hasImage"
                 @update:model-value="updateHeight"
-              >
-                <template #suffix>
-                  <!-- Add Fit/Fill/Fixed -->
-                </template>
-              </UiInput>
+              />
             </div>
             <UiButton
               v-tooltip="isAspectRatioLocked ? 'Unlock Aspect Ratio' : 'Lock Aspect Ratio'"
@@ -162,10 +154,9 @@
 </template>
 
 <script setup lang="ts">
-import type { ICertificateContentImageForm } from '#achievement/config/types.ts';
+import type { ICertificateContentCertificateSigneeForm, ICertificateContentImageForm } from '#achievement/config/types.ts';
 import {
   CERTIFICATE_IMAGE_FILE_TYPES,
-  CERTIFICATE_IMAGE_MAX_DIMENSIONS,
   CERTIFICATE_IMAGE_MAX_SIZE,
   IMAGE_ERROR_MESSAGES,
 } from '#achievement/config/constants.ts';
@@ -176,15 +167,17 @@ import UIFileUploadFiles from '#ui/components/molecules/fileupload/files/index.v
 import UiFormGroup from '#ui/components/molecules/form-group/index.vue';
 import { Dropdown } from 'floating-vue';
 
+type ContentItemType = ICertificateContentImageForm | ICertificateContentCertificateSigneeForm;
+
 const props = defineProps<{
-  contentItem: ICertificateContentImageForm;
+  contentItem: ContentItemType;
   index: number;
   isExpanded?: boolean;
 }>();
 
 const emit = defineEmits<{
   'delete': [index: number];
-  'update:contentItem': [value: ICertificateContentImageForm];
+  'update:contentItem': [value: ContentItemType];
   'headerClick': [];
 }>();
 
@@ -192,7 +185,7 @@ const isCollapsed = computed(() => !props.isExpanded);
 const isAspectRatioLocked = computed({
   get: () => props.contentItem.metadata.isAspectRatioLocked ?? false,
   set: (value: boolean) => {
-    const updatedItem: ICertificateContentImageForm = {
+    const updatedItem: ContentItemType = {
       ...props.contentItem,
       metadata: {
         ...props.contentItem.metadata,
@@ -201,6 +194,20 @@ const isAspectRatioLocked = computed({
     };
     emit('update:contentItem', updatedItem);
   },
+});
+
+const displayConfig = computed(() => {
+  const isSignee = props.contentItem.type === 'sertificate_signee';
+
+  return {
+    icon: isSignee ? 'mdi:draw' : 'mdi:image',
+    label: isSignee ? 'Certificate Signee' : 'Image',
+    fileTypes: CERTIFICATE_IMAGE_FILE_TYPES,
+    maxSize: CERTIFICATE_IMAGE_MAX_SIZE,
+    errorMessages: IMAGE_ERROR_MESSAGES,
+    uploadHint: 'PNG, JPG, JPEG (up to 5 MB)',
+    filenameDefault: isSignee ? 'signee-image' : 'content-image',
+  };
 });
 
 const hasImage = computed(() => {
@@ -227,7 +234,7 @@ const displayUploadedImage = computed(() => {
   if (item.value) {
     return [{
       id: item.key,
-      filename: 'content-image',
+      filename: displayConfig.value.filenameDefault,
       extension: 'png',
       size: undefined,
       link: item.value,
@@ -239,7 +246,6 @@ const displayUploadedImage = computed(() => {
 });
 
 const ratio = computed(() => {
-  // Use original dimensions to prevent division by zero or corrupted ratio
   return originalHeight.value !== 0 ? originalWidth.value / originalHeight.value : 1;
 });
 
@@ -253,12 +259,11 @@ const updateWidth = (value: number | string) => {
   const numValue = typeof value === 'string' ? Number(value) : value;
   let newHeight = props.contentItem.metadata.height;
 
-  // Use the stored ORIGINAL ratio for locking
   if (isAspectRatioLocked.value) {
     newHeight = Math.round(numValue / ratio.value);
   }
 
-  const updatedItem: ICertificateContentImageForm = {
+  const updatedItem: ContentItemType = {
     ...props.contentItem,
     metadata: {
       ...props.contentItem.metadata,
@@ -273,12 +278,11 @@ const updateHeight = (value: number | string) => {
   const numValue = typeof value === 'string' ? Number(value) : value;
   let newWidth = props.contentItem.metadata.width;
 
-  // Use the stored ORIGINAL ratio for locking
   if (isAspectRatioLocked.value) {
     newWidth = Math.round(numValue * ratio.value);
   }
 
-  const updatedItem: ICertificateContentImageForm = {
+  const updatedItem: ContentItemType = {
     ...props.contentItem,
     metadata: {
       ...props.contentItem.metadata,
@@ -291,7 +295,7 @@ const updateHeight = (value: number | string) => {
 
 const updateVertical = (value: number | string) => {
   const numValue = typeof value === 'string' ? Number(value) : value;
-  const updatedItem: ICertificateContentImageForm = {
+  const updatedItem: ContentItemType = {
     ...props.contentItem,
     metadata: {
       ...props.contentItem.metadata,
@@ -303,7 +307,7 @@ const updateVertical = (value: number | string) => {
 
 const updateHorizontal = (value: number | string) => {
   const numValue = typeof value === 'string' ? Number(value) : value;
-  const updatedItem: ICertificateContentImageForm = {
+  const updatedItem: ContentItemType = {
     ...props.contentItem,
     metadata: {
       ...props.contentItem.metadata,
@@ -322,8 +326,8 @@ const handleChangeImage = (files: File[]) => {
     reader.onload = (e) => {
       img.src = e.target?.result as string;
       img.onload = () => {
-        const originalImgWidth = img.width; // Store original W
-        const originalImgHeight = img.height; // Store original H
+        const originalImgWidth = img.width;
+        const originalImgHeight = img.height;
 
         let width = originalImgWidth;
         let height = originalImgHeight;
@@ -334,7 +338,7 @@ const handleChangeImage = (files: File[]) => {
           height = Math.round(height * resizeRatio);
         }
 
-        const updatedItem: ICertificateContentImageForm = {
+        const updatedItem: ContentItemType = {
           ...props.contentItem,
           file,
           metadata: {
@@ -355,12 +359,11 @@ const handleChangeImage = (files: File[]) => {
 };
 
 const handleRemoveImage = () => {
-  const updatedItem: ICertificateContentImageForm = {
+  const updatedItem: ContentItemType = {
     ...props.contentItem,
     file: null,
     value: null,
   };
-  isAspectRatioLocked.value = false;
 
   emit('update:contentItem', updatedItem);
 };

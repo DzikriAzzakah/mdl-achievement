@@ -121,7 +121,6 @@ function isFormChanged(): boolean {
   return false;
 }
 
-// Fetch detail badge
 const { isLoading: isLoadingEdit, refetch, isFetchedAfterMount } = useQuery({
   queryKey: ['get-detail-badge-edit', badgeId],
   queryFn: async () => {
@@ -160,7 +159,6 @@ const { isLoading: isLoadingEdit, refetch, isFetchedAfterMount } = useQuery({
   refetchOnMount: 'always',
 });
 
-// Upload image
 const uploadImage = async (file: File): Promise<string | undefined> => {
   try {
     isLoading.value = true;
@@ -181,7 +179,6 @@ const uploadImage = async (file: File): Promise<string | undefined> => {
   }
 };
 
-// Edit badge mutation
 const { mutate: editBadgeForm } = useMutation({
   mutationFn: async (payload: Record<string, any>) => {
     await patchEditBadge(Number(badgeId), payload);
@@ -196,7 +193,6 @@ const { mutate: editBadgeForm } = useMutation({
     initialImage.value = store.image as string;
     preventLeave.value = false;
 
-    // Refetch to get updated data
     refetch();
   },
   onError: (err) => {
@@ -209,10 +205,8 @@ const { mutate: editBadgeForm } = useMutation({
 });
 
 const handleSubmit = async (): Promise<void> => {
-  // Only build payload with changed fields
   const payload: Record<string, any> = {};
 
-  // Check if image changed
   if (store.image !== initialImage.value) {
     if (store.image instanceof File) {
       const uploadedUrl = await uploadImage(store.image);
@@ -225,17 +219,14 @@ const handleSubmit = async (): Promise<void> => {
     }
   }
 
-  // Check if title changed
   if (store.title !== initialForm.value.title) {
     payload.title = store.title;
   }
 
-  // Check if description changed
   if (store.description !== initialForm.value.description) {
     payload.description = store.description;
   }
 
-  // Only submit if there are changes
   if (Object.keys(payload).length > 0) {
     editBadgeForm(payload);
   }

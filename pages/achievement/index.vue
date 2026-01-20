@@ -7,7 +7,6 @@
     :active-tab="activeTab"
     @on-change-tab="onChangeTab"
   >
-    <!-- Header Action -->
     <template #header-action>
       <UiButton
         size="lg"
@@ -18,7 +17,6 @@
       </UiButton>
     </template>
 
-    <!-- Filter Search -->
     <template #filter-search>
       <UiInput
         v-model="search"
@@ -42,7 +40,6 @@
       </UiInput>
     </template>
 
-    <!-- Filter Advance -->
     <template #filter-advance>
       <UiAdvanceFilter
         v-model="filter"
@@ -137,7 +134,6 @@
       </UiAdvanceFilter>
     </template>
 
-    <!-- Table -->
     <template #table>
       <UiSmarttable
         :columns="columns"

@@ -157,7 +157,6 @@ const displayUploadedImage = computed((): IUploadedFile[] => {
       }];
     }
 
-    // Fallback when no metadata is available
     return [{
       id: '1',
       filename: 'badge-image',

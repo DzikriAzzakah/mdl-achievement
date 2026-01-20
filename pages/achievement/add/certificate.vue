@@ -65,7 +65,7 @@
                 <div>
                   <div
                     ref="canvasRef"
-                    class="w-[842px] h-[594.5px] bg-white relative"
+                    class="w-[842px] h-[595px] bg-white relative"
                   >
                     <div
                       v-if="imagePreview || contents.length > 0"
@@ -77,6 +77,7 @@
                       >
                         <div
                           v-if="showSafeZone"
+                          data-safe-zone="true"
                           class="absolute border-2 border-dashed border-primary-500 pointer-events-none"
                           :style="safeZoneStyle"
                         />
@@ -95,6 +96,27 @@
                             @click.stop="(e) => handleSelectContent(e, content.key)"
                           >
                           <div
+                            v-else-if="content.type === 'qr_code'"
+                            :id="content.key"
+                            :style="getQRCodeContainerStyle(content)"
+                            class="cursor-pointer transition-none prevent-zoom-pan"
+                            :class="[selectedContentKey === content.key ? 'selected-content' : '']"
+                            @click.stop="(e) => handleSelectContent(e, content.key)"
+                          >
+                            <Qrcode
+                              :value="content.value || 'https://example.com'"
+                              :variant="{
+                                pixel: content.metadata.shape === 'dots' ? 'circle' : 'default',
+                                marker: content.metadata.border_style === 'rounded' ? 'rounded' : 'default',
+                                inner: content.metadata.shape === 'dots' ? 'circle' : 'default',
+                              }"
+                              :radius="content.metadata.border_style === 'rounded' ? 1 : 0"
+                              :black-color="`#${content.metadata.shape_color}`"
+                              white-color="transparent"
+                              class="w-full h-full"
+                            />
+                          </div>
+                          <div
                             v-else-if="['text', 'certificate_number', 'fullname', 'employee_id', 'event_title', 'location', 'valid_thru'].includes(content.type)"
                             :id="content.key"
                             :style="getContentTextStyle(content)"
@@ -102,7 +124,7 @@
                             :class="[selectedContentKey === content.key ? 'selected-content' : '']"
                             @click.stop="(e) => handleSelectContent(e, content.key)"
                           >
-                            {{ content.value }}
+                            {{ getContentDisplayValue(content) }}
                           </div>
                         </template>
                         <Moveable
@@ -154,10 +176,13 @@ import Sidebar from '#achievement/components/form/certificate/Sidebar.vue';
 
 import ZoomableContent from '#achievement/components/ZoomableContent.vue';
 
+import { useCertificateCanvas } from '#achievement/composables/useCertificateCanvas';
 import { CREATE_STEPPER, TYPE_OPTIONS } from '#achievement/config/constants.ts';
 import { PERMISSION_CREATE, PERMISSION_LIST } from '#achievement/config/featureFlag.ts';
 
 import FormLayout from '#achievement/layouts/FormLayout.vue';
+import { buildCertificateCreatePayload, buildContentPayload } from '#achievement/utils/certificatePayloadBuilder';
+import { generateCertificateTemplate } from '#achievement/utils/certificateTemplateGenerator';
 import { postUploadFile } from '#core/api/upload.ts';
 import TemplateManageLayout from '#core/components/templates/ManageLayout.vue';
 import UiSwitch from '#ui/components/atoms/switch/index.vue';
@@ -187,7 +212,6 @@ const { showLoading, hideLoading } = useGlobalLoading();
 const { preventLeave } = useConfirmLeave();
 const { getApiErrorMessage } = useUtility();
 
-// Reactive properties
 const activeStepper = ref<number>(1);
 const stepper = CREATE_STEPPER;
 const isLoading = ref<boolean>(false);
@@ -201,10 +225,9 @@ const targetRef = ref<HTMLElement | null>(null);
 
 const moveableRef = ref<any>(null);
 
-// === START: ADDED FOR SAFE ZONE TOGGLE ===
 const showSafeZone = ref<boolean>(true);
 
-const layoutDimensions = { width: 842, height: 594.5 };
+const layoutDimensions = { width: 842, height: 595 };
 
 const safeZoneStyle = computed(() => {
   const { width: layoutWidth, height: layoutHeight } = layoutDimensions;
@@ -242,8 +265,8 @@ function isFormDirty(): boolean {
 
 const isDisabledSubmitBtn = computed(() => {
   if (activeStepper.value === 1) {
-    const isPrimaryDataValid = !!(store.title?.trim() && store.certificate_type && store.image);
-    return !isPrimaryDataValid || Object.keys(errors.value).length > 0;
+    const isPrimaryDataInvalid = !(store.title?.trim() && store.certificate_type?.value && store.image);
+    return isPrimaryDataInvalid || Object.keys(errors.value).length > 0;
   }
 
   return false;
@@ -296,10 +319,8 @@ function getContentImageStyle(content: ICertificateContentImageForm | ICertifica
   }
 
   const { width, height, vertical, horizontal } = content.metadata;
-  const { left, top } = getMargins(); // Get Safe Zone Offsets
+  const { left, top } = getMargins();
 
-  // VISUAL POSITION = STORED VALUE + SAFE ZONE OFFSET
-  // If stored horizontal is 0, it renders at 'left' pixels (start of safe zone)
   const renderX = (horizontal || 0) + left;
   const renderY = (vertical || 0) + top;
 
@@ -313,15 +334,37 @@ function getContentImageStyle(content: ICertificateContentImageForm | ICertifica
   `;
 }
 
+function getContentDisplayValue(content: ICertificateContentTextForm | ICertificateContentCertificateNumberForm | ICertificateContentLocationForm | ICertificateContentFullNameForm | ICertificateContentEmployeeIdForm | ICertificateContentEventTitleForm | ICertificateContentValidThruForm): string {
+  if (content.type === 'certificate_number') {
+    return '{{certificate_number}}';
+  }
+  if (content.type === 'fullname') {
+    return '{{participant_name}}';
+  }
+  if (content.type === 'employee_id') {
+    return '{{nik}}';
+  }
+  if (content.type === 'event_title') {
+    return '{{title}}';
+  }
+  if (content.type === 'location') {
+    return '{{city}}, {{date}}';
+  }
+  if (content.type === 'valid_thru') {
+    return '{{expired_date}}';
+  }
+  return content.value || '';
+}
+
 function getContentTextStyle(content: ICertificateContentTextForm | ICertificateContentCertificateNumberForm | ICertificateContentLocationForm | ICertificateContentFullNameForm | ICertificateContentEmployeeIdForm | ICertificateContentEventTitleForm | ICertificateContentValidThruForm): string {
-  if (!content.value) {
+  const isDynamicContent = ['certificate_number', 'fullname', 'employee_id', 'event_title', 'location', 'valid_thru'].includes(content.type);
+  if (!isDynamicContent && !content.value) {
     return 'display: none;';
   }
 
   const { width, height, font_family, font_size, font_weight, alignment, color, vertical, horizontal } = content.metadata;
-  const { left, top } = getMargins(); // Get Safe Zone Offsets
+  const { left, top } = getMargins();
 
-  // VISUAL POSITION = STORED VALUE + SAFE ZONE OFFSET
   const renderX = (horizontal || 0) + left;
   const renderY = (vertical || 0) + top;
 
@@ -344,6 +387,36 @@ function getContentTextStyle(content: ICertificateContentTextForm | ICertificate
   `;
 }
 
+function getQRCodeContainerStyle(content: any): string {
+  const { width, height, vertical, horizontal, background_color, background_transparent, border_color, border_style } = content.metadata;
+  const { left, top } = getMargins();
+
+  const renderX = (horizontal || 0) + left;
+  const renderY = (vertical || 0) + top;
+
+  // Padding: 1/10 of size with minimum 6px
+  const padding = Math.max(6, Math.floor(Math.min(width, height) / 10));
+  const bgColor = background_transparent ? 'transparent' : `#${background_color}`;
+  const borderRadius = border_style === 'rounded' ? '10px' : '0';
+
+  return `
+    position: absolute;
+    left: ${renderX}px;
+    top: ${renderY}px;
+    width: ${width}px;
+    height: ${height}px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: ${bgColor};
+    border: 2px solid #${border_color};
+    border-radius: ${borderRadius};
+    padding: ${padding}px;
+    box-sizing: border-box;
+    z-index: 10;
+  `;
+}
+
 function handleSelectContent(e: Event, key: string) {
   selectedContentKey.value = key;
 
@@ -358,6 +431,13 @@ function handleClickOutsideContent() {
   targetRef.value = null;
 }
 
+const { captureCanvasAsImage } = useCertificateCanvas({
+  canvasRef,
+  backgroundUrl: imagePreview,
+  contents,
+  safeZone: safe_zone,
+});
+
 const uploadImage = async (file: File) => {
   const now = new Date();
   const folder = `content/user-upload/image/${now.getFullYear()}/${now.getMonth() + 1}`;
@@ -368,7 +448,10 @@ const uploadImage = async (file: File) => {
 
     uploadedImageMeta.value = response?.data;
     store.image = response?.data?.full_path || null;
-    return response?.data?.full_path;
+    return {
+      url: response?.data?.full_path,
+      meta: response?.data,
+    };
   }
   catch (err) {
     $toast({ variant: 'error', title: 'Error', text: getApiErrorMessage(err as Error) || 'Image upload failed.' });
@@ -385,7 +468,10 @@ const uploadContentImage = async (file: File) => {
   const folder = `content/user-upload/certificate-content/${now.getFullYear()}/${now.getMonth() + 1}`;
   try {
     const response = await postUploadFile(file, folder);
-    return response?.data?.full_path || null;
+    return {
+      url: response?.data?.full_path || null,
+      meta: response?.data,
+    };
   }
   catch (err) {
     $toast({ variant: 'error', title: 'Error', text: getApiErrorMessage(err as Error) || 'Content image upload failed.' });
@@ -430,47 +516,72 @@ function handleCancel() {
 
 const handleSubmit = async () => {
   if (activeStepper.value === 1) {
-    let imageUrl: string | undefined = '';
-    if (store.image instanceof File) {
-      imageUrl = await uploadImage(store.image);
+    try {
+      isLoading.value = true;
+      showLoading('Processing certificate', 'Please wait while we prepare the certificate.');
+
+      let backgroundUrl: string = '';
+      let backgroundMeta: any = uploadedImageMeta.value;
+
+      if (store.image instanceof File) {
+        const uploadResult = await uploadImage(store.image);
+        backgroundUrl = uploadResult?.url || '';
+        backgroundMeta = uploadResult?.meta;
+      }
+      else if (typeof store.image === 'string') {
+        backgroundUrl = store.image;
+      }
+
+      if (!backgroundUrl) {
+        $toast({ variant: 'error', title: 'Error', text: 'Background image is required.' });
+        return;
+      }
+
+      const uploadedContents = await Promise.all(
+        store.contents.map(async (content) => {
+          if ((content.type === 'image' || content.type === 'sertificate_signee') && content.file) {
+            const uploadResult = await uploadContentImage(content.file);
+            return buildContentPayload(content, uploadResult?.url, uploadResult?.meta);
+          }
+          return buildContentPayload(content);
+        }),
+      );
+
+      const template = generateCertificateTemplate({
+        backgroundUrl,
+        contents: store.contents,
+        safeZone: store.safe_zone,
+      });
+
+      let imagePreviewBase64 = '';
+      try {
+        imagePreviewBase64 = await captureCanvasAsImage();
+      }
+      catch (err) {
+        console.warn('Could not capture canvas preview:', err);
+      }
+
+      const payload = buildCertificateCreatePayload({
+        title: store.title,
+        certificateType: store.certificate_type?.value || '',
+        backgroundUrl,
+        backgroundMeta,
+        template,
+        imagePreview: imagePreviewBase64,
+        safeZone: store.safe_zone,
+        contents: uploadedContents,
+      });
+
+      submitCertificateForm(payload);
     }
-    else if (typeof store.image === 'string') {
-      imageUrl = store.image;
+    catch (err) {
+      console.error('Error creating certificate:', err);
+      $toast({ variant: 'error', title: 'Error', text: getApiErrorMessage(err as Error) || 'Failed to create certificate.' });
     }
-
-    if (!imageUrl) {
-      return;
+    finally {
+      isLoading.value = false;
+      hideLoading();
     }
-
-    const uploadedContents = await Promise.all(
-      store.contents.map(async (content) => {
-        if (content.type === 'image' && content.file) {
-          const contentImageUrl = await uploadContentImage(content.file);
-          return {
-            type: content.type,
-            key: content.key,
-            value: contentImageUrl,
-            metadata: content.metadata,
-          };
-        }
-        return {
-          type: content.type,
-          key: content.key,
-          value: content.value,
-          metadata: content.metadata,
-        };
-      }),
-    );
-
-    const payload = {
-      title: store.title,
-      certificate_type: store.certificate_type,
-      image: imageUrl,
-      contents: uploadedContents,
-      safe_zone: store.safe_zone,
-    };
-
-    submitCertificateForm(payload);
   }
   else {
     $toast({
@@ -482,14 +593,11 @@ const handleSubmit = async () => {
   }
 };
 
-// 1. VISUAL UPDATE (Runs 60fps - Extremely Fast)
 const onDrag = ({ target, left, top }: any) => {
   target.style.left = `${left}px`;
   target.style.top = `${top}px`;
-  // NO STORE UPDATE HERE
 };
 
-// 2. DATA COMMIT (Runs Once - When user releases mouse)
 const onDragEnd = ({ target }: any) => {
   const contentIndex = store.contents.findIndex(c => c.key === selectedContentKey.value);
   if (contentIndex === -1) {
@@ -498,27 +606,20 @@ const onDragEnd = ({ target }: any) => {
 
   const { left: safeLeft, top: safeTop } = getMargins();
 
-  // Parse the final style values
   const finalLeft = Number.parseFloat(target.style.left || 0);
   const finalTop = Number.parseFloat(target.style.top || 0);
 
-  // Calculate relative to Safe Zone (0,0 = Safe Zone Corner)
   store.contents[contentIndex].metadata.horizontal = Math.round(finalLeft - safeLeft);
   store.contents[contentIndex].metadata.vertical = Math.round(finalTop - safeTop);
 };
 
-// --- RESIZE LOGIC ---
-
-// 1. VISUAL UPDATE (Fast)
 const onResize = ({ target, width, height, drag }: any) => {
   target.style.width = `${width}px`;
   target.style.height = `${height}px`;
   target.style.left = `${drag.left}px`;
   target.style.top = `${drag.top}px`;
-  // NO STORE UPDATE HERE
 };
 
-// 2. DATA COMMIT (Runs Once)
 const onResizeEnd = ({ target, _ }: any) => {
   const contentIndex = store.contents.findIndex(c => c.key === selectedContentKey.value);
   if (contentIndex === -1) {
@@ -527,31 +628,17 @@ const onResizeEnd = ({ target, _ }: any) => {
 
   const { left: safeLeft, top: safeTop } = getMargins();
 
-  // Parse final values
   const finalWidth = Number.parseFloat(target.style.width);
   const finalHeight = Number.parseFloat(target.style.height);
   const finalLeft = Number.parseFloat(target.style.left);
   const finalTop = Number.parseFloat(target.style.top);
 
-  // Update Dimensions
   store.contents[contentIndex].metadata.width = Math.round(finalWidth);
   store.contents[contentIndex].metadata.height = Math.round(finalHeight);
 
-  // Update Position (Resizing from top/left changes position)
-  // Ensure we use the drag result for position, adjusted by safe zone
-  // Note: 'drag' object in resizeEnd might not have 'left' property directly in some versions,
-  // so relying on target.style is safer.
   store.contents[contentIndex].metadata.horizontal = Math.round(finalLeft - safeLeft);
   store.contents[contentIndex].metadata.vertical = Math.round(finalTop - safeTop);
 };
-
-// function handleClickOutsideContent() {
-//   selectedContentKey.value = null;
-// }
-
-// function handlePreviewItemClick(key: string) {
-//   selectedContentKey.value = key;
-// }
 
 watch(isFormDirty, (value) => {
   preventLeave.value = value;
@@ -560,9 +647,7 @@ watch(isFormDirty, (value) => {
 watch(
   () => store.contents,
   () => {
-    // Wait for Vue to update the DOM (move the element)
     nextTick(() => {
-      // Tell Moveable to re-check the element's position
       moveableRef.value?.updateRect();
     });
   },
@@ -584,7 +669,7 @@ onBeforeMount(() => {
 }
 
 .template-manage__content {
-  @apply flex-grow min-h-0 max-w-[1280px] m-auto w-full;
+  @apply flex-grow min-h-0 max-w-[1440px] m-auto w-full;
 }
 
 .template-manage__header {
@@ -592,7 +677,7 @@ onBeforeMount(() => {
 }
 
 .template-manage__header > div {
-  @apply max-w-[1280px] m-auto;
+  @apply max-w-[1440px] m-auto;
 }
 
 .ui-upload-compact {

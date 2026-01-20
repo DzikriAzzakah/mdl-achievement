@@ -1,0 +1,278 @@
+import type { ICertificateContentForm, ICertificateSafeZone, IUploadedImageMetadata } from '#achievement/config/types';
+
+export interface ICertificateBackgroundPayload {
+  id?: number;
+  image_host?: string;
+  full_path?: string;
+  file_path?: string;
+  file_name?: string;
+  file_mime?: string;
+  folder?: string;
+  original_file_name?: string;
+}
+
+export interface ICertificateMetadataPayload {
+  safe_zone: ICertificateSafeZone;
+  canvas_width: number;
+  canvas_height: number;
+}
+
+export interface ICertificateContentMetadataPayload {
+  width: number;
+  height: number;
+  vertical: number;
+  horizontal: number;
+  // For image types
+  original_width?: number;
+  original_height?: number;
+  image_host?: string;
+  full_path?: string;
+  file_path?: string;
+  file_name?: string;
+  file_mime?: string;
+  folder?: string;
+  original_file_name?: string;
+  // For text types
+  font_family?: string;
+  font_size?: number;
+  font_weight?: number;
+  alignment?: { label: string; value: string; };
+  color?: string;
+  // For location type
+  location?: string;
+  date_format?: string;
+  // For QR Code type
+  background_color?: string;
+  background_transparent?: boolean;
+  shape?: string;
+  shape_color?: string;
+  border_style?: string;
+  border_color?: string;
+  // Common
+  width_mode?: string;
+  height_mode?: string;
+  isAspectRatioLocked?: boolean;
+}
+
+export interface ICertificateContentPayload {
+  type: string;
+  key: string;
+  value: string | null;
+  metadata: ICertificateContentMetadataPayload;
+  variables?: Array<{
+    id: string;
+    type: string;
+    label: string;
+    value: string;
+    customValue?: string;
+  }>;
+}
+
+export interface ICertificateCreatePayload {
+  title: string;
+  type: string;
+  status: string;
+  background: ICertificateBackgroundPayload;
+  image_preview: string;
+  template: string;
+  metadata: ICertificateMetadataPayload;
+  contents: ICertificateContentPayload[];
+}
+
+/**
+ * Build background payload from uploaded image metadata
+ */
+export function buildBackgroundPayload(
+  imageUrl: string,
+  uploadedMeta?: IUploadedImageMetadata | null,
+): ICertificateBackgroundPayload {
+  if (uploadedMeta) {
+    return {
+      image_host: uploadedMeta.image_host,
+      full_path: uploadedMeta.full_path,
+      file_path: uploadedMeta.file_path,
+      file_name: uploadedMeta.file_name,
+      file_mime: uploadedMeta.file_mime,
+      folder: uploadedMeta.folder,
+      original_file_name: uploadedMeta.original_file_name,
+    };
+  }
+
+  try {
+    const url = new URL(imageUrl);
+    const pathParts = url.pathname.split('/');
+    const fileName = pathParts[pathParts.length - 1];
+    const folder = pathParts.slice(1, -1).join('/');
+    const extension = fileName.split('.').pop() || 'png';
+
+    return {
+      image_host: url.origin,
+      full_path: imageUrl,
+      file_path: url.pathname,
+      file_name: fileName,
+      file_mime: extension,
+      folder,
+      original_file_name: fileName,
+    };
+  }
+  catch {
+    return {
+      full_path: imageUrl,
+    };
+  }
+}
+
+/**
+ * Build metadata payload
+ */
+export function buildMetadataPayload(safeZone: ICertificateSafeZone): ICertificateMetadataPayload {
+  return {
+    safe_zone: { ...safeZone },
+    canvas_width: 842,
+    canvas_height: 595,
+  };
+}
+
+/**
+ * Build content payload with full metadata
+ */
+export function buildContentPayload(
+  content: ICertificateContentForm,
+  uploadedImageUrl?: string | null,
+  uploadedImageMeta?: IUploadedImageMetadata | null,
+): ICertificateContentPayload {
+  const basePayload: ICertificateContentPayload = {
+    type: content.type,
+    key: content.key,
+    value: uploadedImageUrl || content.value,
+    metadata: {
+      width: content.metadata.width,
+      height: content.metadata.height,
+      vertical: content.metadata.vertical || 0,
+      horizontal: content.metadata.horizontal || 0,
+      width_mode: content.metadata.width_mode,
+      height_mode: content.metadata.height_mode,
+      isAspectRatioLocked: content.metadata.isAspectRatioLocked,
+    },
+  };
+
+  if (content.type === 'image' || content.type === 'sertificate_signee') {
+    const imageMetadata = content.metadata as { originalWidth?: number; originalHeight?: number; };
+    basePayload.metadata.original_width = imageMetadata.originalWidth;
+    basePayload.metadata.original_height = imageMetadata.originalHeight;
+
+    if (uploadedImageMeta) {
+      basePayload.metadata.image_host = uploadedImageMeta.image_host;
+      basePayload.metadata.full_path = uploadedImageMeta.full_path;
+      basePayload.metadata.file_path = uploadedImageMeta.file_path;
+      basePayload.metadata.file_name = uploadedImageMeta.file_name;
+      basePayload.metadata.file_mime = uploadedImageMeta.file_mime;
+      basePayload.metadata.folder = uploadedImageMeta.folder;
+      basePayload.metadata.original_file_name = uploadedImageMeta.original_file_name;
+    }
+  }
+
+  if (content.type === 'qr_code') {
+    const qrMetadata = content.metadata as {
+      background_color?: string;
+      background_transparent?: boolean;
+      shape?: string;
+      shape_color?: string;
+      border_style?: string;
+      border_color?: string;
+    };
+    basePayload.metadata.background_color = qrMetadata.background_color;
+    basePayload.metadata.background_transparent = qrMetadata.background_transparent;
+    basePayload.metadata.shape = qrMetadata.shape;
+    basePayload.metadata.shape_color = qrMetadata.shape_color;
+    basePayload.metadata.border_style = qrMetadata.border_style;
+    basePayload.metadata.border_color = qrMetadata.border_color;
+  }
+
+  if (isTextBasedContent(content.type)) {
+    const textMetadata = content.metadata as {
+      font_family?: string;
+      font_size?: number;
+      font_weight?: number;
+      alignment?: { label: string; value: string; };
+      color?: string;
+    };
+
+    basePayload.metadata.font_family = textMetadata.font_family;
+    basePayload.metadata.font_size = textMetadata.font_size;
+    basePayload.metadata.font_weight = textMetadata.font_weight;
+    basePayload.metadata.alignment = textMetadata.alignment;
+    basePayload.metadata.color = textMetadata.color;
+  }
+
+  if (content.type === 'location') {
+    const locationMetadata = content.metadata as {
+      location?: string;
+      date_format?: string;
+    };
+    basePayload.metadata.location = locationMetadata.location;
+    basePayload.metadata.date_format = locationMetadata.date_format;
+  }
+
+  if (content.type === 'certificate_number') {
+    const certNumContent = content as {
+      variables?: Array<{
+        id: string;
+        type: string;
+        label: string;
+        value: string;
+        customValue?: string;
+      }>;
+    };
+    if (certNumContent.variables) {
+      basePayload.variables = certNumContent.variables;
+    }
+  }
+
+  return basePayload;
+}
+
+/**
+ * Build the complete certificate create payload
+ */
+export function buildCertificateCreatePayload(options: {
+  title: string;
+  certificateType: string;
+  backgroundUrl: string;
+  backgroundMeta?: IUploadedImageMetadata | null;
+  template: string;
+  imagePreview: string;
+  safeZone: ICertificateSafeZone;
+  contents: ICertificateContentPayload[];
+  status?: string;
+}): ICertificateCreatePayload {
+  const {
+    title,
+    certificateType,
+    backgroundUrl,
+    backgroundMeta,
+    template,
+    imagePreview,
+    safeZone,
+    contents,
+    status = 'published',
+  } = options;
+
+  return {
+    title,
+    type: certificateType,
+    status,
+    background: buildBackgroundPayload(backgroundUrl, backgroundMeta),
+    image_preview: imagePreview,
+    template,
+    metadata: buildMetadataPayload(safeZone),
+    contents,
+  };
+}
+
+/**
+ * Helper: Check if content type is text-based
+ */
+function isTextBasedContent(type: string): boolean {
+  return ['text', 'certificate_number', 'location', 'fullname', 'employee_id', 'event_title', 'valid_thru'].includes(type);
+}

@@ -4,7 +4,6 @@ import { defineStore } from 'pinia';
 import { useForm, useIsFormValid } from 'vee-validate';
 
 export const useCertificateStore = defineStore('certificate', () => {
-  // state
   const detailCertificate = ref<ICertificateDetail>();
 
   const { errors, defineField, handleSubmit, resetForm, values, setValues: setFormValues } = useForm({
@@ -12,7 +11,7 @@ export const useCertificateStore = defineStore('certificate', () => {
     initialValues: {
       title: '',
       description: '',
-      certificate_type: '',
+      certificate_type: { label: '', value: '' },
       image: null,
       contents: [],
       safe_zone: {
@@ -31,7 +30,6 @@ export const useCertificateStore = defineStore('certificate', () => {
   const isValid = useIsFormValid();
   const certificateResponse = ref<ICertificateResponse>();
 
-  // form fields
   const [title] = defineField('title');
   const [description] = defineField('description');
   const [certificate_type] = defineField('certificate_type');

@@ -61,23 +61,24 @@ export interface ICertificate {
   updated_at: string;
 }
 
-// Base metadata types for better reusability
 interface IContentMetadataBase {
   vertical: number;
-  horizontal: number;
-  isAspectRatioLocked?: boolean;
-}
-
-export interface ICertificateContentImageMetadata extends IContentMetadataBase {
   width: number;
   height: number;
+  horizontal: number;
+  isAspectRatioLocked?: boolean;
+  width_mode?: SizeMode;
+  height_mode?: SizeMode;
+}
+
+export type SizeMode = 'fix' | 'fill' | 'hug';
+
+export interface ICertificateContentImageMetadata extends IContentMetadataBase {
   originalWidth?: number;
   originalHeight?: number;
 }
 
 export interface ICertificateContentTextMetadata extends IContentMetadataBase {
-  width: number;
-  height: number;
   color: string;
   alignment: { label: string; value: string; };
   date_format?: string;
@@ -96,6 +97,27 @@ export interface ICertificateSafeZone {
   right: number;
   bottom: number;
   left: number;
+}
+
+export type QRCodeShape = 'dots' | 'square';
+export type QRCodeBorderStyle = 'square' | 'rounded';
+
+export interface ICertificateContentQRCodeMetadata extends IContentMetadataBase {
+  background_color: string;
+  background_transparent: boolean;
+  shape: QRCodeShape;
+  shape_color: string;
+  border_style: QRCodeBorderStyle;
+  border_color: string;
+}
+
+export interface ICertificateNumberVariable {
+  id: string;
+  type: string;
+  label: string;
+  value: string;
+  customValue?: string;
+  uuid?: string; // UUID for serial_number type
 }
 
 export interface ICertificateContentImageForm {
@@ -118,6 +140,7 @@ export interface ICertificateContentCertificateNumberForm {
   key: string;
   value: string;
   metadata: ICertificateContentTextMetadata;
+  variables?: ICertificateNumberVariable[];
 }
 
 export interface ICertificateContentLocationForm {
@@ -163,15 +186,21 @@ export interface ICertificateContentCertificateSigneeForm {
   file?: File | null;
 }
 
+export interface ICertificateContentQRCodeForm {
+  type: 'qr_code';
+  key: string;
+  value: string;
+  metadata: ICertificateContentQRCodeMetadata;
+}
+
 export type ContentTextField = 'size' | 'fontFamily' | 'fontSize' | 'fontWeight' | 'alignment' | 'fontColor' | 'vertical' | 'horizontal';
 
-// Content type configurations for UI rendering
 export interface IContentTypeConfig {
   title: string;
   icon: string;
   fields: ContentTextField[];
-  isSource: boolean; // Whether the content uses variable placeholders
-  hasCustomFields: boolean; // Whether it needs custom field slots
+  isSource: boolean;
+  hasCustomFields: boolean;
 }
 
 export const CONTENT_TYPE_CONFIGS: Record<string, IContentTypeConfig> = {
@@ -226,7 +255,6 @@ export const CONTENT_TYPE_CONFIGS: Record<string, IContentTypeConfig> = {
   },
 };
 
-// Helper type guards for type narrowing
 export function isTextContent(content: ICertificateContentForm): content is ICertificateContentTextForm {
   return content.type === 'text';
 }
@@ -247,7 +275,10 @@ export function isSigneeContent(content: ICertificateContentForm): content is IC
   return content.type === 'sertificate_signee';
 }
 
-// Type guard for text-based content (not image/signee)
+export function isQRCodeContent(content: ICertificateContentForm): content is ICertificateContentQRCodeForm {
+  return content.type === 'qr_code';
+}
+
 export function isTextBasedContent(
   content: ICertificateContentForm,
 ): content is
@@ -270,7 +301,8 @@ export type ICertificateContentForm =
   | ICertificateContentEmployeeIdForm
   | ICertificateContentEventTitleForm
   | ICertificateContentValidThruForm
-  | ICertificateContentCertificateSigneeForm;
+  | ICertificateContentCertificateSigneeForm
+  | ICertificateContentQRCodeForm;
 
 export interface ICertificateForm {
   title: string;
@@ -297,7 +329,7 @@ export interface ICertificateDetail {
 export interface ICertificateResponse {
   id: number;
   title?: string;
-  certificate_type?: string;
+  certificate_type?: { label: string; value: string; };
   image_url?: string;
 }
 

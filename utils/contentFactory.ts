@@ -7,9 +7,11 @@ import type {
   ICertificateContentFullNameForm,
   ICertificateContentImageForm,
   ICertificateContentLocationForm,
+  ICertificateContentQRCodeForm,
   ICertificateContentTextForm,
   ICertificateContentValidThruForm,
 } from '#achievement/config/types';
+import { QR_CODE_DEFAULT_CONFIG } from '#achievement/config/constants';
 
 const DEFAULT_TEXT_CONFIG = {
   font: '\'Montserrat\', sans-serif',
@@ -25,9 +27,6 @@ const DEFAULT_IMAGE_DIMENSIONS = {
   height: 100,
 };
 
-/**
- * Calculate text dimensions using canvas measurement
- */
 function getTextDimensions(text: string, font: string, fontSize: number, fontWeight: number) {
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d');
@@ -42,9 +41,6 @@ function getTextDimensions(text: string, font: string, fontSize: number, fontWei
   return { width: 200, height: 50 };
 }
 
-/**
- * Create text metadata with calculated dimensions
- */
 function createTextMetadata(text: string, customConfig: Partial<typeof DEFAULT_TEXT_CONFIG> = {}) {
   const config = { ...DEFAULT_TEXT_CONFIG, ...customConfig };
   const dims = getTextDimensions(text, config.font, config.size, config.weight);
@@ -59,20 +55,15 @@ function createTextMetadata(text: string, customConfig: Partial<typeof DEFAULT_T
     color: config.color,
     vertical: 0,
     horizontal: 0,
+    width_mode: 'fix' as const,
+    height_mode: 'fix' as const,
   };
 }
 
-/**
- * Content factory interface for type safety
- */
 export interface ContentFactory<T extends ICertificateContentForm = ICertificateContentForm> {
   createNew: (key: string) => T;
 }
 
-/**
- * Centralized content factories for all content types
- * This provides a single source of truth for creating new content items
- */
 export const contentFactories: Record<string, ContentFactory<any>> = {
   image: {
     createNew(key: string): ICertificateContentImageForm {
@@ -84,6 +75,8 @@ export const contentFactories: Record<string, ContentFactory<any>> = {
           ...DEFAULT_IMAGE_DIMENSIONS,
           vertical: 0,
           horizontal: 0,
+          width_mode: 'fix' as const,
+          height_mode: 'fix' as const,
         },
         file: null,
       };
@@ -100,6 +93,8 @@ export const contentFactories: Record<string, ContentFactory<any>> = {
           ...DEFAULT_IMAGE_DIMENSIONS,
           vertical: 0,
           horizontal: 0,
+          width_mode: 'fix' as const,
+          height_mode: 'fix' as const,
         },
         file: null,
       };
@@ -192,22 +187,37 @@ export const contentFactories: Record<string, ContentFactory<any>> = {
       };
     },
   } as ContentFactory<ICertificateContentValidThruForm>,
+
+  qr_code: {
+    createNew(key: string): ICertificateContentQRCodeForm {
+      return {
+        type: 'qr_code',
+        key,
+        value: '{{qr_code_url}}',
+        metadata: {
+          width: QR_CODE_DEFAULT_CONFIG.width,
+          height: QR_CODE_DEFAULT_CONFIG.height,
+          vertical: 0,
+          horizontal: 0,
+          background_color: QR_CODE_DEFAULT_CONFIG.background_color,
+          background_transparent: QR_CODE_DEFAULT_CONFIG.background_transparent,
+          shape: QR_CODE_DEFAULT_CONFIG.shape,
+          shape_color: QR_CODE_DEFAULT_CONFIG.shape_color,
+          border_style: QR_CODE_DEFAULT_CONFIG.border_style,
+          border_color: QR_CODE_DEFAULT_CONFIG.border_color,
+          width_mode: 'fix' as const,
+          height_mode: 'fix' as const,
+        },
+      };
+    },
+  } as ContentFactory<ICertificateContentQRCodeForm>,
 };
 
-/**
- * Create a new content item by type
- * @param type - The content type
- * @param key - Unique key for the content item
- * @returns New content item or null if type is invalid
- */
 export function createContent(type: string, key: string): ICertificateContentForm | null {
   const factory = contentFactories[type];
   return factory ? factory.createNew(key) : null;
 }
 
-/**
- * Generate a unique key for content items
- */
 export function generateContentKey(type: string, counter: number): string {
   return `${type}_${counter}`;
 }

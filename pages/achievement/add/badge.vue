@@ -123,7 +123,6 @@ const uploadImage = async (file: File): Promise<string | undefined> => {
     const response: IAchievementUploadResponse = await postUploadAchievementFile(file, 'badges');
     hideLoading();
 
-    // Store both the image URL and the upload metadata
     store.image = response?.data?.full_path || null;
     store.uploadedImageMeta = response?.data || null;
 
@@ -139,7 +138,6 @@ const uploadImage = async (file: File): Promise<string | undefined> => {
   }
 };
 
-// submit form badge (create new)
 const { mutate: submitBadgeForm } = useMutation({
   mutationFn: async (payload: IBadgePayload) => {
     isLoading.value = true;
@@ -168,7 +166,6 @@ const { mutate: submitBadgeForm } = useMutation({
   },
 });
 
-// edit badge form (when going back from step 2)
 const { mutate: editBadgeForm } = useMutation({
   mutationFn: async (payload: Record<string, any>) => {
     isLoading.value = true;
@@ -197,7 +194,6 @@ const handleSubmit = async (): Promise<void> => {
   if (activeStepper.value === 1) {
     let imageUrl: string | undefined = '';
 
-    // Upload image if it's a file or use existing URL
     if (store.image instanceof File) {
       imageUrl = await uploadImage(store.image);
     }
@@ -206,11 +202,9 @@ const handleSubmit = async (): Promise<void> => {
     }
 
     if (imageUrl) {
-      // If badgeId exists, it means user went back from step 2 - edit instead of create
       if (badgeId.value) {
         const payload: Record<string, any> = {};
 
-        // Only add changed fields
         if (store.image !== initialImage.value) {
           payload.url = imageUrl;
         }
@@ -224,7 +218,6 @@ const handleSubmit = async (): Promise<void> => {
         editBadgeForm(payload);
       }
       else {
-        // Create new badge
         const payload: IBadgePayload = {
           title: store.title,
           description: store.description,

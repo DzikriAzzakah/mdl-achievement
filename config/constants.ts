@@ -1,5 +1,8 @@
 export const REMOTE_FEAT_FLAG_KEY = 'achievement';
 
+export const CANVAS_WIDTH = 842;
+export const CANVAS_HEIGHT = 595;
+
 export const ACCESSIBILITY_OPTIONS = [
   { value: 'PUBLIC', label: 'All Company' },
   { value: 'RESTRICTED', label: 'Selected' },
@@ -49,7 +52,6 @@ export const CERTIFICATE_TABS = [
   { label: 'Accessibility', value: 'accessibility' },
 ];
 
-// Certificate Content Form Constants
 export const CERTIFICATE_IMAGE_FILE_TYPES = ['JPG', 'JPEG', 'PNG', 'WEBP'];
 
 export const CERTIFICATE_IMAGE_MAX_SIZE = 5; // MB
@@ -60,13 +62,17 @@ export const CERTIFICATE_IMAGE_MAX_DIMENSIONS = {
 };
 
 export const CERTIFICATE_NUMBER_VARIABLES = [
-  { label: 'NIK', value: '{{NIK}}' },
-  { label: 'Participant Name', value: '{{participant_name}}' },
-  { label: 'Year', value: '{{year}}' },
-  { label: 'Certificate Date', value: '{{certificate_date}}' },
-  { label: 'Email', value: '{{email}}' },
-  { label: 'Certificate Type', value: '{{certificate_type}}' },
-  { label: 'Serial Number', value: '{{serial_number}}' },
+  { key: 'text_area', label: 'Text Area', value: '' },
+  { key: 'nik', label: 'NIK', value: '{{nik}}' },
+  { key: 'serial_number', label: 'Serial Number', value: '' },
+  { key: 'date', label: 'Date', value: '{{date}}' },
+  { key: 'year', label: 'Year', value: '{{year}}' },
+  { key: 'title', label: 'Title', value: '{{title}}' },
+  { key: 'certified_at', label: 'Certified At (Timestamp)', value: '{{certified_at}}' },
+  { key: 'certificate_type', label: 'Certificate Type', value: '{{certificate_type}}' },
+  { key: 'module_type', label: 'Module Type', value: '{{module_type}}' },
+  { key: 'participant_name', label: 'Participant Name', value: '{{participant_name}}' },
+  { key: 'email', label: 'Email', value: '{{email}}' },
 ];
 
 export const DATE_FORMAT_OPTIONS = [
@@ -107,6 +113,12 @@ export const ALIGNMENT_OPTIONS = [
   { label: 'Right', value: 'right' },
 ];
 
+export const SIZE_MODE_OPTIONS = [
+  { label: 'Fix', value: 'fix' },
+  { label: 'Fill', value: 'fill' },
+  { label: 'Hug', value: 'hug' },
+];
+
 export const FONT_WEIGHT_LABELS: Record<number, string> = {
   100: 'Thin',
   200: 'Extra Light',
@@ -122,4 +134,25 @@ export const FONT_WEIGHT_LABELS: Record<number, string> = {
 export const IMAGE_ERROR_MESSAGES = {
   fileType: 'The Uploaded file type is not supported.',
   fileSize: 'The File size exceeds limit of 5 MB.',
+};
+
+export const QR_CODE_SHAPE_OPTIONS = [
+  { label: 'Dots', value: 'dots', icon: 'mdi:dots-grid' },
+  { label: 'Square', value: 'square', icon: 'mdi:square' },
+];
+
+export const QR_CODE_BORDER_OPTIONS = [
+  { label: 'Square', value: 'square', icon: 'mdi:square-outline' },
+  { label: 'Rounded', value: 'rounded', icon: 'mdi:rounded-corner' },
+];
+
+export const QR_CODE_DEFAULT_CONFIG = {
+  width: 100,
+  height: 100,
+  background_color: 'FFFFFF',
+  background_transparent: false,
+  shape: 'square' as const,
+  shape_color: '000000',
+  border_style: 'rounded' as const,
+  border_color: 'FFFFFF',
 };

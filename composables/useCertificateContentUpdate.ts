@@ -1,16 +1,17 @@
 import type {
   ICertificateContentForm,
+  SizeMode,
 } from '#achievement/config/types';
 
 /**
  * Composable for managing certificate content updates
- * Provides type-safe update functions that eliminate boilerplate
  */
 export function useCertificateContentUpdate<T extends ICertificateContentForm>(
-  contentItem: T,
+  getCurrentItem: () => T,
   emit: (event: 'update:contentItem', value: T) => void,
 ) {
   const updateValue = (value: string | undefined) => {
+    const contentItem = getCurrentItem();
     const updatedItem = {
       ...contentItem,
       value: value || (contentItem.type === 'text' ? '' : `{{ ${contentItem.type} }}`),
@@ -22,12 +23,27 @@ export function useCertificateContentUpdate<T extends ICertificateContentForm>(
     field: K,
     value: T['metadata'][K],
   ) => {
+    const contentItem = getCurrentItem();
     const updatedItem = {
       ...contentItem,
       value: contentItem.value,
       metadata: {
         ...contentItem.metadata,
         [field]: value,
+      },
+    } as T;
+    emit('update:contentItem', updatedItem);
+  };
+
+  // Update multiple metadata fields at once to avoid race conditions
+  const updateMultipleMetadataFields = (fields: Partial<T['metadata']>) => {
+    const contentItem = getCurrentItem();
+    const updatedItem = {
+      ...contentItem,
+      value: contentItem.value,
+      metadata: {
+        ...contentItem.metadata,
+        ...fields,
       },
     } as T;
     emit('update:contentItem', updatedItem);
@@ -73,7 +89,38 @@ export function useCertificateContentUpdate<T extends ICertificateContentForm>(
     updateMetadataField('isAspectRatioLocked' as any, value);
   };
 
-  // Special update for location metadata
+  const updateWidthMode = (value: SizeMode) => {
+    updateMetadataField('width_mode' as any, value);
+  };
+
+  const updateHeightMode = (value: SizeMode) => {
+    updateMetadataField('height_mode' as any, value);
+  };
+
+  // Combined update for width mode change (to avoid race conditions)
+  const updateWidthModeWithValue = (mode: SizeMode, width: number, unlockAspectRatio?: boolean) => {
+    const fields: Record<string, any> = {
+      width_mode: mode,
+      width,
+    };
+    if (unlockAspectRatio) {
+      fields.isAspectRatioLocked = false;
+    }
+    updateMultipleMetadataFields(fields as any);
+  };
+
+  // Combined update for height mode change (to avoid race conditions)
+  const updateHeightModeWithValue = (mode: SizeMode, height: number, unlockAspectRatio?: boolean) => {
+    const fields: Record<string, any> = {
+      height_mode: mode,
+      height,
+    };
+    if (unlockAspectRatio) {
+      fields.isAspectRatioLocked = false;
+    }
+    updateMultipleMetadataFields(fields as any);
+  };
+
   const updateLocation = (value: string | undefined) => {
     updateMetadataField('location' as any, value || '');
   };
@@ -94,8 +141,13 @@ export function useCertificateContentUpdate<T extends ICertificateContentForm>(
     updateVertical,
     updateHorizontal,
     updateAspectRatioLock,
+    updateWidthMode,
+    updateHeightMode,
+    updateWidthModeWithValue,
+    updateHeightModeWithValue,
     updateLocation,
     updateDateFormat,
     updateMetadataField,
+    updateMultipleMetadataFields,
   };
 }
