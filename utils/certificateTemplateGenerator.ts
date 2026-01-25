@@ -18,6 +18,10 @@ export interface ICertificateTemplateOptions {
   backgroundUrl: string;
   contents: ICertificateContentForm[];
   safeZone: ICertificateSafeZone;
+  /** When true, uses actual image URLs instead of template placeholders (for preview generation) */
+  useActualUrls?: boolean;
+  /** Map of content keys to their uploaded image data (URL and original filename) */
+  contentImageUrls?: Record<string, { url: string; originalFileName?: string; }>;
 }
 
 type TextContentType =
@@ -30,9 +34,9 @@ type TextContentType =
   | ICertificateContentValidThruForm;
 
 /**
- * Get the Google Fonts import URLs for all fonts used in the certificate
+ * Get the Google Fonts link tags for all fonts used in the certificate
  */
-function getUsedFontImports(contents: ICertificateContentForm[]): string {
+function getUsedFontLinks(contents: ICertificateContentForm[]): string {
   const usedFonts = new Set<string>();
 
   contents.forEach((content) => {
@@ -49,9 +53,14 @@ function getUsedFontImports(contents: ICertificateContentForm[]): string {
     return '';
   }
 
-  return Array.from(usedFonts)
-    .map(url => `@import url('${url}');`)
-    .join('\n    ');
+  // Generate link tags for each font
+  const linkTags = Array.from(usedFonts)
+    .map(url => `<link href="${url}" rel="stylesheet">`)
+    .join('\n');
+
+  return `<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+${linkTags}`;
 }
 
 /**
@@ -86,8 +95,13 @@ function generateClassName(key: string): string {
 
 /**
  * Get the template variable placeholder for a content type
+ * For images (except QR codes), we use the actual uploaded URL
+ * For QR codes and dynamic text fields, we use placeholders
  */
-function getTemplatePlaceholder(content: ICertificateContentForm): string {
+function getTemplatePlaceholder(
+  content: ICertificateContentForm,
+  contentImageUrls?: Record<string, { url: string; originalFileName?: string }>,
+): string {
   switch (content.type) {
     case 'text':
       return content.value || '';
@@ -104,14 +118,47 @@ function getTemplatePlaceholder(content: ICertificateContentForm): string {
     case 'valid_thru':
       return '{{expired_date}}';
     case 'image':
+      // Use actual uploaded URL for custom images
+      if (contentImageUrls?.[content.key]?.url) {
+        return contentImageUrls[content.key].url;
+      }
+      // Fallback to content.value if available (for edit mode)
+      if (content.value) {
+        return content.value;
+      }
       return '{{custom_image}}';
     case 'sertificate_signee':
+      // Use actual uploaded URL for signature images
+      if (contentImageUrls?.[content.key]?.url) {
+        return contentImageUrls[content.key].url;
+      }
+      // Fallback to content.value if available (for edit mode)
+      if (content.value) {
+        return content.value;
+      }
       return '{{sign}}';
     case 'qr_code':
+      // QR codes always use placeholder - generated dynamically by backend
       return '{{qr_code_url}}';
     default:
       return '';
   }
+}
+
+/**
+ * Get alt text for image content
+ */
+function getImageAltText(
+  content: ICertificateContentImageForm | ICertificateContentCertificateSigneeForm,
+  contentImageUrls?: Record<string, { url: string; originalFileName?: string }>,
+): string {
+  // Use original filename from uploaded metadata if available
+  if (contentImageUrls?.[content.key]?.originalFileName) {
+    return contentImageUrls[content.key].originalFileName!;
+  }
+
+  // Fallback to descriptive alt text
+  return content.type === 'sertificate_signee' ? 'Signature' : 'Custom Image';
 }
 
 /**
@@ -139,9 +186,12 @@ function generateTextContentCSS(content: TextContentType, safeZone: ICertificate
         text-align: ${alignment?.value || 'left'};
         color: #${color || '000000'};
         white-space: pre-wrap;
-        overflow: hidden;
+        overflow: visible;
         box-sizing: border-box;
         line-height: 1.4;
+        margin: 0;
+        padding: 0;
+        display: block;
     }`;
 }
 
@@ -228,10 +278,12 @@ function generateTextContentHTML(content: TextContentType): string {
  */
 function generateImageContentHTML(
   content: ICertificateContentImageForm | ICertificateContentCertificateSigneeForm,
+  useActualUrls?: boolean,
+  contentImageUrls?: Record<string, { url: string; originalFileName?: string; }>,
 ): string {
   const className = generateClassName(content.key);
-  const placeholder = getTemplatePlaceholder(content);
-  const altText = content.type === 'sertificate_signee' ? 'Signature' : 'Custom Image';
+  const placeholder = getTemplatePlaceholder(content, contentImageUrls);
+  const altText = getImageAltText(content, contentImageUrls);
 
   return `        <div class="${className}">
             <img src="${placeholder}" alt="${altText}">
@@ -253,10 +305,10 @@ function generateQRCodeContentHTML(content: ICertificateContentQRCodeForm): stri
  * Generate the complete HTML template for a certificate
  */
 export function generateCertificateTemplate(options: ICertificateTemplateOptions): string {
-  const { backgroundUrl, contents, safeZone } = options;
+  const { backgroundUrl, contents, safeZone, useActualUrls, contentImageUrls } = options;
 
-  // Generate font imports
-  const fontImports = getUsedFontImports(contents);
+  // Generate font link tags
+  const fontLinks = getUsedFontLinks(contents);
 
   // Generate CSS for each content
   const contentCSS = contents.map((content) => {
@@ -278,7 +330,7 @@ export function generateCertificateTemplate(options: ICertificateTemplateOptions
       return generateTextContentHTML(content);
     }
     if (isImageBasedContent(content)) {
-      return generateImageContentHTML(content);
+      return generateImageContentHTML(content, useActualUrls, contentImageUrls);
     }
     if (isQRCodeContent(content)) {
       return generateQRCodeContentHTML(content);
@@ -291,14 +343,18 @@ export function generateCertificateTemplate(options: ICertificateTemplateOptions
 <html>
 <head>
 <meta charset="UTF-8">
+${fontLinks}
 <style>
-    ${fontImports}
+    * {
+        box-sizing: border-box; 
+    }
 
     html, body {
         margin: 0;
         padding: 0;
         width: ${CANVAS_WIDTH}px;
         height: ${CANVAS_HEIGHT}px;
+        -webkit-font-smoothing: antialiased;
     }
 
     .certificate-container {
@@ -307,7 +363,7 @@ export function generateCertificateTemplate(options: ICertificateTemplateOptions
         height: ${CANVAS_HEIGHT}px;
         background-image: url('${backgroundUrl}');
         background-repeat: no-repeat;
-        background-size: cover;
+        background-size: contain;
         background-position: center;
     }
 ${contentCSS}

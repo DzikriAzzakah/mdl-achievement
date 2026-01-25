@@ -416,6 +416,7 @@ export interface IAchievementUploadResponse {
   client_code?: string;
   server_code?: string;
   data?: {
+    id?: number;
     image_host?: string;
     full_path?: string;
     file_path?: string;

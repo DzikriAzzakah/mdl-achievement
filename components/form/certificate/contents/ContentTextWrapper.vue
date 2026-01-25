@@ -450,7 +450,6 @@ const handleWidthModeSelect = (option: SizeModeOption) => {
 
 const handleHeightModeSelect = (option: SizeModeOption) => {
   emit('update:heightMode', option);
-  // Close the dropdown
   heightDropdownRef.value?.hide?.();
 };
 
@@ -490,45 +489,5 @@ const handleHeightModeFromSelect = (value: any) => {
 
 .size-mode-option--active {
   @apply bg-primary-50 text-primary-600 font-medium;
-}
-
-:deep(.font-family-select .select-field-wrapper .multiselect__option:nth-child(1) span) {
-  font-family: 'Great Vibes', cursive;
-}
-:deep(.font-family-select .select-field-wrapper .multiselect__option:nth-child(2) span) {
-  font-family: 'Dancing Script', cursive;
-}
-:deep(.font-family-select .select-field-wrapper .multiselect__option:nth-child(3) span) {
-  font-family: 'EB Garamond', serif;
-}
-:deep(.font-family-select .select-field-wrapper .multiselect__option:nth-child(4) span) {
-  font-family: 'Playfair Display', serif;
-}
-:deep(.font-family-select .select-field-wrapper .multiselect__option:nth-child(5) span) {
-  font-family: 'Cormorant Garamond', serif;
-}
-:deep(.font-family-select .select-field-wrapper .multiselect__option:nth-child(6) span) {
-  font-family: 'Libre Baskerville', serif;
-}
-:deep(.font-family-select .select-field-wrapper .multiselect__option:nth-child(7) span) {
-  font-family: 'Merriweather', serif;
-}
-:deep(.font-family-select .select-field-wrapper .multiselect__option:nth-child(8) span) {
-  font-family: 'Cinzel', serif;
-}
-:deep(.font-family-select .select-field-wrapper .multiselect__option:nth-child(9) span) {
-  font-family: 'UnifrakturMaguntia', cursive;
-}
-:deep(.font-family-select .select-field-wrapper .multiselect__option:nth-child(10) span) {
-  font-family: 'MedievalSharp', cursive;
-}
-:deep(.font-family-select .select-field-wrapper .multiselect__option:nth-child(11) span) {
-  font-family: 'Montserrat', sans-serif;
-}
-:deep(.font-family-select .select-field-wrapper .multiselect__option:nth-child(12) span) {
-  font-family: 'Lato', sans-serif;
-}
-:deep(.font-family-select .select-field-wrapper .multiselect__option:nth-child(13) span) {
-  font-family: 'Raleway', sans-serif;
 }
 </style>

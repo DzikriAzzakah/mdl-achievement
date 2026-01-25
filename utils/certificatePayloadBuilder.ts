@@ -1,6 +1,17 @@
-import type { ICertificateContentForm, ICertificateSafeZone, IUploadedImageMetadata } from '#achievement/config/types';
+import type { IAchievementUploadResponse, ICertificateContentForm, ICertificateSafeZone } from '#achievement/config/types';
 
 export interface ICertificateBackgroundPayload {
+  id?: number;
+  image_host?: string;
+  full_path?: string;
+  file_path?: string;
+  file_name?: string;
+  file_mime?: string;
+  folder?: string;
+  original_file_name?: string;
+}
+
+export interface ICertificatePreviewPayload {
   id?: number;
   image_host?: string;
   full_path?: string;
@@ -22,7 +33,8 @@ export interface ICertificateContentMetadataPayload {
   height: number;
   vertical: number;
   horizontal: number;
-  // For image types
+  // For image types - upload metadata
+  id?: number;
   original_width?: number;
   original_height?: number;
   image_host?: string;
@@ -73,7 +85,7 @@ export interface ICertificateCreatePayload {
   type: string;
   status: string;
   background: ICertificateBackgroundPayload;
-  image_preview: string;
+  preview: ICertificatePreviewPayload;
   template: string;
   metadata: ICertificateMetadataPayload;
   contents: ICertificateContentPayload[];
@@ -83,11 +95,11 @@ export interface ICertificateCreatePayload {
  * Build background payload from uploaded image metadata
  */
 export function buildBackgroundPayload(
-  imageUrl: string,
-  uploadedMeta?: IUploadedImageMetadata | null,
+  uploadedMeta?: IAchievementUploadResponse['data'] | null,
 ): ICertificateBackgroundPayload {
   if (uploadedMeta) {
     return {
+      id: uploadedMeta.id,
       image_host: uploadedMeta.image_host,
       full_path: uploadedMeta.full_path,
       file_path: uploadedMeta.file_path,
@@ -98,28 +110,29 @@ export function buildBackgroundPayload(
     };
   }
 
-  try {
-    const url = new URL(imageUrl);
-    const pathParts = url.pathname.split('/');
-    const fileName = pathParts[pathParts.length - 1];
-    const folder = pathParts.slice(1, -1).join('/');
-    const extension = fileName.split('.').pop() || 'png';
+  return {};
+}
 
+/**
+ * Build preview payload from uploaded preview image metadata
+ */
+export function buildPreviewPayload(
+  uploadedMeta?: IAchievementUploadResponse['data'] | null,
+): ICertificatePreviewPayload {
+  if (uploadedMeta) {
     return {
-      image_host: url.origin,
-      full_path: imageUrl,
-      file_path: url.pathname,
-      file_name: fileName,
-      file_mime: extension,
-      folder,
-      original_file_name: fileName,
+      id: uploadedMeta.id,
+      image_host: uploadedMeta.image_host,
+      full_path: uploadedMeta.full_path,
+      file_path: uploadedMeta.file_path,
+      file_name: uploadedMeta.file_name,
+      file_mime: uploadedMeta.file_mime,
+      folder: uploadedMeta.folder,
+      original_file_name: uploadedMeta.original_file_name,
     };
   }
-  catch {
-    return {
-      full_path: imageUrl,
-    };
-  }
+
+  return {};
 }
 
 /**
@@ -139,7 +152,7 @@ export function buildMetadataPayload(safeZone: ICertificateSafeZone): ICertifica
 export function buildContentPayload(
   content: ICertificateContentForm,
   uploadedImageUrl?: string | null,
-  uploadedImageMeta?: IUploadedImageMetadata | null,
+  uploadedImageMeta?: IAchievementUploadResponse['data'] | null,
 ): ICertificateContentPayload {
   const basePayload: ICertificateContentPayload = {
     type: content.type,
@@ -162,6 +175,7 @@ export function buildContentPayload(
     basePayload.metadata.original_height = imageMetadata.originalHeight;
 
     if (uploadedImageMeta) {
+      basePayload.metadata.id = uploadedImageMeta.id;
       basePayload.metadata.image_host = uploadedImageMeta.image_host;
       basePayload.metadata.full_path = uploadedImageMeta.full_path;
       basePayload.metadata.file_path = uploadedImageMeta.file_path;
@@ -238,10 +252,9 @@ export function buildContentPayload(
 export function buildCertificateCreatePayload(options: {
   title: string;
   certificateType: string;
-  backgroundUrl: string;
-  backgroundMeta?: IUploadedImageMetadata | null;
+  backgroundMeta?: IAchievementUploadResponse['data'] | null;
+  previewMeta?: IAchievementUploadResponse['data'] | null;
   template: string;
-  imagePreview: string;
   safeZone: ICertificateSafeZone;
   contents: ICertificateContentPayload[];
   status?: string;
@@ -249,10 +262,9 @@ export function buildCertificateCreatePayload(options: {
   const {
     title,
     certificateType,
-    backgroundUrl,
     backgroundMeta,
+    previewMeta,
     template,
-    imagePreview,
     safeZone,
     contents,
     status = 'published',
@@ -262,8 +274,8 @@ export function buildCertificateCreatePayload(options: {
     title,
     type: certificateType,
     status,
-    background: buildBackgroundPayload(backgroundUrl, backgroundMeta),
-    image_preview: imagePreview,
+    background: buildBackgroundPayload(backgroundMeta),
+    preview: buildPreviewPayload(previewMeta),
     template,
     metadata: buildMetadataPayload(safeZone),
     contents,

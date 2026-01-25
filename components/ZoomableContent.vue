@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import UiButton from '#ui/components/atoms/button/index.vue';
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 const props = defineProps({
   controlsDisabled: { type: Boolean, default: false },
@@ -19,36 +19,11 @@ const MIN_ZOOM = 0.1;
 const MAX_ZOOM = 3.0;
 const PADDING = 100;
 
+// Track whether content overflows container (for drag functionality)
+const contentOverflows = ref(false);
+
 const canZoomIn = computed(() => !props.controlsDisabled && currentZoom.value < MAX_ZOOM);
 const canZoomOut = computed(() => !props.controlsDisabled && currentZoom.value > MIN_ZOOM);
-
-const canDrag = computed(() => {
-  if (!zoomContainer.value || !zoomWrapper.value) {
-    return false;
-  }
-  const container = zoomContainer.value;
-  const wrapper = zoomWrapper.value;
-  return (
-    wrapper.scrollWidth > container.clientWidth
-    || wrapper.scrollHeight > container.clientHeight
-  );
-});
-
-let isDragging = false;
-let startX = 0;
-let startY = 0;
-let scrollLeft = 0;
-let scrollTop = 0;
-
-watch(currentZoom, (val) => {
-  emit('update:zoom', val);
-});
-
-const updateZoomDisplay = () => {
-  if (zoomLevelText.value) {
-    zoomLevelText.value.textContent = `${Math.round(currentZoom.value * 100)}%`;
-  }
-};
 
 const getContentDimensions = () => {
   if (!zoomContent.value) {
@@ -67,6 +42,66 @@ const getContentDimensions = () => {
     width: zoomContent.value.offsetWidth,
     height: zoomContent.value.offsetHeight,
   };
+};
+
+/**
+ * Update the contentOverflows flag based on current zoom and container size.
+ * This is called after zoom changes to ensure drag behavior is correct.
+ */
+const updateOverflowState = () => {
+  if (!zoomContainer.value || !zoomWrapper.value) {
+    contentOverflows.value = false;
+    return;
+  }
+
+  const container = zoomContainer.value;
+  const wrapper = zoomWrapper.value;
+
+  // Check if wrapper exceeds container dimensions
+  const hasScrollOverflow = wrapper.scrollWidth > container.clientWidth
+    || wrapper.scrollHeight > container.clientHeight;
+
+  if (hasScrollOverflow) {
+    contentOverflows.value = true;
+    return;
+  }
+
+  // Fallback: Check if scaled content dimensions exceed container
+  // This handles cases where flexbox centering may affect scroll measurements
+  const contentDimensions = getContentDimensions();
+  const scaledWidth = contentDimensions.width * currentZoom.value + PADDING * 2;
+  const scaledHeight = contentDimensions.height * currentZoom.value + PADDING * 2;
+
+  contentOverflows.value = scaledWidth > container.clientWidth || scaledHeight > container.clientHeight;
+};
+
+/**
+ * Determines if the canvas can be dragged/panned.
+ * Uses the contentOverflows ref which is updated after zoom changes.
+ */
+const canDrag = computed(() => {
+  if (!zoomContainer.value || !zoomWrapper.value || !zoomContent.value) {
+    return false;
+  }
+  return contentOverflows.value;
+});
+
+let isDragging = false;
+let startX = 0;
+let startY = 0;
+let scrollLeft = 0;
+let scrollTop = 0;
+
+watch(currentZoom, (val) => {
+  emit('update:zoom', val);
+  // Update overflow state after zoom changes
+  nextTick(updateOverflowState);
+});
+
+const updateZoomDisplay = () => {
+  if (zoomLevelText.value) {
+    zoomLevelText.value.textContent = `${Math.round(currentZoom.value * 100)}%`;
+  }
 };
 
 const applyZoom = (mouseX: number | null = null, mouseY: number | null = null) => {
@@ -124,6 +159,9 @@ const applyZoom = (mouseX: number | null = null, mouseY: number | null = null) =
       container.scrollLeft = scrollXRatio * wrapper.scrollWidth - container.clientWidth / 2;
       container.scrollTop = scrollYRatio * wrapper.scrollHeight - container.clientHeight / 2;
     }
+
+    // Update overflow state after dimensions are applied
+    updateOverflowState();
   });
 };
 
@@ -262,7 +300,10 @@ onMounted(() => {
     const fitZoom = calculateZoomToFit();
     currentZoom.value = Number.parseFloat(fitZoom.toFixed(2));
     applyZoom();
-    nextTick(centerContent);
+    nextTick(() => {
+      centerContent();
+      updateOverflowState();
+    });
   });
 });
 

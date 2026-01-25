@@ -169,21 +169,20 @@
 
 <script setup lang="ts">
 import type { ICertificateContentCertificateNumberForm, ICertificateContentCertificateSigneeForm, ICertificateContentEmployeeIdForm, ICertificateContentEventTitleForm, ICertificateContentFullNameForm, ICertificateContentImageForm, ICertificateContentLocationForm, ICertificateContentTextForm, ICertificateContentValidThruForm } from '#achievement/config/types.ts';
-import { postAddCertificate } from '#achievement/api/api.ts';
+import { postAddCertificate, postUploadAchievementFile } from '#achievement/api/api.ts';
 import Accessibility from '#achievement/components/form/certificate/Accessibility.vue';
 
 import Sidebar from '#achievement/components/form/certificate/Sidebar.vue';
 
 import ZoomableContent from '#achievement/components/ZoomableContent.vue';
 
-import { useCertificateCanvas } from '#achievement/composables/useCertificateCanvas';
 import { CREATE_STEPPER, TYPE_OPTIONS } from '#achievement/config/constants.ts';
 import { PERMISSION_CREATE, PERMISSION_LIST } from '#achievement/config/featureFlag.ts';
 
 import FormLayout from '#achievement/layouts/FormLayout.vue';
 import { buildCertificateCreatePayload, buildContentPayload } from '#achievement/utils/certificatePayloadBuilder';
 import { generateCertificateTemplate } from '#achievement/utils/certificateTemplateGenerator';
-import { postUploadFile } from '#core/api/upload.ts';
+import { htmlToImageFile } from '#achievement/utils/htmlToImage';
 import TemplateManageLayout from '#core/components/templates/ManageLayout.vue';
 import UiSwitch from '#ui/components/atoms/switch/index.vue';
 
@@ -368,13 +367,16 @@ function getContentTextStyle(content: ICertificateContentTextForm | ICertificate
   const renderX = (horizontal || 0) + left;
   const renderY = (vertical || 0) + top;
 
+  // Use consistent font-family format with quotes
+  const fontFamilyValue = font_family || '\'Montserrat\', sans-serif';
+
   return `
     position: absolute;
     left: ${renderX}px;
     top: ${renderY}px;
     width: ${width}px;
     height: ${height}px;
-    font-family: ${font_family || '\'Montserrat\', sans-serif'};
+    font-family: ${fontFamilyValue};
     font-size: ${font_size}px;
     font-weight: ${font_weight};
     text-align: ${alignment?.value || 'left'};
@@ -384,6 +386,9 @@ function getContentTextStyle(content: ICertificateContentTextForm | ICertificate
     box-sizing: border-box;
     display: block;
     z-index: 10;
+    line-height: 1.4;
+    margin: 0;
+    padding: 0;
   `;
 }
 
@@ -431,20 +436,11 @@ function handleClickOutsideContent() {
   targetRef.value = null;
 }
 
-const { captureCanvasAsImage } = useCertificateCanvas({
-  canvasRef,
-  backgroundUrl: imagePreview,
-  contents,
-  safeZone: safe_zone,
-});
-
-const uploadImage = async (file: File) => {
-  const now = new Date();
-  const folder = `content/user-upload/image/${now.getFullYear()}/${now.getMonth() + 1}`;
+const uploadBackgroundImage = async (file: File) => {
   try {
     isLoading.value = true;
     showLoading('Uploading image', 'Please wait while we upload the file.');
-    const response = await postUploadFile(file, folder);
+    const response = await postUploadAchievementFile(file, 'certificate_background');
 
     uploadedImageMeta.value = response?.data;
     store.image = response?.data?.full_path || null;
@@ -464,10 +460,8 @@ const uploadImage = async (file: File) => {
 };
 
 const uploadContentImage = async (file: File) => {
-  const now = new Date();
-  const folder = `content/user-upload/certificate-content/${now.getFullYear()}/${now.getMonth() + 1}`;
   try {
-    const response = await postUploadFile(file, folder);
+    const response = await postUploadAchievementFile(file, 'certificate_custom_image');
     return {
       url: response?.data?.full_path || null,
       meta: response?.data,
@@ -475,6 +469,20 @@ const uploadContentImage = async (file: File) => {
   }
   catch (err) {
     $toast({ variant: 'error', title: 'Error', text: getApiErrorMessage(err as Error) || 'Content image upload failed.' });
+    throw err;
+  }
+};
+
+const uploadPreviewImage = async (file: File) => {
+  try {
+    const response = await postUploadAchievementFile(file, 'certificate_template_preview');
+    return {
+      url: response?.data?.full_path || null,
+      meta: response?.data,
+    };
+  }
+  catch (err) {
+    $toast({ variant: 'error', title: 'Error', text: getApiErrorMessage(err as Error) || 'Preview image upload failed.' });
     throw err;
   }
 };
@@ -523,8 +531,9 @@ const handleSubmit = async () => {
       let backgroundUrl: string = '';
       let backgroundMeta: any = uploadedImageMeta.value;
 
+      // Upload background image if it's a File
       if (store.image instanceof File) {
-        const uploadResult = await uploadImage(store.image);
+        const uploadResult = await uploadBackgroundImage(store.image);
         backgroundUrl = uploadResult?.url || '';
         backgroundMeta = uploadResult?.meta;
       }
@@ -537,37 +546,73 @@ const handleSubmit = async () => {
         return;
       }
 
+      // Track uploaded content image URLs and metadata for template generation
+      const contentImageUrls: Record<string, { url: string; originalFileName?: string }> = {};
+
+      // Upload content images and collect URLs with original filenames
       const uploadedContents = await Promise.all(
         store.contents.map(async (content) => {
-          if ((content.type === 'image' || content.type === 'sertificate_signee') && content.file) {
-            const uploadResult = await uploadContentImage(content.file);
-            return buildContentPayload(content, uploadResult?.url, uploadResult?.meta);
+          // Handle image and sertificate_signee types
+          if (content.type === 'image' || content.type === 'sertificate_signee') {
+            // Case 1: New file to upload
+            if (content.file) {
+              const uploadResult = await uploadContentImage(content.file);
+              if (uploadResult?.url) {
+                contentImageUrls[content.key] = {
+                  url: uploadResult.url,
+                  originalFileName: uploadResult.meta?.original_file_name || content.file.name,
+                };
+              }
+              return buildContentPayload(content, uploadResult?.url, uploadResult?.meta);
+            }
+            // Case 2: Already has a URL (editing existing or already uploaded)
+            else if (content.value) {
+              const contentMeta = content.metadata as Record<string, any>;
+              contentImageUrls[content.key] = {
+                url: content.value,
+                originalFileName: contentMeta?.original_file_name,
+              };
+              return buildContentPayload(content);
+            }
           }
           return buildContentPayload(content);
         }),
       );
 
+      // Generate HTML template with actual URLs for images
       const template = generateCertificateTemplate({
         backgroundUrl,
         contents: store.contents,
         safeZone: store.safe_zone,
+        contentImageUrls,
       });
 
-      let imagePreviewBase64 = '';
+      // Generate preview image from HTML template and upload it
+      let previewMeta: any = null;
       try {
-        imagePreviewBase64 = await captureCanvasAsImage();
+        showLoading('Generating preview', 'Please wait while we generate the certificate preview.');
+
+        // Generate unique filename with title and timestamp to avoid backend caching
+        const sanitizedTitle = (store.title || 'certificate').replace(/[^a-zA-Z0-9]/g, '-').substring(0, 30);
+        const timestamp = Date.now();
+        const uniqueFileName = `preview-${sanitizedTitle}-${timestamp}.png`;
+
+        const previewFile = await htmlToImageFile(template, uniqueFileName);
+        const previewUploadResult = await uploadPreviewImage(previewFile);
+        previewMeta = previewUploadResult?.meta;
       }
       catch (err) {
-        console.warn('Could not capture canvas preview:', err);
+        console.error('Could not generate/upload preview image:', err);
+        $toast({ variant: 'warning', title: 'Warning', text: 'Preview image generation failed, continuing without preview.' });
       }
 
+      // Build payload with new structure
       const payload = buildCertificateCreatePayload({
         title: store.title,
         certificateType: store.certificate_type?.value || '',
-        backgroundUrl,
         backgroundMeta,
+        previewMeta,
         template,
-        imagePreview: imagePreviewBase64,
         safeZone: store.safe_zone,
         contents: uploadedContents,
       });
