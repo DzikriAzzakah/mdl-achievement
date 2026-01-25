@@ -47,19 +47,9 @@ export const BADGE_TABS_EDIT = [
   { label: 'Accessibility', value: 'accessibility' },
 ];
 
-export const CERTIFICATE_TABS = [
-  { label: 'Certificate Information', value: 'certificatex-information' },
-  { label: 'Accessibility', value: 'accessibility' },
-];
-
 export const CERTIFICATE_IMAGE_FILE_TYPES = ['JPG', 'JPEG', 'PNG', 'WEBP'];
 
 export const CERTIFICATE_IMAGE_MAX_SIZE = 5; // MB
-
-export const CERTIFICATE_IMAGE_MAX_DIMENSIONS = {
-  width: 500,
-  height: 500,
-};
 
 export const CERTIFICATE_NUMBER_VARIABLES = [
   { key: 'text_area', label: 'Text Area', value: '' },

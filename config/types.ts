@@ -1,19 +1,3 @@
-import type { TreeNode } from '#ui/components/molecules/treeview/index.vue';
-
-export interface ICompetencyStructure extends TreeNode {
-  level: number;
-  parentNames: string[];
-  parentId?: number;
-}
-
-export enum ProficiencyLevel {
-  FUNDAMENTAL = 'fundamental',
-  INTERMEDIATE = 'intermediate',
-  ADVANCED = 'advanced',
-  MASTERY = 'mastery',
-  DEVELOPING = 'developing',
-}
-
 export interface ISelectedFilter {
   label: string;
   value: string;
@@ -255,9 +239,6 @@ export const CONTENT_TYPE_CONFIGS: Record<string, IContentTypeConfig> = {
   },
 };
 
-export function isTextContent(content: ICertificateContentForm): content is ICertificateContentTextForm {
-  return content.type === 'text';
-}
 
 export function isLocationContent(content: ICertificateContentForm): content is ICertificateContentLocationForm {
   return content.type === 'location';
@@ -265,14 +246,6 @@ export function isLocationContent(content: ICertificateContentForm): content is 
 
 export function isCertificateNumberContent(content: ICertificateContentForm): content is ICertificateContentCertificateNumberForm {
   return content.type === 'certificate_number';
-}
-
-export function isImageContent(content: ICertificateContentForm): content is ICertificateContentImageForm {
-  return content.type === 'image';
-}
-
-export function isSigneeContent(content: ICertificateContentForm): content is ICertificateContentCertificateSigneeForm {
-  return content.type === 'sertificate_signee';
 }
 
 export function isQRCodeContent(content: ICertificateContentForm): content is ICertificateContentQRCodeForm {
@@ -353,10 +326,6 @@ export interface IBadgeForm {
   image: File | string | null;
 }
 
-export interface IMetadata {
-  image: string;
-}
-
 export interface IBadgeDetail {
   id: number;
   title: string;
@@ -376,15 +345,6 @@ export interface IBadgeResponse {
   title?: string;
   image_url?: string;
 }
-
-export interface IBaseOption<T = number | string | null> {
-  value?: T;
-  label?: string;
-}
-
-export type ITags = IBaseOption<number | null>;
-export type ITypesOptions = IBaseOption<number>;
-export type ITagsOptions = IBaseOption<string>;
 
 export interface IGetListResponse {
   success?: boolean;
@@ -431,8 +391,4 @@ export interface FetchOptions {
   headers?: Record<string, string>;
   timeout?: number;
   [key: string]: any;
-}
-
-export interface IOrgConfigs {
-  id?: number;
 }
