@@ -55,6 +55,7 @@
             v-model="filter.certificateType"
             :select-props="{
               placeholder: 'Select an options',
+              useTeleport: true,
               internalSearch: false,
               searchable: true,
               maxHeight: 250,
@@ -84,6 +85,7 @@
             v-model="filter.accessibility"
             :select-props="{
               placeholder: 'Select an options',
+              useTeleport: true,
               internalSearch: false,
               searchable: true,
               maxHeight: 250,
@@ -369,7 +371,6 @@ const { data, error, isError, isLoading: isLoadingData, refetch } = useQuery({
       ? await getCertificateList(apiParams)
       : await getBadgeList(apiParams);
 
-    // Update pagination
     pagination.value.totalData = response?.data?.pagination?.total_data || 0;
     pagination.value.totalPages = response?.data?.pagination?.total_pages || 1;
 

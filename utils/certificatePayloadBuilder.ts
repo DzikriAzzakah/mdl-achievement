@@ -29,8 +29,8 @@ export interface ICertificateMetadataPayload {
 }
 
 export interface ICertificateContentMetadataPayload {
-  width: number;
-  height: number;
+  width: number | 'fit-content';
+  height: number | 'fit-content';
   vertical: number;
   horizontal: number;
   // For image types - upload metadata
@@ -91,9 +91,6 @@ export interface ICertificateCreatePayload {
   contents: ICertificateContentPayload[];
 }
 
-/**
- * Build background payload from uploaded image metadata
- */
 export function buildBackgroundPayload(
   uploadedMeta?: IAchievementUploadResponse['data'] | null,
 ): ICertificateBackgroundPayload {
@@ -113,9 +110,6 @@ export function buildBackgroundPayload(
   return {};
 }
 
-/**
- * Build preview payload from uploaded preview image metadata
- */
 export function buildPreviewPayload(
   uploadedMeta?: IAchievementUploadResponse['data'] | null,
 ): ICertificatePreviewPayload {
@@ -135,9 +129,6 @@ export function buildPreviewPayload(
   return {};
 }
 
-/**
- * Build metadata payload
- */
 export function buildMetadataPayload(safeZone: ICertificateSafeZone): ICertificateMetadataPayload {
   return {
     safe_zone: { ...safeZone },
@@ -146,9 +137,6 @@ export function buildMetadataPayload(safeZone: ICertificateSafeZone): ICertifica
   };
 }
 
-/**
- * Build content payload with full metadata
- */
 export function buildContentPayload(
   content: ICertificateContentForm,
   uploadedImageUrl?: string | null,
@@ -246,9 +234,6 @@ export function buildContentPayload(
   return basePayload;
 }
 
-/**
- * Build the complete certificate create payload
- */
 export function buildCertificateCreatePayload(options: {
   title: string;
   certificateType: string;
@@ -282,9 +267,6 @@ export function buildCertificateCreatePayload(options: {
   };
 }
 
-/**
- * Helper: Check if content type is text-based
- */
 function isTextBasedContent(type: string): boolean {
   return ['text', 'certificate_number', 'location', 'fullname', 'employee_id', 'event_title', 'valid_thru'].includes(type);
 }

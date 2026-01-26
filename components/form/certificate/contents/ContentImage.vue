@@ -23,7 +23,7 @@
             size="md"
             variant="transparent"
             color="ghost"
-            icon="mdi-dots-vertical"
+            icon="mdi:dots-horizontal"
             square
             @click.stop
           />

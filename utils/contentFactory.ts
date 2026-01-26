@@ -11,21 +11,12 @@ import type {
   ICertificateContentTextForm,
   ICertificateContentValidThruForm,
 } from '#achievement/config/types';
-import { QR_CODE_DEFAULT_CONFIG } from '#achievement/config/constants';
-
-const DEFAULT_TEXT_CONFIG = {
-  font: '\'Montserrat\', sans-serif',
-  size: 16,
-  weight: 400,
-  color: '000000',
-  alignment: { label: 'Center', value: 'center' as const },
-  padding: 20,
-};
-
-const DEFAULT_IMAGE_DIMENSIONS = {
-  width: 200,
-  height: 100,
-};
+import {
+  DEFAULT_IMAGE_DIMENSIONS,
+  DEFAULT_TEXT_CONFIG,
+  DEFAULT_TEXT_DIMENSIONS,
+  QR_CODE_DEFAULT_CONFIG,
+} from '#achievement/config/constants';
 
 function getTextDimensions(text: string, font: string, fontSize: number, fontWeight: number) {
   const canvas = document.createElement('canvas');
@@ -38,7 +29,7 @@ function getTextDimensions(text: string, font: string, fontSize: number, fontWei
       height: Math.ceil(fontSize * 1.5),
     };
   }
-  return { width: 200, height: 50 };
+  return DEFAULT_TEXT_DIMENSIONS;
 }
 
 function createTextMetadata(text: string, customConfig: Partial<typeof DEFAULT_TEXT_CONFIG> = {}) {

@@ -1,29 +1,11 @@
-import type { FetchOptions, IAchievementUploadResponse, ICreateResponse, IGetListResponse } from '#achievement/config/types.ts';
-
-export interface IBadgeDetailResponse {
-  success?: boolean;
-  message?: string;
-  status_code?: number;
-  client_code?: string;
-  server_code?: string;
-  data?: {
-    id: number;
-    title: string;
-    type?: string;
-    url?: string;
-  };
-}
-
-export interface IUUIDResponse {
-  success: boolean;
-  message: string;
-  status_code: number;
-  client_code: string;
-  server_code: string;
-  data: {
-    uuid: string;
-  };
-}
+import type {
+  FetchOptions,
+  IAchievementUploadResponse,
+  IBadgeDetailResponse,
+  ICreateResponse,
+  IGetListResponse,
+  IUUIDResponse,
+} from '#achievement/config/types.ts';
 
 export const getCertificateList: (params: Record<string, any>, options?: FetchOptions) => Promise<IGetListResponse> = (params, options = {}) => {
   return useNuxtApp().$apiGateway<IGetListResponse>('/achievement/api/v1/cms/certificates', {

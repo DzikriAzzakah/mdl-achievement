@@ -3,6 +3,27 @@ export const REMOTE_FEAT_FLAG_KEY = 'achievement';
 export const CANVAS_WIDTH = 842;
 export const CANVAS_HEIGHT = 595;
 
+export const DEFAULT_FONT_FAMILY = '\'Montserrat\', sans-serif';
+
+export const DEFAULT_TEXT_CONFIG = {
+  font: DEFAULT_FONT_FAMILY,
+  size: 16,
+  weight: 400,
+  color: '000000',
+  alignment: { label: 'Center', value: 'center' as const },
+  padding: 20,
+};
+
+export const DEFAULT_IMAGE_DIMENSIONS = {
+  width: 200,
+  height: 100,
+};
+
+export const DEFAULT_TEXT_DIMENSIONS = {
+  width: 200,
+  height: 50,
+};
+
 export const ACCESSIBILITY_OPTIONS = [
   { value: 'PUBLIC', label: 'All Company' },
   { value: 'RESTRICTED', label: 'Selected' },

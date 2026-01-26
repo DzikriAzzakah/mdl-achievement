@@ -33,14 +33,12 @@
               :show-content-section="!!(imagePreview || contents.length > 0)"
               :show-layout-guid-section="!!(imagePreview || contents.length > 0)"
               :uploaded-image-meta="uploadedImageMeta"
-              :selected-content-key="selectedContentKey"
               @update:title="(value: string) => store.title = value"
               @update:certificate-type="(value: { label: string; value: string; }) => store.certificate_type = value"
               @update:safe-zone="(value: any) => store.safe_zone = value"
               @update:image="(value: File | string | null) => store.image = value"
               @update:contents="(value: any[]) => store.contents = value"
               @update:uploaded-image-meta="(value: any) => uploadedImageMeta = value"
-              @update:selected-content-key="(value: string | null) => selectedContentKey = value"
             />
           </template>
           <template #main-content>
@@ -65,7 +63,8 @@
                 <div>
                   <div
                     ref="canvasRef"
-                    class="w-[842px] h-[595px] bg-white relative"
+                    :style="canvasStyle"
+                    class="bg-white relative"
                   >
                     <div
                       v-if="imagePreview || contents.length > 0"
@@ -175,8 +174,9 @@ import Accessibility from '#achievement/components/form/certificate/Accessibilit
 import Sidebar from '#achievement/components/form/certificate/Sidebar.vue';
 
 import ZoomableContent from '#achievement/components/ZoomableContent.vue';
+import { useCanvasInteract } from '#achievement/composables/useCanvasInteract';
 
-import { CREATE_STEPPER, TYPE_OPTIONS } from '#achievement/config/constants.ts';
+import { CANVAS_HEIGHT, CANVAS_WIDTH, CREATE_STEPPER, DEFAULT_FONT_FAMILY, TYPE_OPTIONS } from '#achievement/config/constants.ts';
 import { PERMISSION_CREATE, PERMISSION_LIST } from '#achievement/config/featureFlag.ts';
 
 import FormLayout from '#achievement/layouts/FormLayout.vue';
@@ -187,7 +187,6 @@ import TemplateManageLayout from '#core/components/templates/ManageLayout.vue';
 import UiSwitch from '#ui/components/atoms/switch/index.vue';
 
 import { useMutation } from '@tanstack/vue-query';
-import { nextTick } from 'vue';
 
 import Moveable from 'vue3-moveable';
 
@@ -204,7 +203,7 @@ definePageMeta({
 });
 
 const store = useCertificateStore();
-const { errors, title, certificate_type, image, contents, safe_zone } = storeToRefs(store);
+const { errors, title, certificate_type, image, contents, safe_zone, selectedContentKey } = storeToRefs(store);
 
 const router = useRouter();
 const { showLoading, hideLoading } = useGlobalLoading();
@@ -216,20 +215,33 @@ const stepper = CREATE_STEPPER;
 const isLoading = ref<boolean>(false);
 const certificateId = ref<number | string | null>(null);
 const uploadedImageMeta = ref<any>(null);
-const selectedContentKey = ref<string | null>(null);
 const currentZoomLevel = ref<number>(1);
 
 const canvasRef = ref<HTMLElement | null>(null);
-const targetRef = ref<HTMLElement | null>(null);
-
-const moveableRef = ref<any>(null);
 
 const showSafeZone = ref<boolean>(true);
 
-const layoutDimensions = { width: 842, height: 595 };
+const {
+  moveableRef,
+  targetRef,
+  handleSelectContent,
+  handleClickOutsideContent,
+  onDrag,
+  onDragEnd,
+  onResize,
+  onResizeEnd,
+} = useCanvasInteract({
+  contents,
+  safeZone: safe_zone,
+  selectedContentKey,
+});
+
+const canvasStyle = computed(() => ({
+  width: `${CANVAS_WIDTH}px`,
+  height: `${CANVAS_HEIGHT}px`,
+}));
 
 const safeZoneStyle = computed(() => {
-  const { width: layoutWidth, height: layoutHeight } = layoutDimensions;
   const top = safe_zone.value?.top || 0;
   const right = safe_zone.value?.right || 0;
   const bottom = safe_zone.value?.bottom || 0;
@@ -240,8 +252,8 @@ const safeZoneStyle = computed(() => {
     right: ${right}px;
     bottom: ${bottom}px;
     left: ${left}px;
-    width: ${layoutWidth - left - right}px;
-    height: ${layoutHeight - top - bottom}px;
+    width: ${CANVAS_WIDTH - left - right}px;
+    height: ${CANVAS_HEIGHT - top - bottom}px;
   `;
 });
 
@@ -361,28 +373,33 @@ function getContentTextStyle(content: ICertificateContentTextForm | ICertificate
     return 'display: none;';
   }
 
-  const { width, height, font_family, font_size, font_weight, alignment, color, vertical, horizontal } = content.metadata;
+  const { width, height, font_family, font_size, font_weight, alignment, color, vertical, horizontal, width_mode, height_mode } = content.metadata;
   const { left, top } = getMargins();
 
   const renderX = (horizontal || 0) + left;
   const renderY = (vertical || 0) + top;
 
-  // Use consistent font-family format with quotes
-  const fontFamilyValue = font_family || '\'Montserrat\', sans-serif';
+  const fontFamilyValue = font_family || DEFAULT_FONT_FAMILY;
+
+  const widthValue = width === 'fit-content' ? 'fit-content' : `${width}px`;
+  const heightValue = height === 'fit-content' ? 'fit-content' : `${height}px`;
+
+  const shouldHideOverflow = (width_mode === 'fill' || width_mode === 'fix') && (height_mode === 'fill' || height_mode === 'fix');
+  const overflowStyle = shouldHideOverflow ? 'hidden' : 'visible';
 
   return `
     position: absolute;
     left: ${renderX}px;
     top: ${renderY}px;
-    width: ${width}px;
-    height: ${height}px;
+    width: ${widthValue};
+    height: ${heightValue};
     font-family: ${fontFamilyValue};
     font-size: ${font_size}px;
     font-weight: ${font_weight};
     text-align: ${alignment?.value || 'left'};
     color: #${color};
     white-space: pre-wrap;
-    overflow: hidden;
+    overflow: ${overflowStyle};
     box-sizing: border-box;
     display: block;
     z-index: 10;
@@ -399,7 +416,6 @@ function getQRCodeContainerStyle(content: any): string {
   const renderX = (horizontal || 0) + left;
   const renderY = (vertical || 0) + top;
 
-  // Padding: 1/10 of size with minimum 6px
   const padding = Math.max(6, Math.floor(Math.min(width, height) / 10));
   const bgColor = background_transparent ? 'transparent' : `#${background_color}`;
   const borderRadius = border_style === 'rounded' ? '10px' : '0';
@@ -420,20 +436,6 @@ function getQRCodeContainerStyle(content: any): string {
     box-sizing: border-box;
     z-index: 10;
   `;
-}
-
-function handleSelectContent(e: Event, key: string) {
-  selectedContentKey.value = key;
-
-  nextTick(() => {
-    const el = document.getElementById(key);
-    targetRef.value = el;
-  });
-}
-
-function handleClickOutsideContent() {
-  selectedContentKey.value = null;
-  targetRef.value = null;
 }
 
 const uploadBackgroundImage = async (file: File) => {
@@ -531,7 +533,6 @@ const handleSubmit = async () => {
       let backgroundUrl: string = '';
       let backgroundMeta: any = uploadedImageMeta.value;
 
-      // Upload background image if it's a File
       if (store.image instanceof File) {
         const uploadResult = await uploadBackgroundImage(store.image);
         backgroundUrl = uploadResult?.url || '';
@@ -546,15 +547,11 @@ const handleSubmit = async () => {
         return;
       }
 
-      // Track uploaded content image URLs and metadata for template generation
-      const contentImageUrls: Record<string, { url: string; originalFileName?: string }> = {};
+      const contentImageUrls: Record<string, { url: string; originalFileName?: string; }> = {};
 
-      // Upload content images and collect URLs with original filenames
       const uploadedContents = await Promise.all(
         store.contents.map(async (content) => {
-          // Handle image and sertificate_signee types
           if (content.type === 'image' || content.type === 'sertificate_signee') {
-            // Case 1: New file to upload
             if (content.file) {
               const uploadResult = await uploadContentImage(content.file);
               if (uploadResult?.url) {
@@ -565,7 +562,7 @@ const handleSubmit = async () => {
               }
               return buildContentPayload(content, uploadResult?.url, uploadResult?.meta);
             }
-            // Case 2: Already has a URL (editing existing or already uploaded)
+
             else if (content.value) {
               const contentMeta = content.metadata as Record<string, any>;
               contentImageUrls[content.key] = {
@@ -579,7 +576,6 @@ const handleSubmit = async () => {
         }),
       );
 
-      // Generate HTML template with actual URLs for images
       const template = generateCertificateTemplate({
         backgroundUrl,
         contents: store.contents,
@@ -587,13 +583,11 @@ const handleSubmit = async () => {
         contentImageUrls,
       });
 
-      // Generate preview image from HTML template and upload it
       let previewMeta: any = null;
       try {
         showLoading('Generating preview', 'Please wait while we generate the certificate preview.');
 
-        // Generate unique filename with title and timestamp to avoid backend caching
-        const sanitizedTitle = (store.title || 'certificate').replace(/[^a-zA-Z0-9]/g, '-').substring(0, 30);
+        const sanitizedTitle = (store.title || 'certificate').replace(/[^a-z0-9]/gi, '-').substring(0, 30);
         const timestamp = Date.now();
         const uniqueFileName = `preview-${sanitizedTitle}-${timestamp}.png`;
 
@@ -602,11 +596,10 @@ const handleSubmit = async () => {
         previewMeta = previewUploadResult?.meta;
       }
       catch (err) {
-        console.error('Could not generate/upload preview image:', err);
+        console.error('[App] Could not generate/upload preview image:', err);
         $toast({ variant: 'warning', title: 'Warning', text: 'Preview image generation failed, continuing without preview.' });
       }
 
-      // Build payload with new structure
       const payload = buildCertificateCreatePayload({
         title: store.title,
         certificateType: store.certificate_type?.value || '',
@@ -638,66 +631,9 @@ const handleSubmit = async () => {
   }
 };
 
-const onDrag = ({ target, left, top }: any) => {
-  target.style.left = `${left}px`;
-  target.style.top = `${top}px`;
-};
-
-const onDragEnd = ({ target }: any) => {
-  const contentIndex = store.contents.findIndex(c => c.key === selectedContentKey.value);
-  if (contentIndex === -1) {
-    return;
-  }
-
-  const { left: safeLeft, top: safeTop } = getMargins();
-
-  const finalLeft = Number.parseFloat(target.style.left || 0);
-  const finalTop = Number.parseFloat(target.style.top || 0);
-
-  store.contents[contentIndex].metadata.horizontal = Math.round(finalLeft - safeLeft);
-  store.contents[contentIndex].metadata.vertical = Math.round(finalTop - safeTop);
-};
-
-const onResize = ({ target, width, height, drag }: any) => {
-  target.style.width = `${width}px`;
-  target.style.height = `${height}px`;
-  target.style.left = `${drag.left}px`;
-  target.style.top = `${drag.top}px`;
-};
-
-const onResizeEnd = ({ target, _ }: any) => {
-  const contentIndex = store.contents.findIndex(c => c.key === selectedContentKey.value);
-  if (contentIndex === -1) {
-    return;
-  }
-
-  const { left: safeLeft, top: safeTop } = getMargins();
-
-  const finalWidth = Number.parseFloat(target.style.width);
-  const finalHeight = Number.parseFloat(target.style.height);
-  const finalLeft = Number.parseFloat(target.style.left);
-  const finalTop = Number.parseFloat(target.style.top);
-
-  store.contents[contentIndex].metadata.width = Math.round(finalWidth);
-  store.contents[contentIndex].metadata.height = Math.round(finalHeight);
-
-  store.contents[contentIndex].metadata.horizontal = Math.round(finalLeft - safeLeft);
-  store.contents[contentIndex].metadata.vertical = Math.round(finalTop - safeTop);
-};
-
 watch(isFormDirty, (value) => {
   preventLeave.value = value;
 });
-
-watch(
-  () => store.contents,
-  () => {
-    nextTick(() => {
-      moveableRef.value?.updateRect();
-    });
-  },
-  { deep: true },
-);
 
 onBeforeMount(() => {
   store.$resetAll();

@@ -47,8 +47,8 @@ export interface ICertificate {
 
 interface IContentMetadataBase {
   vertical: number;
-  width: number;
-  height: number;
+  width: number | 'fit-content';
+  height: number | 'fit-content';
   horizontal: number;
   isAspectRatioLocked?: boolean;
   width_mode?: SizeMode;
@@ -101,7 +101,7 @@ export interface ICertificateNumberVariable {
   label: string;
   value: string;
   customValue?: string;
-  uuid?: string; // UUID for serial_number type
+  uuid?: string;
 }
 
 export interface ICertificateContentImageForm {
@@ -238,7 +238,6 @@ export const CONTENT_TYPE_CONFIGS: Record<string, IContentTypeConfig> = {
     hasCustomFields: false,
   },
 };
-
 
 export function isLocationContent(content: ICertificateContentForm): content is ICertificateContentLocationForm {
   return content.type === 'location';
@@ -391,4 +390,29 @@ export interface FetchOptions {
   headers?: Record<string, string>;
   timeout?: number;
   [key: string]: any;
+}
+
+export interface IBadgeDetailResponse {
+  success?: boolean;
+  message?: string;
+  status_code?: number;
+  client_code?: string;
+  server_code?: string;
+  data?: {
+    id: number;
+    title: string;
+    type?: string;
+    url?: string;
+  };
+}
+
+export interface IUUIDResponse {
+  success: boolean;
+  message: string;
+  status_code: number;
+  client_code: string;
+  server_code: string;
+  data: {
+    uuid: string;
+  };
 }

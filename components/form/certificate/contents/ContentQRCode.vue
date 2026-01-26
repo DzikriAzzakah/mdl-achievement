@@ -55,7 +55,6 @@
       :class="isCollapsed ? 'max-h-0' : 'max-h-[1000px]'"
     >
       <div class="space-y-4 pt-2">
-        <!-- Size -->
         <UiFormGroup label="Size">
           <div class="flex items-center gap-2">
             <div class="w-32">
@@ -73,7 +72,6 @@
           </div>
         </UiFormGroup>
 
-        <!-- Position -->
         <div class="flex items-center gap-4">
           <UiFormGroup label="Position X">
             <UiInput
@@ -102,7 +100,6 @@
           </UiFormGroup>
         </div>
 
-        <!-- Background Color -->
         <UiFormGroup label="Background">
           <div class="flex items-center gap-3">
             <UiSwitch
@@ -144,12 +141,12 @@
           </div>
         </UiFormGroup>
 
-        <!-- QR Shape -->
         <UiFormGroup label="QR Shape">
           <div class="flex items-center gap-2">
             <UiButton
               v-for="option in QR_CODE_SHAPE_OPTIONS"
               :key="option.value"
+              v-tooltip="option.label"
               square
               size="md"
               :variant="contentItem.metadata.shape === option.value ? 'solid' : 'soft'"
@@ -187,12 +184,12 @@
           </div>
         </UiFormGroup>
 
-        <!-- Border Style -->
         <UiFormGroup label="Border Style">
           <div class="flex items-center gap-2">
             <UiButton
               v-for="option in QR_CODE_BORDER_OPTIONS"
               :key="option.value"
+              v-tooltip="option.label"
               square
               size="md"
               :variant="contentItem.metadata.border_style === option.value ? 'solid' : 'soft'"
@@ -259,12 +256,10 @@ const emit = defineEmits<{
 
 const isCollapsed = computed(() => !props.isExpanded);
 
-// Color picker refs
 const bgColorPickerInput = ref<HTMLInputElement | null>(null);
 const shapeColorPickerInput = ref<HTMLInputElement | null>(null);
 const borderColorPickerInput = ref<HTMLInputElement | null>(null);
 
-// Define updateMetadata first before it's used
 const updateMetadata = (updates: Partial<ICertificateContentQRCodeForm['metadata']>) => {
   const updatedItem: ICertificateContentQRCodeForm = {
     ...props.contentItem,
@@ -276,7 +271,6 @@ const updateMetadata = (updates: Partial<ICertificateContentQRCodeForm['metadata
   emit('update:contentItem', updatedItem);
 };
 
-// Color picker open functions
 const openBgColorPicker = () => {
   bgColorPickerInput.value?.click();
 };
@@ -289,7 +283,6 @@ const openBorderColorPicker = () => {
   borderColorPickerInput.value?.click();
 };
 
-// Color change handlers
 const handleBgColorChange = (event: Event) => {
   const input = event.target as HTMLInputElement;
   const color = input.value.replace('#', '');
@@ -310,7 +303,7 @@ const handleBorderColorChange = (event: Event) => {
 
 const updateSize = (value: number | string) => {
   const numValue = typeof value === 'string' ? Number(value) : value;
-  // Always update both width and height to maintain 1:1 aspect ratio
+
   updateMetadata({ width: numValue, height: numValue });
 };
 

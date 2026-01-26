@@ -115,6 +115,7 @@
                   size="md"
                   :options="sizeModeOptions"
                   :select-props="{
+                    useTeleport: true,
                     trackBy: 'value',
                     label: 'label',
                   }"
@@ -181,6 +182,7 @@
                   size="md"
                   :options="sizeModeOptions"
                   :select-props="{
+                    useTeleport: true,
                     trackBy: 'value',
                     label: 'label',
                   }"
@@ -211,6 +213,7 @@
             class="font-family-select"
             :options="fontOptions"
             :select-props="{
+              useTeleport: true,
               trackBy: 'value',
               label: 'label',
             }"
@@ -258,6 +261,7 @@
               size="md"
               :options="fontWeightOptions"
               :select-props="{
+                useTeleport: true,
                 trackBy: 'value',
                 label: 'label',
               }"
@@ -307,6 +311,9 @@
               :model-value="metadata.alignment"
               size="md"
               :options="alignmentOptions"
+              :select-props="{
+                useTeleport: true,
+              }"
               @update:model-value="$emit('update:alignment', $event)"
             />
           </UiFormGroup>
@@ -317,6 +324,7 @@
             <UiInput
               type="number"
               :model-value="metadata.horizontal"
+              :disabled="widthMode === 'fill'"
               size="md"
               @update:model-value="$emit('update:horizontal', $event)"
             >
@@ -332,6 +340,7 @@
             <UiInput
               type="number"
               :model-value="metadata.vertical"
+              :disabled="heightMode === 'fill'"
               size="md"
               @update:model-value="$emit('update:vertical', $event)"
             >
@@ -444,7 +453,6 @@ const handleColorChange = (event: Event) => {
 
 const handleWidthModeSelect = (option: SizeModeOption) => {
   emit('update:widthMode', option);
-  // Close the dropdown
   widthDropdownRef.value?.hide?.();
 };
 

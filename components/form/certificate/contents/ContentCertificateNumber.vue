@@ -145,6 +145,7 @@
                 size="md"
                 :options="availableVariableOptions"
                 :select-props="{
+                  useTeleport: true,
                   trackBy: 'key',
                   label: 'label',
                 }"
@@ -222,7 +223,6 @@ const emit = defineEmits<{
   'headerClick': [];
 }>();
 
-// Use shared composable for common logic
 const {
   contentConfig,
   isCollapsed,
@@ -246,7 +246,6 @@ const {
   handleHeightModeChange,
 } = useContentTextControls(props, emit as any);
 
-// ============ Certificate Number Variables Logic ============
 const showSelectVariableModal = ref(false);
 const selectedVariableType = ref<typeof CERTIFICATE_NUMBER_VARIABLES[0] | null>(null);
 const serialNumberValue = ref('');
@@ -256,40 +255,34 @@ const isLoadingUUID = ref(false);
 
 const isEditingVariable = computed(() => editingVariableIndex.value !== null);
 
-// Generate payload value string from variables (for API payload)
 const generatePayloadValue = (variables: ICertificateNumberVariable[]): string => {
   return variables.map((v) => {
     if (v.type === 'text_area') {
       return v.customValue || '';
     }
     if (v.type === 'serial_number') {
-      // Format: {{serial_number:UUID:startNumber}}
       return `{{serial_number:${v.uuid}:${v.customValue || '1'}}}`;
     }
     return v.value;
   }).join('');
 };
 
-// Generate preview string from variables (for sidebar display)
 const generatePreviewValue = (variables: ICertificateNumberVariable[]): string => {
   return variables.map((v) => {
     if (v.type === 'text_area') {
       return v.customValue || '';
     }
     if (v.type === 'serial_number') {
-      // Show user-friendly preview with starting number
       return `[Serial: ${v.customValue || '1'}]`;
     }
     return v.value;
   }).join('');
 };
 
-// Generate unique ID
 const generateVariableId = (): string => {
   return `var_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 };
 
-// Reset modal state
 const resetVariableModal = () => {
   showSelectVariableModal.value = false;
   selectedVariableType.value = null;
@@ -299,7 +292,6 @@ const resetVariableModal = () => {
   isLoadingUUID.value = false;
 };
 
-// Get variables from contentItem or initialize empty array
 const certificateVariables = computed({
   get: () => {
     return props.contentItem.variables || [];
@@ -314,12 +306,10 @@ const certificateVariables = computed({
   },
 });
 
-// Computed preview for display in sidebar
 const certificateNumberPreview = computed(() => {
   return generatePreviewValue(certificateVariables.value);
 });
 
-// Get display label for variable item
 const getVariableDisplayLabel = (variable: ICertificateNumberVariable): string => {
   if (variable.type === 'text_area') {
     const text = variable.customValue || '';
@@ -331,12 +321,10 @@ const getVariableDisplayLabel = (variable: ICertificateNumberVariable): string =
   return variable.label;
 };
 
-// Filter available options (exclude already used non-repeatable types, except text_area and serial_number)
 const availableVariableOptions = computed(() => {
   const usedTypes = certificateVariables.value.map(v => v.type);
 
   return CERTIFICATE_NUMBER_VARIABLES.filter((option) => {
-    // text_area and serial_number can be added multiple times
     if (option.key === 'text_area' || option.key === 'serial_number') {
       return true;
     }
@@ -350,7 +338,6 @@ const availableVariableOptions = computed(() => {
   });
 });
 
-// Validate form
 const isVariableFormValid = computed(() => {
   if (!selectedVariableType.value) {
     return false;
@@ -369,7 +356,6 @@ const isVariableFormValid = computed(() => {
   return true;
 });
 
-// Open add modal
 const openAddVariableModal = () => {
   editingVariableIndex.value = null;
   selectedVariableType.value = availableVariableOptions.value[0] || null;
@@ -378,7 +364,6 @@ const openAddVariableModal = () => {
   showSelectVariableModal.value = true;
 };
 
-// Open edit modal
 const openEditVariableModal = (index: number) => {
   const variable = certificateVariables.value[index];
   if (!variable) {
@@ -404,7 +389,6 @@ const openEditVariableModal = (index: number) => {
   showSelectVariableModal.value = true;
 };
 
-// Submit variable (add or update)
 const onSubmitVariable = async () => {
   if (!selectedVariableType.value || !isVariableFormValid.value) {
     return;
@@ -415,15 +399,12 @@ const onSubmitVariable = async () => {
 
   let uuid: string | undefined;
 
-  // For serial_number, fetch UUID from API (only for new variables, keep existing UUID when editing)
   if (isSerialNumber) {
     if (isEditing) {
-      // Keep existing UUID when editing
       const existingVar = certificateVariables.value[editingVariableIndex.value!];
       uuid = existingVar.uuid;
     }
     else {
-      // Fetch new UUID for new serial_number variable
       try {
         isLoadingUUID.value = true;
         const response = await getSerialNumberUUID();
@@ -476,18 +457,15 @@ const onSubmitVariable = async () => {
   resetVariableModal();
 };
 
-// Cancel modal
 const onCancelVariableModal = () => {
   resetVariableModal();
 };
 
-// Delete variable
 const deleteVariable = (index: number) => {
   const updatedVariables = certificateVariables.value.filter((_, i) => i !== index);
   certificateVariables.value = updatedVariables;
 };
 
-// Handle drag end
 const onDragEnd = () => {
   certificateVariables.value = [...certificateVariables.value];
 };

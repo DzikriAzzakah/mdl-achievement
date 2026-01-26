@@ -43,7 +43,6 @@ export function useContentTextControls<T extends ICertificateContentForm>(
   const alignmentOptions = ALIGNMENT_OPTIONS;
   const sizeModeOptions = SIZE_MODE_OPTIONS as SizeModeOption[];
 
-  // Load Google Fonts
   const loadFont = (fontUrl: string) => {
     if (!fontUrl) {
       return;
@@ -65,7 +64,6 @@ export function useContentTextControls<T extends ICertificateContentForm>(
     });
   });
 
-  // Font weight computations
   const availableFontWeights = computed(() => {
     const selectedFont = fontOptions.find(f => f.value === (props.contentItem.metadata as any).font_family);
     return selectedFont?.weights || [100, 200, 300, 400, 500, 600, 700, 800, 900];
@@ -96,7 +94,6 @@ export function useContentTextControls<T extends ICertificateContentForm>(
     return fontWeightOptions.value.find(w => w.value === (props.contentItem.metadata as any).font_weight) || fontWeightOptions.value[0];
   });
 
-  // Size mode computations
   const widthMode = computed<SizeMode>(() => (props.contentItem.metadata as any).width_mode || 'fix');
   const heightMode = computed<SizeMode>(() => (props.contentItem.metadata as any).height_mode || 'fix');
 
@@ -108,7 +105,6 @@ export function useContentTextControls<T extends ICertificateContentForm>(
     return (sizeModeOptions.find(m => m.value === heightMode.value) || sizeModeOptions[0]) as SizeModeOption;
   });
 
-  // Text measurement utility
   const measureTextSize = (text: string, fontFamily: string, fontSize: number, fontWeight: number) => {
     if (typeof document === 'undefined') {
       return { width: 100, height: fontSize * 1.2 };
@@ -120,20 +116,16 @@ export function useContentTextControls<T extends ICertificateContentForm>(
       return { width: 100, height: fontSize * 1.2 };
     }
 
-    // Set font properties
     context.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
 
-    // Measure text
     const metrics = context.measureText(text || 'Sample Text');
     const width = Math.ceil(metrics.width);
 
-    // Calculate height based on font metrics
-    const height = Math.ceil(fontSize * 1.4); // Approximate line height
+    const height = Math.ceil(fontSize * 1.4);
 
     return { width: Math.max(width, 20), height: Math.max(height, 20) };
   };
 
-  // Calculate hug size based on content
   const calculateHugSize = () => {
     const metadata = props.contentItem.metadata as any;
     const text = props.contentItem.value || 'Sample Text';
@@ -144,51 +136,43 @@ export function useContentTextControls<T extends ICertificateContentForm>(
     return measureTextSize(text, fontFamily, fontSize, fontWeight);
   };
 
-  // Get safe zone dimensions (defaults if not provided)
   const getSafeZoneWidth = () => props.safeZoneWidth || CANVAS_WIDTH;
   const getSafeZoneHeight = () => props.safeZoneHeight || CANVAS_HEIGHT;
 
-  // Handle width mode change
   const handleWidthModeChange = (selectedOption: SizeModeOption | SizeMode) => {
     const newMode = typeof selectedOption === 'string' ? selectedOption : selectedOption.value;
     const metadata = props.contentItem.metadata as any;
     const shouldUnlockAspectRatio = newMode !== 'fix' && metadata.isAspectRatioLocked;
 
-    // Calculate new width based on mode
     if (newMode === 'fill') {
       updateHandlers.updateWidthModeWithValue(newMode, getSafeZoneWidth(), shouldUnlockAspectRatio);
     }
     else if (newMode === 'hug') {
-      const hugSize = calculateHugSize();
-      updateHandlers.updateWidthModeWithValue(newMode, hugSize.width, shouldUnlockAspectRatio);
+      updateHandlers.updateWidthModeWithValue(newMode, 'fit-content', shouldUnlockAspectRatio);
     }
     else {
-      // For 'fix', keep the current width value
-      updateHandlers.updateWidthModeWithValue(newMode, metadata.width, shouldUnlockAspectRatio);
+      const currentWidth = metadata.width === 'fit-content' ? 200 : metadata.width;
+      updateHandlers.updateWidthModeWithValue(newMode, currentWidth, shouldUnlockAspectRatio);
     }
   };
 
-  // Handle height mode change
   const handleHeightModeChange = (selectedOption: SizeModeOption | SizeMode) => {
     const newMode = typeof selectedOption === 'string' ? selectedOption : selectedOption.value;
     const metadata = props.contentItem.metadata as any;
     const shouldUnlockAspectRatio = newMode !== 'fix' && metadata.isAspectRatioLocked;
 
-    // Calculate new height based on mode
     if (newMode === 'fill') {
       updateHandlers.updateHeightModeWithValue(newMode, getSafeZoneHeight(), shouldUnlockAspectRatio);
     }
     else if (newMode === 'hug') {
-      const hugSize = calculateHugSize();
-      updateHandlers.updateHeightModeWithValue(newMode, hugSize.height, shouldUnlockAspectRatio);
+      updateHandlers.updateHeightModeWithValue(newMode, 'fit-content', shouldUnlockAspectRatio);
     }
     else {
-      // For 'fix', keep the current height value
-      updateHandlers.updateHeightModeWithValue(newMode, metadata.height, shouldUnlockAspectRatio);
+      const currentHeight = metadata.height === 'fit-content' ? 50 : metadata.height;
+      updateHandlers.updateHeightModeWithValue(newMode, currentHeight, shouldUnlockAspectRatio);
     }
   };
 
-  // Event handlers
   const handleFontFamilyUpdate = (selectedOption: any) => {
     const fontValue = selectedOption?.value || '\'Montserrat\', sans-serif';
     updateHandlers.updateFontFamily(fontValue);
@@ -202,7 +186,6 @@ export function useContentTextControls<T extends ICertificateContentForm>(
       updateHandlers.updateFontWeight(newWeight);
     }
 
-    // Recalculate hug size if in hug mode
     if (widthMode.value === 'hug' || heightMode.value === 'hug') {
       nextTick(() => {
         const hugSize = calculateHugSize();
@@ -223,7 +206,6 @@ export function useContentTextControls<T extends ICertificateContentForm>(
     }
     updateHandlers.updateFontWeight(weight);
 
-    // Recalculate hug size if in hug mode
     if (widthMode.value === 'hug' || heightMode.value === 'hug') {
       nextTick(() => {
         const hugSize = calculateHugSize();
@@ -240,7 +222,6 @@ export function useContentTextControls<T extends ICertificateContentForm>(
   const handleFontSizeUpdate = (value: string | number) => {
     updateHandlers.updateFontSize(value);
 
-    // Recalculate hug size if in hug mode
     if (widthMode.value === 'hug' || heightMode.value === 'hug') {
       nextTick(() => {
         const hugSize = calculateHugSize();
@@ -265,7 +246,6 @@ export function useContentTextControls<T extends ICertificateContentForm>(
     emit('delete', props.index);
   };
 
-  // Aspect ratio logic - only available when both modes are 'fix'
   const isAspectRatioLocked = computed(() => (props.contentItem.metadata as any).isAspectRatioLocked ?? false);
   const canLockAspectRatio = computed(() => widthMode.value === 'fix' && heightMode.value === 'fix');
 
@@ -277,7 +257,6 @@ export function useContentTextControls<T extends ICertificateContentForm>(
   };
 
   const handleWidthUpdate = (value: string | number) => {
-    // Only allow manual width update in 'fix' mode
     if (widthMode.value !== 'fix') {
       return;
     }
@@ -291,7 +270,6 @@ export function useContentTextControls<T extends ICertificateContentForm>(
   };
 
   const handleHeightUpdate = (value: string | number) => {
-    // Only allow manual height update in 'fix' mode
     if (heightMode.value !== 'fix') {
       return;
     }
@@ -304,11 +282,9 @@ export function useContentTextControls<T extends ICertificateContentForm>(
     }
   };
 
-  // Handle text value update (for hug recalculation)
   const handleValueUpdate = (value: string | undefined) => {
     updateHandlers.updateValue(value);
 
-    // Recalculate hug size if in hug mode
     if (widthMode.value === 'hug' || heightMode.value === 'hug') {
       nextTick(() => {
         const hugSize = calculateHugSize();
@@ -322,7 +298,6 @@ export function useContentTextControls<T extends ICertificateContentForm>(
     }
   };
 
-  // Color picker
   const openColorPicker = () => {
     colorPickerInput.value?.click();
   };
@@ -334,10 +309,9 @@ export function useContentTextControls<T extends ICertificateContentForm>(
   };
 
   return {
-    // Refs
+
     colorPickerInput,
 
-    // Computed
     contentConfig,
     isCollapsed,
     fontOptions,
@@ -354,7 +328,6 @@ export function useContentTextControls<T extends ICertificateContentForm>(
     selectedWidthModeObject,
     selectedHeightModeObject,
 
-    // Handlers
     updateHandlers,
     handleFontFamilyUpdate,
     handleFontWeightUpdate,
@@ -370,7 +343,6 @@ export function useContentTextControls<T extends ICertificateContentForm>(
     openColorPicker,
     handleColorChange,
 
-    // Utilities
     loadFont,
     getClosestFontWeight,
     getFontWeightLabel,

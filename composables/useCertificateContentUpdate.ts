@@ -3,9 +3,6 @@ import type {
   SizeMode,
 } from '#achievement/config/types';
 
-/**
- * Composable for managing certificate content updates
- */
 export function useCertificateContentUpdate<T extends ICertificateContentForm>(
   getCurrentItem: () => T,
   emit: (event: 'update:contentItem', value: T) => void,
@@ -35,7 +32,6 @@ export function useCertificateContentUpdate<T extends ICertificateContentForm>(
     emit('update:contentItem', updatedItem);
   };
 
-  // Update multiple metadata fields at once to avoid race conditions
   const updateMultipleMetadataFields = (fields: Partial<T['metadata']>) => {
     const contentItem = getCurrentItem();
     const updatedItem = {
@@ -49,12 +45,12 @@ export function useCertificateContentUpdate<T extends ICertificateContentForm>(
     emit('update:contentItem', updatedItem);
   };
 
-  const updateWidth = (value: string | number) => {
-    updateMetadataField('width' as any, typeof value === 'string' ? Number(value) : value);
+  const updateWidth = (value: string | number | 'fit-content') => {
+    updateMetadataField('width' as any, value === 'fit-content' ? 'fit-content' : (typeof value === 'string' ? Number(value) : value));
   };
 
-  const updateHeight = (value: string | number) => {
-    updateMetadataField('height' as any, typeof value === 'string' ? Number(value) : value);
+  const updateHeight = (value: string | number | 'fit-content') => {
+    updateMetadataField('height' as any, value === 'fit-content' ? 'fit-content' : (typeof value === 'string' ? Number(value) : value));
   };
 
   const updateFontSize = (value: string | number) => {
@@ -97,24 +93,32 @@ export function useCertificateContentUpdate<T extends ICertificateContentForm>(
     updateMetadataField('height_mode' as any, value);
   };
 
-  // Combined update for width mode change (to avoid race conditions)
-  const updateWidthModeWithValue = (mode: SizeMode, width: number, unlockAspectRatio?: boolean) => {
+  const updateWidthModeWithValue = (mode: SizeMode, width: number | 'fit-content', unlockAspectRatio?: boolean) => {
     const fields: Record<string, any> = {
       width_mode: mode,
       width,
     };
+
+    if (mode === 'fill') {
+      fields.horizontal = 0;
+    }
+
     if (unlockAspectRatio) {
       fields.isAspectRatioLocked = false;
     }
     updateMultipleMetadataFields(fields as any);
   };
 
-  // Combined update for height mode change (to avoid race conditions)
-  const updateHeightModeWithValue = (mode: SizeMode, height: number, unlockAspectRatio?: boolean) => {
+  const updateHeightModeWithValue = (mode: SizeMode, height: number | 'fit-content', unlockAspectRatio?: boolean) => {
     const fields: Record<string, any> = {
       height_mode: mode,
       height,
     };
+
+    if (mode === 'fill') {
+      fields.vertical = 0;
+    }
+
     if (unlockAspectRatio) {
       fields.isAspectRatioLocked = false;
     }

@@ -45,6 +45,7 @@
             size="md"
             :options="dateFormatOptions"
             :select-props="{
+              useTeleport: true,
               trackBy: 'value',
               label: 'label',
             }"
@@ -113,7 +114,6 @@ const emit = defineEmits<{
   'headerClick': [];
 }>();
 
-// Use shared composable for common logic
 const {
   contentConfig,
   isCollapsed,
@@ -139,7 +139,6 @@ const {
   handleValueUpdate,
 } = useContentTextControls(props, emit as any);
 
-// Location-specific logic
 const dateFormatOptions = DATE_FORMAT_OPTIONS;
 
 const selectedDateFormat = computed(() => {
