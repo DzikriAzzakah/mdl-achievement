@@ -1,32 +1,22 @@
-import type { IAchievementUploadResponse, ICertificateContentForm, ICertificateSafeZone } from '#achievement/config/types';
+import type {
+  IAchievementUploadResponse,
+  ICertificateBackgroundPayload,
+  ICertificateContentForm,
+  ICertificateContentPayload,
+  ICertificateCreatePayload,
+  ICertificateMetadataPayload,
+  ICertificatePreviewPayload,
+  ICertificateSafeZone,
+} from '#achievement/config/types';
 
-export interface ICertificateBackgroundPayload {
-  id?: number;
-  image_host?: string;
-  full_path?: string;
-  file_path?: string;
-  file_name?: string;
-  file_mime?: string;
-  folder?: string;
-  original_file_name?: string;
-}
-
-export interface ICertificatePreviewPayload {
-  id?: number;
-  image_host?: string;
-  full_path?: string;
-  file_path?: string;
-  file_name?: string;
-  file_mime?: string;
-  folder?: string;
-  original_file_name?: string;
-}
-
-export interface ICertificateMetadataPayload {
-  safe_zone: ICertificateSafeZone;
-  canvas_width: number;
-  canvas_height: number;
-}
+// Re-export types for backward compatibility
+export type {
+  ICertificateBackgroundPayload,
+  ICertificateContentPayload,
+  ICertificateCreatePayload,
+  ICertificateMetadataPayload,
+  ICertificatePreviewPayload,
+} from '#achievement/config/types';
 
 export interface ICertificateContentMetadataPayload {
   width: number | 'fit-content';
@@ -64,31 +54,6 @@ export interface ICertificateContentMetadataPayload {
   width_mode?: string;
   height_mode?: string;
   isAspectRatioLocked?: boolean;
-}
-
-export interface ICertificateContentPayload {
-  type: string;
-  key: string;
-  value: string | null;
-  metadata: ICertificateContentMetadataPayload;
-  variables?: Array<{
-    id: string;
-    type: string;
-    label: string;
-    value: string;
-    customValue?: string;
-  }>;
-}
-
-export interface ICertificateCreatePayload {
-  title: string;
-  type: string;
-  status: string;
-  background: ICertificateBackgroundPayload;
-  preview: ICertificatePreviewPayload;
-  template: string;
-  metadata: ICertificateMetadataPayload;
-  contents: ICertificateContentPayload[];
 }
 
 export function buildBackgroundPayload(

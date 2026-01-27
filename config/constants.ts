@@ -68,6 +68,12 @@ export const BADGE_TABS_EDIT = [
   { label: 'Accessibility', value: 'accessibility' },
 ];
 
+export const CERTIFICATE_TABS = [
+  { label: 'Configuration', value: 'certificate-configuration' },
+  { label: 'Preview', value: 'certificate-preview' },
+  { label: 'Accessibility', value: 'accessibility' },
+];
+
 export const FormMode = {
   CREATE: 'create',
   EDIT: 'edit',

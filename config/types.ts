@@ -417,3 +417,110 @@ export interface IUUIDResponse {
     uuid: string;
   };
 }
+
+// Certificate Payload Types (moved from certificatePayloadBuilder.ts for reusability)
+export interface ICertificateBackgroundPayload {
+  id?: number;
+  image_host?: string;
+  full_path?: string;
+  file_path?: string;
+  file_name?: string;
+  file_mime?: string;
+  folder?: string;
+  original_file_name?: string;
+}
+
+export interface ICertificatePreviewPayload {
+  id?: number;
+  image_host?: string;
+  full_path?: string;
+  file_path?: string;
+  file_name?: string;
+  file_mime?: string;
+  folder?: string;
+  original_file_name?: string;
+}
+
+export interface ICertificateMetadataPayload {
+  safe_zone: ICertificateSafeZone;
+  canvas_width: number;
+  canvas_height: number;
+}
+
+export interface ICertificateContentMetadataPayload {
+  width: number | 'fit-content';
+  height: number | 'fit-content';
+  vertical: number;
+  horizontal: number;
+  // For image types - upload metadata
+  id?: number;
+  original_width?: number;
+  original_height?: number;
+  image_host?: string;
+  full_path?: string;
+  file_path?: string;
+  file_name?: string;
+  file_mime?: string;
+  folder?: string;
+  original_file_name?: string;
+  // For text types
+  font_family?: string;
+  font_size?: number;
+  font_weight?: number;
+  alignment?: { label: string; value: string; };
+  color?: string;
+  // For location type
+  location?: string;
+  date_format?: string;
+  // For QR Code type
+  background_color?: string;
+  background_transparent?: boolean;
+  shape?: string;
+  shape_color?: string;
+  border_style?: string;
+  border_color?: string;
+  // Common
+  width_mode?: string;
+  height_mode?: string;
+  isAspectRatioLocked?: boolean;
+}
+
+export interface ICertificateContentPayload {
+  type: string;
+  key: string;
+  value: string | null;
+  metadata: ICertificateContentMetadataPayload;
+  variables?: Array<{
+    id: string;
+    type: string;
+    label: string;
+    value: string;
+    customValue?: string;
+  }>;
+}
+
+export interface ICertificateCreatePayload {
+  title: string;
+  type: string;
+  status: string;
+  background: ICertificateBackgroundPayload;
+  preview: ICertificatePreviewPayload;
+  template: string;
+  metadata: ICertificateMetadataPayload;
+  contents: ICertificateContentPayload[];
+}
+
+// Certificate Detail Response (GET /certificates/:id)
+export interface ICertificateDetailResponseData extends Omit<ICertificateCreatePayload, 'preview'> {
+  id: number;
+  preview_url?: string;
+}
+
+export interface ICertificateDetailResponse {
+  success?: boolean;
+  message?: string;
+  status_code?: number;
+  client_code?: string;
+  server_code?: string;
+  data?: ICertificateDetailResponseData;
+}

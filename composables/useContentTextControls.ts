@@ -105,37 +105,6 @@ export function useContentTextControls<T extends ICertificateContentForm>(
     return (sizeModeOptions.find(m => m.value === heightMode.value) || sizeModeOptions[0]) as SizeModeOption;
   });
 
-  const measureTextSize = (text: string, fontFamily: string, fontSize: number, fontWeight: number) => {
-    if (typeof document === 'undefined') {
-      return { width: 100, height: fontSize * 1.2 };
-    }
-
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    if (!context) {
-      return { width: 100, height: fontSize * 1.2 };
-    }
-
-    context.font = `${fontWeight} ${fontSize}px ${fontFamily}`;
-
-    const metrics = context.measureText(text || 'Sample Text');
-    const width = Math.ceil(metrics.width);
-
-    const height = Math.ceil(fontSize * 1.4);
-
-    return { width: Math.max(width, 20), height: Math.max(height, 20) };
-  };
-
-  const calculateHugSize = () => {
-    const metadata = props.contentItem.metadata as any;
-    const text = props.contentItem.value || 'Sample Text';
-    const fontFamily = metadata.font_family || '\'Montserrat\', sans-serif';
-    const fontSize = metadata.font_size || 16;
-    const fontWeight = metadata.font_weight || 400;
-
-    return measureTextSize(text, fontFamily, fontSize, fontWeight);
-  };
-
   const getSafeZoneWidth = () => props.safeZoneWidth || CANVAS_WIDTH;
   const getSafeZoneHeight = () => props.safeZoneHeight || CANVAS_HEIGHT;
 
@@ -185,18 +154,6 @@ export function useContentTextControls<T extends ICertificateContentForm>(
       newWeight = getClosestFontWeight(newWeight, newAvailableWeights);
       updateHandlers.updateFontWeight(newWeight);
     }
-
-    if (widthMode.value === 'hug' || heightMode.value === 'hug') {
-      nextTick(() => {
-        const hugSize = calculateHugSize();
-        if (widthMode.value === 'hug') {
-          updateHandlers.updateWidth(hugSize.width);
-        }
-        if (heightMode.value === 'hug') {
-          updateHandlers.updateHeight(hugSize.height);
-        }
-      });
-    }
   };
 
   const handleFontWeightUpdate = (selectedOption: any) => {
@@ -205,34 +162,10 @@ export function useContentTextControls<T extends ICertificateContentForm>(
       weight = getClosestFontWeight(weight, availableFontWeights.value);
     }
     updateHandlers.updateFontWeight(weight);
-
-    if (widthMode.value === 'hug' || heightMode.value === 'hug') {
-      nextTick(() => {
-        const hugSize = calculateHugSize();
-        if (widthMode.value === 'hug') {
-          updateHandlers.updateWidth(hugSize.width);
-        }
-        if (heightMode.value === 'hug') {
-          updateHandlers.updateHeight(hugSize.height);
-        }
-      });
-    }
   };
 
   const handleFontSizeUpdate = (value: string | number) => {
     updateHandlers.updateFontSize(value);
-
-    if (widthMode.value === 'hug' || heightMode.value === 'hug') {
-      nextTick(() => {
-        const hugSize = calculateHugSize();
-        if (widthMode.value === 'hug') {
-          updateHandlers.updateWidth(hugSize.width);
-        }
-        if (heightMode.value === 'hug') {
-          updateHandlers.updateHeight(hugSize.height);
-        }
-      });
-    }
   };
 
   const handleAlignmentUpdate = (value: string | number | object | any[] | undefined) => {
@@ -284,18 +217,6 @@ export function useContentTextControls<T extends ICertificateContentForm>(
 
   const handleValueUpdate = (value: string | undefined) => {
     updateHandlers.updateValue(value);
-
-    if (widthMode.value === 'hug' || heightMode.value === 'hug') {
-      nextTick(() => {
-        const hugSize = calculateHugSize();
-        if (widthMode.value === 'hug') {
-          updateHandlers.updateWidth(hugSize.width);
-        }
-        if (heightMode.value === 'hug') {
-          updateHandlers.updateHeight(hugSize.height);
-        }
-      });
-    }
   };
 
   const openColorPicker = () => {
@@ -309,7 +230,6 @@ export function useContentTextControls<T extends ICertificateContentForm>(
   };
 
   return {
-
     colorPickerInput,
 
     contentConfig,
@@ -346,7 +266,5 @@ export function useContentTextControls<T extends ICertificateContentForm>(
     loadFont,
     getClosestFontWeight,
     getFontWeightLabel,
-    measureTextSize,
-    calculateHugSize,
   };
 }

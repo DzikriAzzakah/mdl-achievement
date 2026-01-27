@@ -1,7 +1,10 @@
 <template>
   <TemplateManageLayout
     :title="pageTitle"
-    :class="isCreateMode && activeStepper === 1 ? 'layout-add-badge' : 'layout-edit-badge'"
+    :class="[
+      isCreateMode ? 'layout-add-badge' : 'layout-edit-badge',
+      activeStepper === 2 ? 'layout-badge--accessibility' : '',
+    ]"
     :active-stepper="isCreateMode ? activeStepper : activeStep"
     :breadcrumbs="breadcrumbs"
     :stepper="isCreateMode ? CREATE_STEPPER : BADGE_TABS_EDIT"
@@ -64,7 +67,7 @@ const { getApiErrorMessage } = useUtility();
 
 // Route params
 const formMode = route.params.formMode as string;
-const badgeId = computed(() => route.params.id?.[0] as string | undefined);
+const badgeId = computed(() => route.params.id as string | undefined);
 
 // Mode flags
 const isCreateMode = computed(() => formMode === 'create');
@@ -89,7 +92,7 @@ definePageMeta({
   auth: { authenticatedOnly: true, navigateUnauthenticatedTo: '/' },
   validate: async (route) => {
     const formMode = route.params.formMode as string;
-    const id = route.params.id?.[0];
+    const id = route.params.id;
 
     if (formMode === 'create' && id) {
       return false;
@@ -541,8 +544,16 @@ onBeforeMount(() => {
   @apply h-screen w-full !bg-gray-25 !m-0;
 }
 
+.empty-layout:has(.layout-add-badge.layout-badge--accessibility) {
+  @apply !bg-white;
+}
+
 .empty-layout:has(.layout-edit-badge) {
-  @apply h-screen w-full !bg-gray-25 !m-0;
+  @apply m-0 h-screen w-full !bg-gray-25;
+}
+
+.empty-layout:has(.layout-edit-badge.layout-badge--accessibility) {
+  @apply !bg-white;
 }
 
 .template-manage {

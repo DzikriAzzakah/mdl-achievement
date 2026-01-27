@@ -1,6 +1,6 @@
 <template>
   <TemplateManageLayout
-    title="Add Certificate"
+    :title="isEditMode ? 'Edit Certificate' : 'Add Certificate'"
     class="layout-add-certificate"
     :active-stepper="activeStepper"
     :breadcrumbs="[]"
@@ -167,8 +167,8 @@
 </template>
 
 <script setup lang="ts">
-import type { ICertificateContentCertificateNumberForm, ICertificateContentCertificateSigneeForm, ICertificateContentEmployeeIdForm, ICertificateContentEventTitleForm, ICertificateContentFullNameForm, ICertificateContentImageForm, ICertificateContentLocationForm, ICertificateContentTextForm, ICertificateContentValidThruForm } from '#achievement/config/types.ts';
-import { postAddCertificate, postUploadAchievementFile } from '#achievement/api/api.ts';
+import type { ICertificateContentCertificateNumberForm, ICertificateContentCertificateSigneeForm, ICertificateContentEmployeeIdForm, ICertificateContentEventTitleForm, ICertificateContentFullNameForm, ICertificateContentImageForm, ICertificateContentLocationForm, ICertificateContentTextForm, ICertificateContentValidThruForm, ICertificateDetailResponseData } from '#achievement/config/types.ts';
+import { getCertificateDetail, patchEditCertificate, postAddCertificate, postUploadAchievementFile } from '#achievement/api/api.ts';
 import Accessibility from '#achievement/components/form/certificate/Accessibility.vue';
 
 import Sidebar from '#achievement/components/form/certificate/Sidebar.vue';
@@ -176,8 +176,8 @@ import Sidebar from '#achievement/components/form/certificate/Sidebar.vue';
 import ZoomableContent from '#achievement/components/ZoomableContent.vue';
 import { useCanvasInteract } from '#achievement/composables/useCanvasInteract';
 
-import { CANVAS_HEIGHT, CANVAS_WIDTH, CREATE_STEPPER, DEFAULT_FONT_FAMILY, TYPE_OPTIONS } from '#achievement/config/constants.ts';
-import { PERMISSION_CREATE, PERMISSION_LIST } from '#achievement/config/featureFlag.ts';
+import { CANVAS_HEIGHT, CANVAS_WIDTH, CREATE_STEPPER, DEFAULT_FONT_FAMILY, FormMode, TYPE_OPTIONS } from '#achievement/config/constants.ts';
+import { PERMISSION_CREATE, PERMISSION_EDIT, PERMISSION_LIST } from '#achievement/config/featureFlag.ts';
 
 import FormLayout from '#achievement/layouts/FormLayout.vue';
 import { buildCertificateCreatePayload, buildContentPayload } from '#achievement/utils/certificatePayloadBuilder';
@@ -186,11 +186,16 @@ import { htmlToImageFile } from '#achievement/utils/htmlToImage';
 import TemplateManageLayout from '#core/components/templates/ManageLayout.vue';
 import UiSwitch from '#ui/components/atoms/switch/index.vue';
 
-import { useMutation } from '@tanstack/vue-query';
+import { useMutation, useQuery } from '@tanstack/vue-query';
 
 import Moveable from 'vue3-moveable';
 
 const { $toast } = useNuxtApp();
+
+const route = useRoute();
+const formMode = computed(() => route.params.formMode as string);
+const isEditMode = computed(() => formMode.value === FormMode.EDIT);
+const routeId = computed(() => route.params.id as string | undefined);
 
 definePageMeta({
   layout: 'empty',
@@ -198,7 +203,7 @@ definePageMeta({
   auth: { authenticatedOnly: true, navigateUnauthenticatedTo: '/' },
   rbac: {
     feature: PERMISSION_LIST,
-    permissions: [PERMISSION_CREATE],
+    permissions: [PERMISSION_CREATE, PERMISSION_EDIT],
   },
 });
 
@@ -216,10 +221,55 @@ const isLoading = ref<boolean>(false);
 const certificateId = ref<number | string | null>(null);
 const uploadedImageMeta = ref<any>(null);
 const currentZoomLevel = ref<number>(1);
+const isLoadingDetail = ref<boolean>(false);
 
 const canvasRef = ref<HTMLElement | null>(null);
 
 const showSafeZone = ref<boolean>(true);
+
+// Fetch certificate detail for edit mode
+useQuery({
+  queryKey: ['get-certificate-detail', routeId],
+  queryFn: async () => {
+    if (!isEditMode.value || !routeId.value) {
+      return null;
+    }
+
+    isLoadingDetail.value = true;
+    showLoading('Loading certificate', 'Please wait while we load the certificate data.');
+
+    try {
+      const response = await getCertificateDetail(Number(routeId.value));
+      const data = response?.data as ICertificateDetailResponseData;
+
+      if (data) {
+        // Set form data from API response
+        store.setFormFromDetail(data);
+        certificateId.value = data.id;
+
+        // Sync uploadedImageMeta with the store's uploadedBackgroundMeta
+        uploadedImageMeta.value = store.uploadedBackgroundMeta;
+      }
+
+      return data;
+    }
+    catch (err) {
+      $toast({
+        variant: 'error',
+        title: 'Error',
+        text: getApiErrorMessage(err as Error) || 'Failed to fetch certificate details.',
+      });
+      router.push({ name: 'achievement' });
+      return null;
+    }
+    finally {
+      isLoadingDetail.value = false;
+      hideLoading();
+    }
+  },
+  enabled: computed(() => isEditMode.value && !!routeId.value),
+  refetchOnMount: 'always',
+});
 
 const {
   moveableRef,
@@ -277,7 +327,7 @@ function isFormDirty(): boolean {
 const isDisabledSubmitBtn = computed(() => {
   if (activeStepper.value === 1) {
     const isPrimaryDataInvalid = !(store.title?.trim() && store.certificate_type?.value && store.image);
-    return isPrimaryDataInvalid || Object.keys(errors.value).length > 0;
+    return isPrimaryDataInvalid || Object.keys(errors.value).length > 0 || isLoadingDetail.value;
   }
 
   return false;
@@ -292,7 +342,7 @@ const buttonLabelSubmit = computed(() => {
     return 'Done';
   }
   if (activeStepper.value === stepper.length - 1) {
-    return 'Add Certificate';
+    return isEditMode.value ? 'Save Certificate' : 'Add Certificate';
   }
   return 'Next';
 });
@@ -492,18 +542,31 @@ const uploadPreviewImage = async (file: File) => {
 const { mutate: submitCertificateForm } = useMutation({
   mutationFn: async (payload: Record<string, any>) => {
     isLoading.value = true;
-    showLoading('Creating certificate', 'Please wait while we create the certificate.');
+    const loadingMessage = isEditMode.value ? 'Updating certificate' : 'Creating certificate';
+    showLoading(loadingMessage, 'Please wait while we process the certificate.');
 
-    const response = await postAddCertificate(payload).catch((err: Error) => {
-      hideLoading();
-      $toast({ variant: 'error', title: 'Error', text: getApiErrorMessage(err as Error) || 'Failed to add certificate.' });
-      throw err;
-    });
+    let response;
+    if (isEditMode.value && certificateId.value) {
+      response = await patchEditCertificate(Number(certificateId.value), payload as any).catch((err: Error) => {
+        hideLoading();
+        $toast({ variant: 'error', title: 'Error', text: getApiErrorMessage(err as Error) || 'Failed to update certificate.' });
+        throw err;
+      });
+    }
+    else {
+      response = await postAddCertificate(payload).catch((err: Error) => {
+        hideLoading();
+        $toast({ variant: 'error', title: 'Error', text: getApiErrorMessage(err as Error) || 'Failed to add certificate.' });
+        throw err;
+      });
+    }
 
     if (response) {
       const { data } = response;
       store.certificateResponse = data;
-      certificateId.value = data?.id || null;
+      if (!isEditMode.value) {
+        certificateId.value = data?.id || null;
+      }
 
       preventLeave.value = false;
       activeStepper.value += 1;
@@ -531,7 +594,7 @@ const handleSubmit = async () => {
       showLoading('Processing certificate', 'Please wait while we prepare the certificate.');
 
       let backgroundUrl: string = '';
-      let backgroundMeta: any = uploadedImageMeta.value;
+      let backgroundMeta: any = uploadedImageMeta.value || store.uploadedBackgroundMeta;
 
       if (store.image instanceof File) {
         const uploadResult = await uploadBackgroundImage(store.image);
@@ -613,8 +676,8 @@ const handleSubmit = async () => {
       submitCertificateForm(payload);
     }
     catch (err) {
-      console.error('Error creating certificate:', err);
-      $toast({ variant: 'error', title: 'Error', text: getApiErrorMessage(err as Error) || 'Failed to create certificate.' });
+      console.error('Error processing certificate:', err);
+      $toast({ variant: 'error', title: 'Error', text: getApiErrorMessage(err as Error) || 'Failed to process certificate.' });
     }
     finally {
       isLoading.value = false;
@@ -622,10 +685,11 @@ const handleSubmit = async () => {
     }
   }
   else {
+    const successMessage = isEditMode.value ? 'Certificate successfully updated.' : 'Certificate successfully added.';
     $toast({
       variant: 'success',
       title: 'Success',
-      text: 'Certificate successfully added.',
+      text: successMessage,
     });
     router.push({ name: 'achievement' });
   }

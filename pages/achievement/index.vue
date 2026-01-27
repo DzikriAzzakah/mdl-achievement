@@ -427,7 +427,7 @@ function handleApplyFilter() {
 
 function handleAddAchievement() {
   if (isCertificates.value) {
-    router.push({ name: 'achievement-add-certificate' });
+    router.push('/achievement/create/certificate');
     return;
   }
   router.push('/achievement/create/badge');
@@ -455,19 +455,16 @@ function handleSort(sort: ISortData) {
 
 function handleDetailItem(item: ICertificate | IBadge) {
   if (isCertificates.value) {
-    console.warn('Detail certificate:', item);
-    // router.push(`/achievement/certificates/${item.id}`);
+    router.push(`/achievement/detail/certificate/${item.id}`);
   }
   else {
-    console.warn('Detail badge:', item);
     router.push(`/achievement/detail/badge/${item.id}`);
   }
 }
 
 function handleEditItem(item: ICertificate | IBadge) {
-  console.warn('Edit item:', item);
   if (isCertificates.value) {
-    // router.push(`/achievement/certificates/edit/${item.id}`);
+    router.push(`/achievement/edit/certificate/${item.id}`);
   }
   else {
     router.push(`/achievement/edit/badge/${item.id}`);

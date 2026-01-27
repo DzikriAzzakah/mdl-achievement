@@ -2,6 +2,8 @@ import type {
   FetchOptions,
   IAchievementUploadResponse,
   IBadgeDetailResponse,
+  ICertificateCreatePayload,
+  ICertificateDetailResponse,
   ICreateResponse,
   IGetListResponse,
   IUUIDResponse,
@@ -103,5 +105,27 @@ export const getSerialNumberUUID = async (
   return useNuxtApp().$apiGateway<IUUIDResponse>('/achievement/api/v1/cms/setup/uuid', {
     ...options,
     method: 'get',
+  });
+};
+
+export const getCertificateDetail = async (
+  id: number,
+  options: FetchOptions = {},
+): Promise<ICertificateDetailResponse> => {
+  return useNuxtApp().$apiGateway<ICertificateDetailResponse>(`/achievement/api/v1/cms/certificates/${id}`, {
+    ...options,
+    method: 'get',
+  });
+};
+
+export const patchEditCertificate = async (
+  id: number,
+  body: ICertificateCreatePayload,
+  options: FetchOptions = {},
+): Promise<ICreateResponse> => {
+  return useNuxtApp().$apiGateway<ICreateResponse>(`/achievement/api/v1/cms/certificates/${id}`, {
+    ...options,
+    body,
+    method: 'patch',
   });
 };
