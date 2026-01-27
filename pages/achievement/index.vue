@@ -430,7 +430,7 @@ function handleAddAchievement() {
     router.push({ name: 'achievement-add-certificate' });
     return;
   }
-  router.push({ name: 'achievement-add-badge' });
+  router.push('/achievement/create/badge');
 }
 
 function onChangeTab(value: string) {

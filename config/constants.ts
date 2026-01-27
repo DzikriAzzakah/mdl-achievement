@@ -68,6 +68,12 @@ export const BADGE_TABS_EDIT = [
   { label: 'Accessibility', value: 'accessibility' },
 ];
 
+export const FormMode = {
+  CREATE: 'create',
+  EDIT: 'edit',
+  VIEW: 'view',
+};
+
 export const CERTIFICATE_IMAGE_FILE_TYPES = ['JPG', 'JPEG', 'PNG', 'WEBP'];
 
 export const CERTIFICATE_IMAGE_MAX_SIZE = 5; // MB

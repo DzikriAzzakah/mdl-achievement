@@ -20,6 +20,7 @@ export interface IUploadedFile {
 }
 
 export interface IUploadedImageMetadata {
+  id?: number;
   image_host?: string;
   full_path?: string;
   file_path?: string;
@@ -32,7 +33,7 @@ export interface IUploadedImageMetadata {
 export interface IBadgePayload {
   title: string;
   description: string;
-  url: string;
+  image_id: number;
 }
 
 export interface ICertificate {

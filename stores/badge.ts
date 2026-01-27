@@ -6,6 +6,7 @@ import { useForm, useIsFormValid } from 'vee-validate';
 export const useBadgeStore = defineStore('badge', () => {
   const detailBadge = ref<IBadgeDetail>();
   const uploadedImageMeta = ref<IUploadedImageMetadata | null>(null);
+  const createdBadgeId = ref<number | null>(null);
 
   const { errors, defineField, handleSubmit, resetForm, values, setValues: setFormValues } = useForm({
     validationSchema: badgeValidationSchema,
@@ -32,6 +33,7 @@ export const useBadgeStore = defineStore('badge', () => {
     detailBadge.value = undefined;
     badgeResponse.value = undefined;
     uploadedImageMeta.value = null;
+    createdBadgeId.value = null;
   };
 
   return {
@@ -41,6 +43,7 @@ export const useBadgeStore = defineStore('badge', () => {
     description,
     image,
     uploadedImageMeta,
+    createdBadgeId,
     handleSubmit,
     $resetAll,
     resetForm,
