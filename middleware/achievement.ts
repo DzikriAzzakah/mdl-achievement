@@ -1,5 +1,5 @@
 import { REMOTE_FEAT_FLAG_KEY } from '#achievement/config/constants';
-import FeatureFlag from '#achievement/config/featureFlag';
+import { FEATURE_ENABLED } from '#achievement/config/featureFlag';
 
 export default defineNuxtRouteMiddleware((to, _) => {
   const auth = useAppAuth();
@@ -14,7 +14,7 @@ export default defineNuxtRouteMiddleware((to, _) => {
   // Check this conditions:
   // 1. Internal feature flag is set (if any)
   // 2. Remote feature flag is set (if any)
-  if (!FeatureFlag.FEATURE_ENABLED || !isRemoteFeatEnabled) {
+  if (!FEATURE_ENABLED || !isRemoteFeatEnabled) {
     return abortNavigation();
   }
 
