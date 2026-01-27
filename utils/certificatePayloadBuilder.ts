@@ -9,7 +9,6 @@ import type {
   ICertificateSafeZone,
 } from '#achievement/config/types';
 
-// Re-export types for backward compatibility
 export type {
   ICertificateBackgroundPayload,
   ICertificateContentPayload,

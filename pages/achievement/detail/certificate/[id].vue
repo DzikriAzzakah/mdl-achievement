@@ -68,7 +68,6 @@ const { isLoading: isLoadingDetail, refetch } = useQuery({
 
     const content = response?.data as ICertificateDetailResponseData;
     if (content) {
-      // Map type string to label
       const typeOption = TYPE_OPTIONS.find(opt => opt.value === content.type);
       const certificateType = typeOption
         ? { label: typeOption.label, value: typeOption.value }

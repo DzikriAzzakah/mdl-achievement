@@ -418,7 +418,6 @@ export interface IUUIDResponse {
   };
 }
 
-// Certificate Payload Types (moved from certificatePayloadBuilder.ts for reusability)
 export interface ICertificateBackgroundPayload {
   id?: number;
   image_host?: string;
@@ -510,7 +509,6 @@ export interface ICertificateCreatePayload {
   contents: ICertificateContentPayload[];
 }
 
-// Certificate Detail Response (GET /certificates/:id)
 export interface ICertificateDetailResponseData extends Omit<ICertificateCreatePayload, 'preview'> {
   id: number;
   preview_url?: string;

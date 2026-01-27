@@ -201,6 +201,19 @@ definePageMeta({
   layout: 'empty',
   middleware: ['app-auth', 'rbac'],
   auth: { authenticatedOnly: true, navigateUnauthenticatedTo: '/' },
+  validate: async (route) => {
+    const formMode = route.params.formMode as string;
+    const id = route.params.id;
+
+    if (formMode === 'create' && id) {
+      return false;
+    }
+
+    if (formMode === 'edit' && !id) {
+      return false;
+    }
+    return ['create', 'edit'].includes(formMode);
+  },
   rbac: {
     feature: PERMISSION_LIST,
     permissions: [PERMISSION_CREATE, PERMISSION_EDIT],
@@ -227,7 +240,6 @@ const canvasRef = ref<HTMLElement | null>(null);
 
 const showSafeZone = ref<boolean>(true);
 
-// Fetch certificate detail for edit mode
 useQuery({
   queryKey: ['get-certificate-detail', routeId],
   queryFn: async () => {
@@ -243,11 +255,9 @@ useQuery({
       const data = response?.data as ICertificateDetailResponseData;
 
       if (data) {
-        // Set form data from API response
         store.setFormFromDetail(data);
         certificateId.value = data.id;
 
-        // Sync uploadedImageMeta with the store's uploadedBackgroundMeta
         uploadedImageMeta.value = store.uploadedBackgroundMeta;
       }
 

@@ -65,27 +65,21 @@ const { showLoading, hideLoading } = useGlobalLoading();
 const { preventLeave } = useConfirmLeave();
 const { getApiErrorMessage } = useUtility();
 
-// Route params
 const formMode = route.params.formMode as string;
 const badgeId = computed(() => route.params.id as string | undefined);
 
-// Mode flags
 const isCreateMode = computed(() => formMode === 'create');
 const isEditMode = computed(() => formMode === 'edit');
 
-// Create mode state
 const activeStepper = ref<number>(1);
 
-// Edit mode state
 const activeStep = ref<TStep>('badge-configuration');
 const isFormInitialized = ref(false);
 
-// Shared state
 const isLoading = ref<boolean>(false);
 const initialImage = ref<string | null>(null);
 const initialForm = ref<Record<string, any>>({});
 
-// Dynamic page meta based on mode
 definePageMeta({
   layout: 'empty',
   middleware: ['app-auth', 'rbac'],
@@ -121,12 +115,10 @@ definePageMeta({
   },
 });
 
-// Dynamic RBAC permissions
 const rbacPermissions = computed(() => {
   return isCreateMode.value ? [PERMISSION_CREATE] : [PERMISSION_EDIT];
 });
 
-// Use RBAC
 const { checkPermission } = useRBAC();
 watch(() => rbacPermissions.value, (permissions) => {
   if (!checkPermission(PERMISSION_LIST, permissions)) {
@@ -134,7 +126,6 @@ watch(() => rbacPermissions.value, (permissions) => {
   }
 }, { immediate: true });
 
-// Computed properties
 const pageTitle = computed(() => isCreateMode.value ? 'Add Badge' : 'Edit Badge');
 
 const breadcrumbs = computed(() => {
@@ -179,7 +170,6 @@ const isDisabledSubmitBtn = computed((): boolean => {
     return false;
   }
 
-  // Edit mode
   if (isAllRequiredFilled && isFormChanged()) {
     return false;
   }
@@ -209,7 +199,6 @@ const buttonLabelSubmit = computed((): string => {
   return 'Save Badge Information';
 });
 
-// Functions
 function isFormDirty(): boolean {
   if (isCreateMode.value) {
     return !!(
@@ -290,7 +279,6 @@ const uploadImage = async (file: File): Promise<{ imageUrl: string; imageId: num
   }
 };
 
-// Create mode mutations
 const { mutate: submitBadgeForm } = useMutation({
   mutationFn: async (payload: IBadgePayload) => {
     isLoading.value = true;
@@ -307,7 +295,6 @@ const { mutate: submitBadgeForm } = useMutation({
       const data = response.data as IBadgeResponse;
       store.badgeResponse = data;
 
-      // Store the created badge ID
       if (data?.id) {
         store.createdBadgeId = data.id;
       }
@@ -322,7 +309,6 @@ const { mutate: submitBadgeForm } = useMutation({
   },
 });
 
-// Update existing badge mutation (used when user goes back from step 2)
 const { mutate: updateCreatedBadge } = useMutation({
   mutationFn: async ({ id, payload }: { id: number; payload: Record<string, any>; }) => {
     isLoading.value = true;
@@ -345,7 +331,6 @@ const { mutate: updateCreatedBadge } = useMutation({
   },
 });
 
-// Edit mode query
 const { isLoading: isLoadingEdit, refetch, isFetchedAfterMount } = useQuery({
   queryKey: ['get-detail-badge-edit', badgeId],
   queryFn: async () => {
@@ -389,7 +374,6 @@ const { isLoading: isLoadingEdit, refetch, isFetchedAfterMount } = useQuery({
   refetchOnMount: 'always',
 });
 
-// Edit mode mutation
 const { mutate: editBadgeForm } = useMutation({
   mutationFn: async (payload: Record<string, any>) => {
     if (!badgeId.value) {
@@ -429,7 +413,6 @@ const { mutate: editBadgeForm } = useMutation({
 
 const handleSubmit = async (): Promise<void> => {
   if (isCreateMode.value) {
-    // Create mode logic
     if (activeStepper.value === 1) {
       let imageId: number | undefined;
 
@@ -442,9 +425,7 @@ const handleSubmit = async (): Promise<void> => {
       }
 
       if (imageId) {
-        // Check if badge was already created (user clicked previous from step 2)
         if (createdBadgeId.value) {
-          // Update existing badge instead of creating a new one
           const payload: Record<string, any> = {
             title: store.title,
             description: store.description,
@@ -454,7 +435,6 @@ const handleSubmit = async (): Promise<void> => {
           updateCreatedBadge({ id: createdBadgeId.value, payload });
         }
         else {
-          // Create new badge
           const payload: IBadgePayload = {
             title: store.title,
             description: store.description,
@@ -475,7 +455,6 @@ const handleSubmit = async (): Promise<void> => {
     }
   }
   else {
-    // Edit mode logic
     const payload: Record<string, any> = {};
 
     if (store.image !== initialImage.value) {
@@ -511,12 +490,10 @@ const handleSubmit = async (): Promise<void> => {
   }
 };
 
-// Provide refetch for child components (edit mode)
 if (isEditMode.value) {
   provide('refetch-detail', refetch);
 }
 
-// Watch form changes for edit mode
 watch(
   () => [getForm.value],
   () => {
