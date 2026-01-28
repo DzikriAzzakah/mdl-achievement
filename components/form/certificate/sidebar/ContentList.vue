@@ -121,7 +121,7 @@ import ContentImage from '#achievement/components/form/certificate/contents/Cont
 import ContentQRCode from '#achievement/components/form/certificate/contents/ContentQRCode.vue';
 import ContentTextBase from '#achievement/components/form/certificate/contents/ContentTextBase.vue';
 import { isCertificateNumberContent, isQRCodeContent, isTextBasedContent } from '#achievement/config/types.ts';
-import UiButton from '#ui/components/atoms/button/index.vue';
+import { UiButton } from '@mydigilearn-saas/web-ui';
 
 interface Props {
   contents: ICertificateContentForm[];

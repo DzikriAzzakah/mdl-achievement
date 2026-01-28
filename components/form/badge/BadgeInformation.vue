@@ -77,7 +77,7 @@
           <div>
             <div
               v-if="imagePreview"
-              class="w-[500px] h-[500px]"
+              class="flex items-center justify-center w-[500px] h-[500px]"
             >
               <img
                 :src="imagePreview"

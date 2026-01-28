@@ -315,11 +315,6 @@ export interface IBadge {
   updated_at: string;
 }
 
-export interface ISortData {
-  key: string;
-  type: string;
-}
-
 export interface IBadgeForm {
   title: string;
   description: string;

@@ -55,7 +55,7 @@ export interface ICertificateContentMetadataPayload {
   isAspectRatioLocked?: boolean;
 }
 
-export function buildBackgroundPayload(
+function buildBackgroundPayload(
   uploadedMeta?: IAchievementUploadResponse['data'] | null,
 ): ICertificateBackgroundPayload {
   if (uploadedMeta) {
@@ -74,7 +74,7 @@ export function buildBackgroundPayload(
   return {};
 }
 
-export function buildPreviewPayload(
+function buildPreviewPayload(
   uploadedMeta?: IAchievementUploadResponse['data'] | null,
 ): ICertificatePreviewPayload {
   if (uploadedMeta) {
@@ -93,7 +93,7 @@ export function buildPreviewPayload(
   return {};
 }
 
-export function buildMetadataPayload(safeZone: ICertificateSafeZone): ICertificateMetadataPayload {
+function buildMetadataPayload(safeZone: ICertificateSafeZone): ICertificateMetadataPayload {
   return {
     safe_zone: { ...safeZone },
     canvas_width: 842,

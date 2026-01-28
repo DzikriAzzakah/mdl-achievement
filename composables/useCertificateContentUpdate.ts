@@ -7,7 +7,7 @@ export function useCertificateContentUpdate<T extends ICertificateContentForm>(
   getCurrentItem: () => T,
   emit: (event: 'update:contentItem', value: T) => void,
 ) {
-  const updateValue = (value: string | undefined) => {
+  const updateValue = (value: string | undefined): void => {
     const contentItem = getCurrentItem();
     const updatedItem = {
       ...contentItem,
@@ -85,14 +85,6 @@ export function useCertificateContentUpdate<T extends ICertificateContentForm>(
     updateMetadataField('isAspectRatioLocked' as any, value);
   };
 
-  const updateWidthMode = (value: SizeMode) => {
-    updateMetadataField('width_mode' as any, value);
-  };
-
-  const updateHeightMode = (value: SizeMode) => {
-    updateMetadataField('height_mode' as any, value);
-  };
-
   const updateWidthModeWithValue = (mode: SizeMode, width: number | 'fit-content', unlockAspectRatio?: boolean) => {
     const fields: Record<string, any> = {
       width_mode: mode,
@@ -145,13 +137,9 @@ export function useCertificateContentUpdate<T extends ICertificateContentForm>(
     updateVertical,
     updateHorizontal,
     updateAspectRatioLock,
-    updateWidthMode,
-    updateHeightMode,
     updateWidthModeWithValue,
     updateHeightModeWithValue,
     updateLocation,
     updateDateFormat,
-    updateMetadataField,
-    updateMultipleMetadataFields,
   };
 }

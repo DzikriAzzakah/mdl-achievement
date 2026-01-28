@@ -121,7 +121,6 @@ export function useCanvasInteract(options: UseCanvasInteractOptions) {
   );
 
   return {
-
     moveableRef,
     targetRef,
 

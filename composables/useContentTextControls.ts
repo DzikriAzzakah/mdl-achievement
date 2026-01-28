@@ -32,15 +32,12 @@ export function useContentTextControls<T extends ICertificateContentForm>(
   props: ContentTextControlsProps<T>,
   emit: (event: 'update:contentItem' | 'delete' | 'headerClick', value?: any) => void,
 ) {
-  const colorPickerInput = ref<HTMLInputElement | null>(null);
-
   const contentConfig = computed(() => CONTENT_TYPE_CONFIGS[props.contentItem.type]);
   const isCollapsed = computed(() => !props.isExpanded);
 
   const updateHandlers = useCertificateContentUpdate(() => props.contentItem, emit as any);
 
   const fontOptions = FONT_OPTIONS;
-  const alignmentOptions = ALIGNMENT_OPTIONS;
   const sizeModeOptions = SIZE_MODE_OPTIONS as SizeModeOption[];
 
   const loadFont = (fontUrl: string) => {
@@ -175,10 +172,6 @@ export function useContentTextControls<T extends ICertificateContentForm>(
     }
   };
 
-  const handleDelete = () => {
-    emit('delete', props.index);
-  };
-
   const isAspectRatioLocked = computed(() => (props.contentItem.metadata as any).isAspectRatioLocked ?? false);
   const canLockAspectRatio = computed(() => widthMode.value === 'fix' && heightMode.value === 'fix');
 
@@ -219,25 +212,9 @@ export function useContentTextControls<T extends ICertificateContentForm>(
     updateHandlers.updateValue(value);
   };
 
-  const openColorPicker = () => {
-    colorPickerInput.value?.click();
-  };
-
-  const handleColorChange = (event: Event) => {
-    const input = event.target as HTMLInputElement;
-    const color = input.value.replace('#', '');
-    updateHandlers.updateColor(color);
-  };
-
   return {
-    colorPickerInput,
-
     contentConfig,
     isCollapsed,
-    fontOptions,
-    alignmentOptions,
-    sizeModeOptions,
-    availableFontWeights,
     fontWeightOptions,
     selectedFontObject,
     selectedFontWeightObject,
@@ -253,15 +230,12 @@ export function useContentTextControls<T extends ICertificateContentForm>(
     handleFontWeightUpdate,
     handleFontSizeUpdate,
     handleAlignmentUpdate,
-    handleDelete,
     toggleAspectRatioLock,
     handleWidthUpdate,
     handleHeightUpdate,
     handleWidthModeChange,
     handleHeightModeChange,
     handleValueUpdate,
-    openColorPicker,
-    handleColorChange,
 
     loadFont,
     getClosestFontWeight,

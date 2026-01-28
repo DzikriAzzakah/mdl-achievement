@@ -26,7 +26,7 @@
     @on-change="handleTabChange"
   >
     <template #content>
-      <UiAtomsLoading
+      <UiLoading
         v-if="isLoadingEdit"
         class="h-[calc(100vh-200px)]"
       />
@@ -48,7 +48,7 @@ import { PERMISSION_CREATE, PERMISSION_EDIT, PERMISSION_FEATURE_KEY, PERMISSION_
 import TemplateManageLayout from '#core/components/templates/ManageLayout.vue';
 import { PermissionsCoreSegmentKey } from '#core/config/constants.ts';
 import { CMS_LIVE_EVENT_v2 } from '#core/config/permissions.ts';
-import UiAtomsLoading from '#ui/components/atoms/loading/index.vue';
+import { UiLoading } from '@mydigilearn-saas/web-ui';
 
 import { useMutation, useQuery } from '@tanstack/vue-query';
 

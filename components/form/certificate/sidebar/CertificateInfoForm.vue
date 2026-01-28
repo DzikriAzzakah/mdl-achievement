@@ -53,14 +53,14 @@
           class="flex flex-col gap-3 w-full"
           required
         >
-          <UIFileUploadFiles
+          <UiFileUploadFiles
             v-if="image"
             :files="displayUploadedImage"
             :enable-remove="true"
             @remove-file="handleRemoveImage"
             @cancel-fetch="handleCancelFetchImage"
           />
-          <UIFileUploadCompact
+          <UiFileUploadCompact
             v-else
             id="upload-image"
             :supported-file-types="['JPG', 'JPEG', 'PNG', 'WEBP']"
@@ -82,7 +82,7 @@
                 </div>
               </div>
             </template>
-          </UIFileUploadCompact>
+          </UiFileUploadCompact>
         </UiFormGroup>
       </div>
     </div>
@@ -90,11 +90,7 @@
 </template>
 
 <script setup lang="ts">
-import UiInput from '#ui/components/atoms/input/index.vue';
-import UIFileUploadCompact from '#ui/components/molecules/fileupload/compact/index.vue';
-import UIFileUploadFiles from '#ui/components/molecules/fileupload/files/index.vue';
-import UiFormGroup from '#ui/components/molecules/form-group/index.vue';
-import UiSelect from '#ui/components/molecules/select/index.vue';
+import { UiFileUploadCompact, UiFileUploadFiles, UiFormGroup, UiInput, UiSelect } from '@mydigilearn-saas/web-ui';
 
 interface Props {
   errors: Record<string, any>;

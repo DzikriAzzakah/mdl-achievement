@@ -184,7 +184,7 @@ import { buildCertificateCreatePayload, buildContentPayload } from '#achievement
 import { generateCertificateTemplate } from '#achievement/utils/certificateTemplateGenerator';
 import { htmlToImageFile } from '#achievement/utils/htmlToImage';
 import TemplateManageLayout from '#core/components/templates/ManageLayout.vue';
-import UiSwitch from '#ui/components/atoms/switch/index.vue';
+import { UiSwitch } from '@mydigilearn-saas/web-ui';
 
 import { useMutation, useQuery } from '@tanstack/vue-query';
 

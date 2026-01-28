@@ -118,8 +118,10 @@
 
 <script setup lang="ts">
 import type { ICertificateSafeZone } from '#achievement/config/types.ts';
-import UiInput from '#ui/components/atoms/input/index.vue';
-import UiFormGroup from '#ui/components/molecules/form-group/index.vue';
+import {
+  UiFormGroup,
+  UiInput,
+} from '@mydigilearn-saas/web-ui';
 
 interface Props {
   safeZone: ICertificateSafeZone;

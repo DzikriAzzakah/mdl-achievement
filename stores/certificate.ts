@@ -20,7 +20,7 @@ import { useForm, useIsFormValid } from 'vee-validate';
 export const useCertificateStore = defineStore('certificate', () => {
   const detailCertificate = ref<ICertificateDetail>();
 
-  const { errors, defineField, handleSubmit, resetForm, values, setValues: setFormValues } = useForm({
+  const { errors, defineField, resetForm, values, setValues: setFormValues } = useForm({
     validationSchema: certificateValidationSchema,
     initialValues: {
       title: '',
@@ -41,7 +41,6 @@ export const useCertificateStore = defineStore('certificate', () => {
     ...values,
   }));
 
-  const isValid = useIsFormValid();
   const certificateResponse = ref<ICertificateResponse>();
 
   const [title] = defineField('title');
@@ -68,26 +67,6 @@ export const useCertificateStore = defineStore('certificate', () => {
     contents.value = [...contents.value, newContent];
     selectedContentKey.value = key;
     return key;
-  }
-
-  function updateContent(key: string, data: Partial<ICertificateContentForm>): void {
-    const index = contents.value.findIndex(c => c.key === key);
-    if (index === -1) {
-      console.error(`Content with key "${key}" not found`);
-      return;
-    }
-
-    const updatedContents = [...contents.value];
-    updatedContents[index] = {
-      ...updatedContents[index],
-      ...data,
-      metadata: {
-        ...updatedContents[index].metadata,
-        ...(data.metadata || {}),
-      },
-    } as ICertificateContentForm;
-
-    contents.value = updatedContents;
   }
 
   function updateContentByIndex(index: number, data: ICertificateContentForm): void {
@@ -158,10 +137,6 @@ export const useCertificateStore = defineStore('certificate', () => {
 
       contents.value = updatedContents;
     }
-  }
-
-  function setSelectedContentKey(key: string | null): void {
-    selectedContentKey.value = key;
   }
 
   function toggleContentSelection(key: string): void {
@@ -389,24 +364,15 @@ export const useCertificateStore = defineStore('certificate', () => {
     uploadedBackgroundMeta,
 
     getForm,
-    isValid,
 
-    handleSubmit,
     resetForm,
     setFormValues,
     $resetAll,
-
     addContent,
-    updateContent,
     updateContentByIndex,
     deleteContent,
-
     updateSafeZone,
-
-    setSelectedContentKey,
     toggleContentSelection,
-
     setFormFromDetail,
-    mapContentPayloadToForm,
   };
 });

@@ -8,7 +8,7 @@ export const useBadgeStore = defineStore('badge', () => {
   const uploadedImageMeta = ref<IUploadedImageMetadata | null>(null);
   const createdBadgeId = ref<number | null>(null);
 
-  const { errors, defineField, handleSubmit, resetForm, values, setValues: setFormValues } = useForm({
+  const { errors, defineField, resetForm, values, setValues: setFormValues } = useForm({
     validationSchema: badgeValidationSchema,
     initialValues: {
       title: '',
@@ -21,7 +21,6 @@ export const useBadgeStore = defineStore('badge', () => {
     ...values,
   }));
 
-  const isValid = useIsFormValid();
   const badgeResponse = ref<IBadgeResponse>();
 
   const [title] = defineField('title');
@@ -44,12 +43,10 @@ export const useBadgeStore = defineStore('badge', () => {
     image,
     uploadedImageMeta,
     createdBadgeId,
-    handleSubmit,
     $resetAll,
     resetForm,
     getForm,
     setFormValues,
-    isValid,
     badgeResponse,
   };
 });

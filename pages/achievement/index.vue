@@ -113,7 +113,7 @@
           label="Created"
           class="mb-2"
         >
-          <UiDatePicker
+          <UiDatepicker
             v-model="filter.created"
             :date-picker-options="{
               placeholder: 'Select date time',
@@ -124,7 +124,7 @@
         </UiFormGroup>
 
         <UiFormGroup label="Last Updated">
-          <UiDatePicker
+          <UiDatepicker
             v-model="filter.lastUpdate"
             :date-picker-options="{
               placeholder: 'Select date time',
@@ -137,12 +137,12 @@
     </template>
 
     <template #table>
-      <UiSmarttable
+      <UiSmartTable
         :columns="columns"
         :rows="tableData"
         :loading="isLoadingData"
         :pagination="pagination"
-        :sort="sortOrder"
+        :sort="nonUndefinedSort"
         :empty-title="emptyTitle"
         :empty-description="emptyDescription"
         enable-numbering
@@ -155,7 +155,7 @@
           #body-certificate_type="{ item }"
         >
           <p class="capitalize">
-            {{ item.certificate_type }}
+            {{ (item as ICertificate).certificate_type }}
           </p>
         </template>
 
@@ -209,14 +209,13 @@
             />
           </div>
         </template>
-      </UiSmarttable>
+      </UiSmartTable>
     </template>
   </TemplateListLayout>
 </template>
 
 <script setup lang="ts">
-import type { IBadge, ICertificate, IFilterAchievement, ISortData } from '#achievement/config/types.ts';
-import type { TabItem } from '#ui/components/molecules/tabs/index.vue';
+import type { IBadge, ICertificate, IFilterAchievement } from '#achievement/config/types.ts';
 
 import { deleteBadge, deleteCertificate, getBadgeList, getCertificateList } from '#achievement/api/api.ts';
 
@@ -224,15 +223,18 @@ import { ACCESSIBILITY_OPTIONS, BADGE_COLUMNS, CERTIFICATE_COLUMNS, TYPE_OPTIONS
 import { PERMISSION_CREATE, PERMISSION_DELETE, PERMISSION_DETAIL, PERMISSION_EDIT, PERMISSION_LIST } from '#achievement/config/featureFlag.ts';
 
 import TemplateListLayout from '#core/components/templates/ListLayout.vue';
-import UiBadge from '#ui/components/atoms/badge/index.vue';
-import UiButton from '#ui/components/atoms/button/index.vue';
-import UiCheckbox from '#ui/components/atoms/checkbox/index.vue';
-import UiInput from '#ui/components/atoms/input/index.vue';
-import UiAdvanceFilter from '#ui/components/molecules/advance-filter/index.vue';
-import UiDatePicker from '#ui/components/molecules/datepicker/index.vue';
-import UiFormGroup from '#ui/components/molecules/form-group/index.vue';
-import UiSelect from '#ui/components/molecules/select/index.vue';
-import UiSmarttable from '#ui/components/molecules/smart-table/index.vue';
+import {
+  type ISmartTableSortData,
+  UiAdvanceFilter,
+  UiBadge,
+  UiButton,
+  UiCheckbox,
+  UiDatepicker,
+  UiFormGroup,
+  UiInput,
+  UiSelect,
+  UiSmartTable,
+} from '@mydigilearn-saas/web-ui';
 
 import { useMutation, useQuery } from '@tanstack/vue-query';
 import dayjs from 'dayjs';
@@ -265,7 +267,7 @@ const breadcrumbs = [
   { text: 'Achievement', href: '/achievement', active: true },
 ];
 
-const TABS_CONFIG: TabItem[] = [
+const TABS_CONFIG = [
   { label: 'Certificates', value: 'certificates' },
   { label: 'Badges', value: 'badges' },
 ];
@@ -281,10 +283,8 @@ const filter = ref<IFilterAchievement>({
   lastUpdate: '',
 });
 
-const sortOrder = ref<ISortData>({
-  key: '',
-  type: '',
-});
+const sortOrder = ref<ISmartTableSortData | undefined>(undefined);
+const nonUndefinedSort = computed<ISmartTableSortData>(() => sortOrder.value ?? ({} as ISmartTableSortData));
 
 const pagination = ref({
   currentPage: 1,
@@ -449,7 +449,7 @@ function handlePage(page = 1) {
   pagination.value.currentPage = page;
 }
 
-function handleSort(sort: ISortData) {
+function handleSort(sort: ISmartTableSortData | undefined) {
   sortOrder.value = sort;
 }
 
