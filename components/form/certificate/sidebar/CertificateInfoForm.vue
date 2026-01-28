@@ -73,7 +73,7 @@
             @modified="handleChangeImage"
           >
             <template #content>
-              <div class="ui-upload-compact__content">
+              <div class="text-xs font-medium">
                 <div class="text-gray-900">
                   Upload File
                 </div>

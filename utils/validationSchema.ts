@@ -28,10 +28,6 @@ export const certificateValidationSchema = yup.object().shape({
     .string()
     .required('Title is required')
     .max(255, 'Title must be at most 255 characters'),
-  description: yup
-    .string()
-    .required('Description is required')
-    .max(1000, 'Description must be at most 1000 characters'),
   certificate_type: yup
     .object()
     .shape({

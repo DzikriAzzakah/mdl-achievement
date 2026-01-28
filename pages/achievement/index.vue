@@ -146,8 +146,9 @@
         :empty-title="emptyTitle"
         :empty-description="emptyDescription"
         enable-numbering
+        enable-pagination
         stickyheader
-        @on-page="handlePage"
+        @update:page="pagination.currentPage = $event"
         @on-sort="handleSort"
       >
         <template

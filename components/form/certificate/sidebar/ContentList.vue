@@ -36,48 +36,15 @@
           v-for="(content, idx) in contents"
           :key="content.key"
         >
-          <ContentImage
-            v-if="content.type === 'image' || content.type === 'sertificate_signee'"
+          <component
+            :is="getContentComponent(content.type)"
             :content-item="content"
             :index="idx"
             :is-expanded="isContentExpanded(content.key)"
             :safe-zone-width="safeZoneWidth"
             :safe-zone-height="safeZoneHeight"
             @delete="$emit('deleteContent', idx)"
-            @update:content-item="(updated) => $emit('updateContent', idx, updated)"
-            @header-click="$emit('contentClick', content.key)"
-          />
-          <ContentQRCode
-            v-else-if="isQRCodeContent(content)"
-            :content-item="content"
-            :index="idx"
-            :is-expanded="isContentExpanded(content.key)"
-            :safe-zone-width="safeZoneWidth"
-            :safe-zone-height="safeZoneHeight"
-            @delete="$emit('deleteContent', idx)"
-            @update:content-item="(updated) => $emit('updateContent', idx, updated)"
-            @header-click="$emit('contentClick', content.key)"
-          />
-          <ContentCertificateNumber
-            v-else-if="isCertificateNumberContent(content)"
-            :content-item="content"
-            :index="idx"
-            :is-expanded="isContentExpanded(content.key)"
-            :safe-zone-width="safeZoneWidth"
-            :safe-zone-height="safeZoneHeight"
-            @delete="$emit('deleteContent', idx)"
-            @update:content-item="(updated) => $emit('updateContent', idx, updated)"
-            @header-click="$emit('contentClick', content.key)"
-          />
-          <ContentTextBase
-            v-else-if="isTextBasedContent(content) && !isCertificateNumberContent(content)"
-            :content-item="content"
-            :index="idx"
-            :is-expanded="isContentExpanded(content.key)"
-            :safe-zone-width="safeZoneWidth"
-            :safe-zone-height="safeZoneHeight"
-            @delete="$emit('deleteContent', idx)"
-            @update:content-item="(updated) => $emit('updateContent', idx, updated)"
+            @update:content-item="(updated: ICertificateContentForm) => $emit('updateContent', idx, updated)"
             @header-click="$emit('contentClick', content.key)"
           />
         </template>
@@ -120,7 +87,6 @@ import ContentCertificateNumber from '#achievement/components/form/certificate/c
 import ContentImage from '#achievement/components/form/certificate/contents/ContentImage.vue';
 import ContentQRCode from '#achievement/components/form/certificate/contents/ContentQRCode.vue';
 import ContentTextBase from '#achievement/components/form/certificate/contents/ContentTextBase.vue';
-import { isCertificateNumberContent, isQRCodeContent, isTextBasedContent } from '#achievement/config/types.ts';
 import { UiButton } from '@mydigilearn-saas/web-ui';
 
 interface Props {
@@ -140,7 +106,6 @@ defineEmits<{
 }>();
 
 const isContentListOpen = defineModel<boolean>('isContentListOpen', { default: false });
-
 const isCollapsed = ref<boolean>(false);
 
 const availableContentTypes = [
@@ -155,6 +120,23 @@ const availableContentTypes = [
   { type: 'qr_code', label: 'QR Code', icon: 'mdi:qrcode' },
   { type: 'valid_thru', label: 'Certificate Valid Thru', icon: 'mdi:code-tags' },
 ];
+
+const COMPONENT_MAP: Record<string, any> = {
+  image: ContentImage,
+  sertificate_signee: ContentImage,
+  qr_code: ContentQRCode,
+  certificate_number: ContentCertificateNumber,
+  text: ContentTextBase,
+  fullname: ContentTextBase,
+  employee_id: ContentTextBase,
+  event_title: ContentTextBase,
+  location: ContentTextBase,
+  valid_thru: ContentTextBase,
+};
+
+const getContentComponent = (type: string) => {
+  return COMPONENT_MAP[type] || ContentTextBase;
+};
 
 const isContentExpanded = (contentKey: string) => {
   return props.selectedContentKey === contentKey;

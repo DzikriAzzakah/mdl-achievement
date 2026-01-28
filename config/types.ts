@@ -279,7 +279,6 @@ export type ICertificateContentForm =
 
 export interface ICertificateForm {
   title: string;
-  description: string;
   certificate_type: { label: string; value: string; };
   image: File | string | null;
   contents: ICertificateContentForm[];
@@ -289,7 +288,6 @@ export interface ICertificateForm {
 export interface ICertificateDetail {
   id: number;
   title: string;
-  description?: string;
   certificate_type: { label: string; value: string; };
   image_url?: string;
   created_at?: string;

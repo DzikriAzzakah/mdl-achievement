@@ -664,7 +664,15 @@ const handleSubmit = async () => {
         const timestamp = Date.now();
         const uniqueFileName = `preview-${sanitizedTitle}-${timestamp}.png`;
 
-        const previewFile = await htmlToImageFile(template, uniqueFileName);
+        const previewTemplate = generateCertificateTemplate({
+          backgroundUrl,
+          contents: store.contents,
+          safeZone: store.safe_zone,
+          contentImageUrls,
+          useActualUrls: true,
+        });
+
+        const previewFile = await htmlToImageFile(previewTemplate, uniqueFileName);
         const previewUploadResult = await uploadPreviewImage(previewFile);
         previewMeta = previewUploadResult?.meta;
       }

@@ -1,7 +1,6 @@
 import type { ICertificateContentForm, SizeMode } from '#achievement/config/types';
 import { useCertificateContentUpdate } from '#achievement/composables/useCertificateContentUpdate';
 import {
-  ALIGNMENT_OPTIONS,
   CANVAS_HEIGHT,
   CANVAS_WIDTH,
   FONT_OPTIONS,

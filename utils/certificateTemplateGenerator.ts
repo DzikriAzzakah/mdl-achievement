@@ -13,6 +13,7 @@ import type {
   ICertificateSafeZone,
 } from '#achievement/config/types';
 import { CANVAS_HEIGHT, CANVAS_WIDTH, DEFAULT_FONT_FAMILY, FONT_OPTIONS } from '#achievement/config/constants';
+import { generateQRCodeDataUrl } from './qrCodeGenerator';
 
 export interface ICertificateTemplateOptions {
   backgroundUrl: string;
@@ -255,11 +256,15 @@ function generateImageContentHTML(
         </div>`;
 }
 
-function generateQRCodeContentHTML(content: ICertificateContentQRCodeForm): string {
+function generateQRCodeContentHTML(content: ICertificateContentQRCodeForm, useActualUrls?: boolean): string {
   const className = generateClassName(content.key);
 
+  const qrSrc = useActualUrls
+    ? generateQRCodeDataUrl(content, content.value || 'https://example.com')
+    : '{{qr_code_url}}';
+
   return `        <div class="${className}">
-            <img src="{{qr_code_url}}" alt="QR Code">
+            <img src="${qrSrc}" alt="QR Code">
         </div>`;
 }
 
@@ -289,7 +294,7 @@ export function generateCertificateTemplate(options: ICertificateTemplateOptions
       return generateImageContentHTML(content, useActualUrls, contentImageUrls);
     }
     if (isQRCodeContent(content)) {
-      return generateQRCodeContentHTML(content);
+      return generateQRCodeContentHTML(content, useActualUrls);
     }
     return '';
   }).join('\n\n');

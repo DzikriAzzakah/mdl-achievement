@@ -1,7 +1,7 @@
 import type { IBadgeDetail, IBadgeForm, IBadgeResponse, IUploadedImageMetadata } from '#achievement/config/types.ts';
 import { badgeValidationSchema } from '#achievement/utils/validationSchema.ts';
 import { defineStore } from 'pinia';
-import { useForm, useIsFormValid } from 'vee-validate';
+import { useForm } from 'vee-validate';
 
 export const useBadgeStore = defineStore('badge', () => {
   const detailBadge = ref<IBadgeDetail>();

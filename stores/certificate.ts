@@ -15,7 +15,7 @@ import { TYPE_OPTIONS } from '#achievement/config/constants.ts';
 import { createContent, generateContentKey } from '#achievement/utils/contentFactory';
 import { certificateValidationSchema } from '#achievement/utils/validationSchema.ts';
 import { defineStore } from 'pinia';
-import { useForm, useIsFormValid } from 'vee-validate';
+import { useForm } from 'vee-validate';
 
 export const useCertificateStore = defineStore('certificate', () => {
   const detailCertificate = ref<ICertificateDetail>();
@@ -24,7 +24,6 @@ export const useCertificateStore = defineStore('certificate', () => {
     validationSchema: certificateValidationSchema,
     initialValues: {
       title: '',
-      description: '',
       certificate_type: { label: '', value: '' },
       image: null,
       contents: [],
@@ -44,7 +43,6 @@ export const useCertificateStore = defineStore('certificate', () => {
   const certificateResponse = ref<ICertificateResponse>();
 
   const [title] = defineField('title');
-  const [description] = defineField('description');
   const [certificate_type] = defineField('certificate_type');
   const [image] = defineField('image');
   const [contents] = defineField('contents');
@@ -183,7 +181,6 @@ export const useCertificateStore = defineStore('certificate', () => {
 
     setFormValues({
       title: data.title || '',
-      description: '',
       certificate_type: certificateType,
       image: imageUrl,
       contents: mappedContents,
@@ -354,7 +351,6 @@ export const useCertificateStore = defineStore('certificate', () => {
     detailCertificate,
     errors,
     title,
-    description,
     certificate_type,
     image,
     contents,
