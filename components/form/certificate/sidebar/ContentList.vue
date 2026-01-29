@@ -43,9 +43,9 @@
             :is-expanded="isContentExpanded(content.key)"
             :safe-zone-width="safeZoneWidth"
             :safe-zone-height="safeZoneHeight"
-            @delete="$emit('deleteContent', idx)"
-            @update:content-item="(updated: ICertificateContentForm) => $emit('updateContent', idx, updated)"
-            @header-click="$emit('contentClick', content.key)"
+            @delete="emit('deleteContent', idx)"
+            @update:content-item="(updated: ICertificateContentForm) => emit('updateContent', idx, updated)"
+            @header-click="emit('contentClick', content.key)"
           />
         </template>
       </div>
@@ -65,7 +65,7 @@
           :icon="contentType.icon"
           variant="transparent"
           class="text-start"
-          @click="$emit('addContent', contentType.type)"
+          @click="emit('addContent', contentType.type)"
         >
           {{ contentType.label }}
         </UiButton>
@@ -95,10 +95,9 @@ interface Props {
   safeZoneWidth: number;
   safeZoneHeight: number;
 }
-
 const props = defineProps<Props>();
 
-defineEmits<{
+const emit = defineEmits<{
   addContent: [type: string];
   deleteContent: [index: number];
   updateContent: [index: number, updated: ICertificateContentForm];

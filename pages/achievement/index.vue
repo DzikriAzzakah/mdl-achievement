@@ -446,10 +446,6 @@ function onChangeTab(value: string) {
   };
 }
 
-function handlePage(page = 1) {
-  pagination.value.currentPage = page;
-}
-
 function handleSort(sort: ISmartTableSortData | undefined) {
   sortOrder.value = sort;
 }

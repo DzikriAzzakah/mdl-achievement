@@ -57,6 +57,11 @@ export const CREATE_STEPPER = [
   { label: 'Accessibility', value: 2 },
 ];
 
+export const CERTIFICATE_TABS_EDIT = [
+  { label: 'Configuration', value: 'certificate-configuration' },
+  { label: 'Accessibility', value: 'accessibility' },
+];
+
 export const BADGE_TABS = [
   { label: 'Configuration', value: 'badge-configuration' },
   { label: 'Badge', value: 'badge-image' },

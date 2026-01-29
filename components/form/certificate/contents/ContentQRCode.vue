@@ -1,9 +1,8 @@
 <template>
-  <div class="bg-white border border-solid border-gray-50 shadow-sm rounded-xl p-4 w-full space-y-2">
+  <div class="bg-white border border-solid border-gray-50 shadow-sm rounded-xl p-4 w-full">
     <div
-      class="flex justify-between items-center w-full cursor-pointer"
+      class="flex justify-between items-center w-full"
       :class="{ 'border-b-2 border-gray-50 pb-2': !isCollapsed }"
-      @click="$emit('headerClick')"
     >
       <div class="flex items-center gap-2">
         <Icon
@@ -44,9 +43,9 @@
         </Dropdown>
         <Icon
           name="mdi:chevron-down"
-          class="transition-transform duration-300"
+          class="transition-transform duration-300 cursor-pointer"
           :class="{ 'rotate-180': isCollapsed }"
-          @click.stop="isCollapsed = !isCollapsed"
+          @click="emit('headerClick')"
         />
       </div>
     </div>

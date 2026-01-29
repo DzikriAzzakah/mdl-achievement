@@ -11,7 +11,7 @@ import type {
   QRCodeShape,
   SizeMode,
 } from '#achievement/config/types.ts';
-import { TYPE_OPTIONS } from '#achievement/config/constants.ts';
+import { CANVAS_HEIGHT, CANVAS_WIDTH, TYPE_OPTIONS } from '#achievement/config/constants.ts';
 import { createContent, generateContentKey } from '#achievement/utils/contentFactory';
 import { certificateValidationSchema } from '#achievement/utils/validationSchema.ts';
 import { defineStore } from 'pinia';
@@ -338,6 +338,150 @@ export const useCertificateStore = defineStore('certificate', () => {
     };
   }
 
+  // Layering Actions
+  function bringForward(key: string): void {
+    const index = contents.value.findIndex(c => c.key === key);
+    if (index === -1 || index >= contents.value.length - 1) {
+      return;
+    }
+
+    const updatedContents = [...contents.value];
+    const temp = updatedContents[index];
+    updatedContents[index] = updatedContents[index + 1];
+    updatedContents[index + 1] = temp;
+    contents.value = updatedContents;
+  }
+
+  function sendBackward(key: string): void {
+    const index = contents.value.findIndex(c => c.key === key);
+    if (index <= 0) {
+      return;
+    }
+
+    const updatedContents = [...contents.value];
+    const temp = updatedContents[index];
+    updatedContents[index] = updatedContents[index - 1];
+    updatedContents[index - 1] = temp;
+    contents.value = updatedContents;
+  }
+
+  function bringToFront(key: string): void {
+    const index = contents.value.findIndex(c => c.key === key);
+    if (index === -1 || index >= contents.value.length - 1) {
+      return;
+    }
+
+    const updatedContents = [...contents.value];
+    const [element] = updatedContents.splice(index, 1);
+    updatedContents.push(element);
+    contents.value = updatedContents;
+  }
+
+  function sendToBack(key: string): void {
+    const index = contents.value.findIndex(c => c.key === key);
+    if (index <= 0) {
+      return;
+    }
+
+    const updatedContents = [...contents.value];
+    const [element] = updatedContents.splice(index, 1);
+    updatedContents.unshift(element);
+    contents.value = updatedContents;
+  }
+
+  // Alignment Action
+  function alignContent(key: string, type: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom'): void {
+    const index = contents.value.findIndex(c => c.key === key);
+    if (index === -1) {
+      return;
+    }
+
+    const content = contents.value[index];
+    const DEFAULT_DIMENSION = 200;
+
+    const elementWidth = content.metadata.width === 'fit-content' ? DEFAULT_DIMENSION : content.metadata.width;
+    const elementHeight = content.metadata.height === 'fit-content' ? DEFAULT_DIMENSION : content.metadata.height;
+
+    const updatedContents = [...contents.value];
+    const updatedMetadata = { ...content.metadata };
+
+    switch (type) {
+      case 'left':
+        updatedMetadata.horizontal = 0;
+        break;
+      case 'center':
+        updatedMetadata.horizontal = (CANVAS_WIDTH - elementWidth) / 2;
+        break;
+      case 'right':
+        updatedMetadata.horizontal = CANVAS_WIDTH - elementWidth;
+        break;
+      case 'top':
+        updatedMetadata.vertical = 0;
+        break;
+      case 'middle':
+        updatedMetadata.vertical = (CANVAS_HEIGHT - elementHeight) / 2;
+        break;
+      case 'bottom':
+        updatedMetadata.vertical = CANVAS_HEIGHT - elementHeight;
+        break;
+      default:
+        return;
+    }
+
+    updatedContents[index] = {
+      ...content,
+      metadata: updatedMetadata,
+    } as ICertificateContentForm;
+    contents.value = updatedContents;
+  }
+
+  // Duplication Action
+  function duplicateContent(key: string): void {
+    const index = contents.value.findIndex(c => c.key === key);
+    if (index === -1) {
+      return;
+    }
+
+    const originalContent = contents.value[index];
+    contentIdCounter.value++;
+    const newKey = generateContentKey(originalContent.type, contentIdCounter.value);
+
+    const clonedContent: ICertificateContentForm = JSON.parse(JSON.stringify(originalContent));
+    clonedContent.key = newKey;
+    clonedContent.metadata.horizontal += 10;
+    clonedContent.metadata.vertical += 10;
+
+    contents.value = [...contents.value, clonedContent];
+    selectedContentKey.value = newKey;
+  }
+
+  // Locking Action
+  function toggleLock(key: string): void {
+    const index = contents.value.findIndex(c => c.key === key);
+    if (index === -1) {
+      return;
+    }
+
+    const content = contents.value[index];
+    const updatedContents = [...contents.value];
+    updatedContents[index] = {
+      ...content,
+      metadata: {
+        ...content.metadata,
+        isLocked: !content.metadata.isLocked,
+      },
+    } as ICertificateContentForm;
+    contents.value = updatedContents;
+  }
+
+  /**
+   * Reorder contents array (for drag-and-drop layer ordering)
+   * @param newContents - The reordered contents array
+   */
+  function reorderContents(newContents: ICertificateContentForm[]): void {
+    contents.value = newContents;
+  }
+
   const $resetAll = () => {
     resetForm();
     detailCertificate.value = undefined;
@@ -370,5 +514,13 @@ export const useCertificateStore = defineStore('certificate', () => {
     updateSafeZone,
     toggleContentSelection,
     setFormFromDetail,
+    bringForward,
+    sendBackward,
+    bringToFront,
+    sendToBack,
+    alignContent,
+    duplicateContent,
+    toggleLock,
+    reorderContents,
   };
 });

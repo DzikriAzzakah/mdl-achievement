@@ -54,6 +54,8 @@ interface IContentMetadataBase {
   isAspectRatioLocked?: boolean;
   width_mode?: SizeMode;
   height_mode?: SizeMode;
+  isLocked?: boolean;
+  isHidden?: boolean;
 }
 
 export type SizeMode = 'fix' | 'fill' | 'hug';

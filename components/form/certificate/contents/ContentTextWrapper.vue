@@ -1,9 +1,8 @@
 <template>
   <div class="bg-white border border-solid border-gray-50 shadow-sm rounded-xl p-4 w-full">
     <div
-      class="flex justify-between items-center w-full cursor-pointer"
+      class="flex justify-between items-center w-full"
       :class="{ 'border-b-2 border-gray-50 pb-4': !isCollapsed }"
-      @click="$emit('headerClick')"
     >
       <div class="flex items-center gap-2">
         <Icon
@@ -35,7 +34,7 @@
                 variant="transparent"
                 color="ghost"
                 icon="mdi-delete"
-                @click="$emit('delete', index)"
+                @click="emit('delete', index)"
               >
                 Delete
               </UiButton>
@@ -44,8 +43,9 @@
         </Dropdown>
         <Icon
           name="mdi:chevron-down"
-          class="transition-transform duration-300"
+          class="transition-transform duration-300 cursor-pointer"
           :class="{ 'rotate-180': isCollapsed }"
+          @click="emit('headerClick')"
         />
       </div>
     </div>
@@ -68,7 +68,7 @@
                   type="number"
                   :model-value="metadata.width"
                   size="md"
-                  @update:model-value="$emit('update:width', $event)"
+                  @update:model-value="emit('update:width', $event)"
                 >
                   <template #suffix>
                     <Dropdown
@@ -135,7 +135,7 @@
                   type="number"
                   :model-value="metadata.height"
                   size="md"
-                  @update:model-value="$emit('update:height', $event)"
+                  @update:model-value="emit('update:height', $event)"
                 >
                   <template #suffix>
                     <Dropdown
@@ -201,7 +201,7 @@
               icon="mdi:aspect-ratio"
               :color="isAspectRatioLocked ? 'primary' : 'ghost'"
               :disabled="!canLockAspectRatio"
-              @click="$emit('toggleAspectRatio')"
+              @click="emit('toggleAspectRatio')"
             />
           </UiFormGroup>
         </div>
@@ -217,7 +217,7 @@
               trackBy: 'value',
               label: 'label',
             }"
-            @update:model-value="$emit('update:fontFamily', $event)"
+            @update:model-value="emit('update:fontFamily', $event)"
           >
             <template #select-option="{ option }">
               <span :style="{ fontFamily: option.value }">
@@ -242,10 +242,10 @@
               :model-value="metadata.font_size"
               size="md"
               class="w-24"
-              @update:model-value="$emit('update:fontSize', $event)"
+              @update:model-value="emit('update:fontSize', $event)"
             >
               <template #suffix>
-                <span class="text-gray-500">
+                <span class="text-xs text-gray-500">
                   px
                 </span>
               </template>
@@ -265,7 +265,7 @@
                 trackBy: 'value',
                 label: 'label',
               }"
-              @update:model-value="$emit('update:fontWeight', $event)"
+              @update:model-value="emit('update:fontWeight', $event)"
             />
           </UiFormGroup>
         </div>
@@ -280,7 +280,7 @@
               :model-value="metadata.color"
               size="md"
               class="w-16 h-10 p-0 border-0"
-              @update:model-value="$emit('update:color', $event)"
+              @update:model-value="emit('update:color', $event)"
             >
               <template #prefix>
                 <span class="text-gray-500">
@@ -314,44 +314,43 @@
               :select-props="{
                 useTeleport: true,
               }"
-              @update:model-value="$emit('update:alignment', $event)"
+              @update:model-value="emit('update:alignment', $event)"
             />
           </UiFormGroup>
         </div>
 
-        <div class="flex items-center gap-4">
-          <UiFormGroup label="Position X">
+        <UiFormGroup label="Position">
+          <div class="flex items-center gap-4">
             <UiInput
               type="number"
               :model-value="metadata.horizontal"
               :disabled="widthMode === 'fill'"
+              placeholder="X"
               size="md"
-              @update:model-value="$emit('update:horizontal', $event)"
+              @update:model-value="emit('update:horizontal', $event)"
             >
               <template #suffix>
                 <span class="text-xs text-gray-500">
-                  px
+                  X
                 </span>
               </template>
             </UiInput>
-          </UiFormGroup>
-
-          <UiFormGroup label="Position Y">
             <UiInput
               type="number"
               :model-value="metadata.vertical"
               :disabled="heightMode === 'fill'"
+              placeholder="Y"
               size="md"
-              @update:model-value="$emit('update:vertical', $event)"
+              @update:model-value="emit('update:vertical', $event)"
             >
               <template #suffix>
                 <span class="text-xs text-gray-500">
-                  px
+                  Y
                 </span>
               </template>
             </UiInput>
-          </UiFormGroup>
-        </div>
+          </div>
+        </UiFormGroup>
 
         <slot name="after-fields" />
       </div>

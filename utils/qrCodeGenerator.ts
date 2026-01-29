@@ -6,7 +6,7 @@ export function generateQRCodeDataUrl(content: ICertificateContentQRCodeForm, _v
   // For template preview, we'll generate a simple placeholder QR code pattern
   // In production, the actual QR code will be generated server-side with real data
   const size = 200;
-  const modules = 25; // Standard QR code module count
+  const modules = 25;
   const moduleSize = size / modules;
 
   const isDots = shape === 'dots';
@@ -16,10 +16,9 @@ export function generateQRCodeDataUrl(content: ICertificateContentQRCodeForm, _v
   let svgContent = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`;
   svgContent += `<rect width="${size}" height="${size}" fill="transparent"/>`;
 
-  // Create a simple pattern that looks like a QR code
   for (let row = 0; row < modules; row++) {
     for (let col = 0; col < modules; col++) {
-      // Create a checkerboard-like pattern with some variations
+      // Create a checkerboard-like pattern
       const shouldFill = (row + col) % 3 === 0
         || (row < 7 && col < 7) // Top-left corner
         || (row < 7 && col >= modules - 7) // Top-right corner
@@ -44,7 +43,6 @@ export function generateQRCodeDataUrl(content: ICertificateContentQRCodeForm, _v
 
   svgContent += '</svg>';
 
-  // Convert SVG to base64 data URL
   const base64 = btoa(unescape(encodeURIComponent(svgContent)));
   return `data:image/svg+xml;base64,${base64}`;
 }

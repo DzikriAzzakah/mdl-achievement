@@ -1,25 +1,32 @@
 <template>
   <TemplateManageLayout
     :title="isEditMode ? 'Edit Certificate' : 'Add Certificate'"
-    class="layout-add-certificate"
-    :active-stepper="activeStepper"
-    :breadcrumbs="[]"
-    :stepper="stepper"
+    :class="[
+      isEditMode ? 'layout-edit-certificate' : 'layout-add-certificate',
+      activeStepper === 2 ? 'layout-certificate--accessibility' : '',
+    ]"
+    :active-stepper="isEditMode ? activeStep : activeStepper"
+    :breadcrumbs="breadcrumbs"
+    :stepper="isEditMode ? CERTIFICATE_TABS_EDIT : CREATE_STEPPER"
+    :is-tabs="isEditMode"
     :disable-submit="isDisabledSubmitBtn"
-    :disable-cancel="activeStepper === 1"
+    :disable-cancel="!isEditMode && activeStepper === 1"
     :label-cancel="buttonLabelCancel"
     :label-submit="buttonLabelSubmit"
     :is-loading-submit="isLoading"
     :is-loading-cancel="isLoading"
     :fixed-bottom-footer="true"
-    :is-use-breadcrumbs="false"
+    :is-use-breadcrumbs="isEditMode"
+    :show-cancel="!isEditMode"
+    :show-submit="!isEditMode || activeStep !== 'accessibility'"
     show-header-button
     disable-footer
     @on-cancel="handleCancel"
     @on-submit="handleSubmit"
+    @on-change="handleTabChange"
   >
     <template #content>
-      <template v-if="activeStepper === 1">
+      <template v-if="showCertificateInformation">
         <FormLayout>
           <template #sidebar-content>
             <Sidebar
@@ -91,7 +98,10 @@
                             :src="getContentImageSrc(content)"
                             :style="getContentImageStyle(content)"
                             class="absolute cursor-pointer transition-none prevent-zoom-pan"
-                            :class="[selectedContentKey === content.key ? 'selected-content' : '']"
+                            :class="[
+                              selectedContentKey === content.key ? 'selected-content' : '',
+                              content.metadata.isLocked ? 'locked-content' : '',
+                            ]"
                             @click.stop="(e) => handleSelectContent(e, content.key)"
                           >
                           <div
@@ -99,7 +109,10 @@
                             :id="content.key"
                             :style="getQRCodeContainerStyle(content)"
                             class="cursor-pointer transition-none prevent-zoom-pan"
-                            :class="[selectedContentKey === content.key ? 'selected-content' : '']"
+                            :class="[
+                              selectedContentKey === content.key ? 'selected-content' : '',
+                              content.metadata.isLocked ? 'locked-content' : '',
+                            ]"
                             @click.stop="(e) => handleSelectContent(e, content.key)"
                           >
                             <Qrcode
@@ -120,7 +133,10 @@
                             :id="content.key"
                             :style="getContentTextStyle(content)"
                             class="cursor-pointer transition-none hover:border hover:border-blue-300 prevent-zoom-pan"
-                            :class="[selectedContentKey === content.key ? 'selected-content' : '']"
+                            :class="[
+                              selectedContentKey === content.key ? 'selected-content' : '',
+                              content.metadata.isLocked ? 'locked-content' : '',
+                            ]"
                             @click.stop="(e) => handleSelectContent(e, content.key)"
                           >
                             {{ getContentDisplayValue(content) }}
@@ -130,8 +146,8 @@
                           v-if="selectedContentKey && targetRef"
                           ref="moveableRef"
                           :target="targetRef"
-                          :draggable="true"
-                          :resizable="true"
+                          :draggable="!isSelectedContentLocked"
+                          :resizable="!isSelectedContentLocked"
                           :zoom="currentZoomLevel"
                           :throttle-drag="0"
                           :throttle-resize="0"
@@ -159,7 +175,7 @@
           </template>
         </FormLayout>
       </template>
-      <div v-if="activeStepper === 2">
+      <div v-if="showAccessibility">
         <Accessibility />
       </div>
     </template>
@@ -175,8 +191,9 @@ import Sidebar from '#achievement/components/form/certificate/Sidebar.vue';
 
 import ZoomableContent from '#achievement/components/ZoomableContent.vue';
 import { useCanvasInteract } from '#achievement/composables/useCanvasInteract';
+import { useKeyboardShortcuts } from '#achievement/composables/useKeyboardShortcuts';
 
-import { CANVAS_HEIGHT, CANVAS_WIDTH, CREATE_STEPPER, DEFAULT_FONT_FAMILY, FormMode, TYPE_OPTIONS } from '#achievement/config/constants.ts';
+import { CANVAS_HEIGHT, CANVAS_WIDTH, CERTIFICATE_TABS_EDIT, CREATE_STEPPER, DEFAULT_FONT_FAMILY, FormMode, TYPE_OPTIONS } from '#achievement/config/constants.ts';
 import { PERMISSION_CREATE, PERMISSION_EDIT, PERMISSION_LIST } from '#achievement/config/featureFlag.ts';
 
 import FormLayout from '#achievement/layouts/FormLayout.vue';
@@ -189,6 +206,8 @@ import { UiSwitch } from '@mydigilearn-saas/web-ui';
 import { useMutation, useQuery } from '@tanstack/vue-query';
 
 import Moveable from 'vue3-moveable';
+
+type TStep = 'certificate-configuration' | 'accessibility';
 
 const { $toast } = useNuxtApp();
 
@@ -228,8 +247,20 @@ const { showLoading, hideLoading } = useGlobalLoading();
 const { preventLeave } = useConfirmLeave();
 const { getApiErrorMessage } = useUtility();
 
+const breadcrumbs = computed(() => {
+  if (!isEditMode.value) {
+    return [];
+  }
+
+  return [
+    { text: 'Master Data', href: '', active: false },
+    { text: 'Achievement', href: '/achievement', active: false },
+    { text: 'Edit', href: `/achievement/edit/certificate/${routeId.value}`, active: true },
+  ];
+});
+
 const activeStepper = ref<number>(1);
-const stepper = CREATE_STEPPER;
+const activeStep = ref<TStep>('certificate-configuration');
 const isLoading = ref<boolean>(false);
 const certificateId = ref<number | string | null>(null);
 const uploadedImageMeta = ref<any>(null);
@@ -296,6 +327,9 @@ const {
   selectedContentKey,
 });
 
+// Initialize keyboard shortcuts
+useKeyboardShortcuts();
+
 const canvasStyle = computed(() => ({
   width: `${CANVAS_WIDTH}px`,
   height: `${CANVAS_HEIGHT}px`,
@@ -330,6 +364,21 @@ const selectedContentAspectRatioLocked = computed(() => {
   return selectedContent.metadata.isAspectRatioLocked ?? false;
 });
 
+const isSelectedContentLocked = computed(() => {
+  if (!selectedContentKey.value) {
+    return false;
+  }
+
+  const content = store.contents.find(c => c.key === selectedContentKey.value);
+  return content?.metadata.isLocked === true;
+});
+
+function handleTabChange(value: string | number): void {
+  if (isEditMode.value) {
+    activeStep.value = value as TStep;
+  }
+}
+
 function isFormDirty(): boolean {
   return !!(store.title?.trim() || store.certificate_type || store.image);
 }
@@ -348,13 +397,27 @@ const buttonLabelCancel = computed(() => {
 });
 
 const buttonLabelSubmit = computed(() => {
-  if (activeStepper.value === stepper.length) {
+  if (activeStepper.value === CREATE_STEPPER.length) {
     return 'Done';
   }
-  if (activeStepper.value === stepper.length - 1) {
+  if (activeStepper.value === CREATE_STEPPER.length - 1) {
     return isEditMode.value ? 'Save Certificate' : 'Add Certificate';
   }
   return 'Next';
+});
+
+const showCertificateInformation = computed(() => {
+  if (!isEditMode.value) {
+    return activeStepper.value === 1;
+  }
+  return activeStep.value === 'certificate-configuration';
+});
+
+const showAccessibility = computed(() => {
+  if (!isEditMode.value) {
+    return activeStepper.value === 2;
+  }
+  return activeStep.value === 'accessibility';
 });
 
 const imagePreview = computed(() => {
@@ -727,8 +790,20 @@ onBeforeMount(() => {
   @apply h-screen w-full !bg-gray-25 !m-0;
 }
 
+.empty-layout:has(.layout-add-certificate.layout-certificate--accessibility) {
+  @apply !bg-white;
+}
+
+.empty-layout:has(.layout-edit-certificate) {
+  @apply h-screen w-full !bg-gray-25 !m-0;
+}
+
+.empty-layout:has(.layout-edit-certificate.layout-certificate--accessibility) {
+  @apply !bg-white;
+}
+
 .template-manage {
-  @apply h-full flex flex-col; /* 1. Make the layout a full-height flex column */
+  @apply h-full flex flex-col;
 }
 
 .template-manage__content {
@@ -757,5 +832,13 @@ onBeforeMount(() => {
 
 .selected-content {
   @apply border-2 border-primary-500;
+}
+
+.locked-content {
+  cursor: not-allowed;
+}
+
+.locked-content.selected-content {
+  @apply border-amber-500;
 }
 </style>
