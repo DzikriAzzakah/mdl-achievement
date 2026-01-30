@@ -105,12 +105,16 @@ export function buildContentPayload(
   content: ICertificateContentForm,
   uploadedImageUrl?: string | null,
   uploadedImageMeta?: IAchievementUploadResponse['data'] | null,
+  isDeleted: boolean = false,
 ): ICertificateContentPayload {
   const basePayload: ICertificateContentPayload = {
+    id: content.id,
+    deleted: isDeleted,
     type: content.type,
     key: content.key,
     value: uploadedImageUrl || content.value,
     metadata: {
+      ...content.metadata,
       width: content.metadata.width,
       height: content.metadata.height,
       vertical: content.metadata.vertical || 0,

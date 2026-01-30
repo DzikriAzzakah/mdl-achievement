@@ -51,6 +51,7 @@ export const useCertificateStore = defineStore('certificate', () => {
   const contentIdCounter = ref<number>(0);
   const selectedContentKey = ref<string | null>(null);
   const uploadedBackgroundMeta = ref<ICertificateBackgroundPayload | null>(null);
+  const deletedContents = ref<ICertificateContentForm[]>([]);
 
   function addContent(type: string): string | null {
     contentIdCounter.value++;
@@ -84,7 +85,13 @@ export const useCertificateStore = defineStore('certificate', () => {
       return;
     }
 
-    const deletedKey = contents.value[index].key;
+    const contentToDelete = contents.value[index];
+    const deletedKey = contentToDelete.key;
+
+    if (contentToDelete.id) {
+      deletedContents.value.push(contentToDelete);
+    }
+
     const updatedContents = [...contents.value];
     updatedContents.splice(index, 1);
     contents.value = updatedContents;
@@ -92,6 +99,7 @@ export const useCertificateStore = defineStore('certificate', () => {
     if (selectedContentKey.value === deletedKey) {
       selectedContentKey.value = null;
     }
+    console.log(contents.value);
   }
 
   function updateSafeZone(zone: ICertificateSafeZone): void {
@@ -147,6 +155,8 @@ export const useCertificateStore = defineStore('certificate', () => {
   }
 
   function setFormFromDetail(data: Omit<ICertificateCreatePayload, 'preview'> & { id?: number; preview_url?: string; }): void {
+    deletedContents.value = [];
+
     const typeOption = TYPE_OPTIONS.find(opt => opt.value === data.type);
     const certificateType = typeOption
       ? { label: typeOption.label, value: typeOption.value }
@@ -197,7 +207,7 @@ export const useCertificateStore = defineStore('certificate', () => {
   }
 
   function mapContentPayloadToForm(content: ICertificateContentPayload, index: number): ICertificateContentForm {
-    const { type, key, value, metadata, variables } = content;
+    const { type, key, value, metadata, variables, id } = content;
 
     const contentKey = key || generateContentKey(type, index + 1);
 
@@ -213,6 +223,7 @@ export const useCertificateStore = defineStore('certificate', () => {
 
     if (type === 'image') {
       return {
+        id,
         type: 'image',
         key: contentKey,
         value: value || metadata.full_path || null,
@@ -227,6 +238,7 @@ export const useCertificateStore = defineStore('certificate', () => {
 
     if (type === 'sertificate_signee') {
       return {
+        id,
         type: 'sertificate_signee',
         key: contentKey,
         value: value || metadata.full_path || null,
@@ -241,6 +253,7 @@ export const useCertificateStore = defineStore('certificate', () => {
 
     if (type === 'qr_code') {
       return {
+        id,
         type: 'qr_code',
         key: contentKey,
         value: value || '',
@@ -267,6 +280,7 @@ export const useCertificateStore = defineStore('certificate', () => {
 
     if (type === 'certificate_number') {
       return {
+        id,
         type: 'certificate_number',
         key: contentKey,
         value: value || '',
@@ -283,6 +297,7 @@ export const useCertificateStore = defineStore('certificate', () => {
 
     if (type === 'location') {
       return {
+        id,
         type: 'location',
         key: contentKey,
         value: value || '',
@@ -296,6 +311,7 @@ export const useCertificateStore = defineStore('certificate', () => {
 
     if (type === 'fullname') {
       return {
+        id,
         type: 'fullname',
         key: contentKey,
         value: value || '',
@@ -305,6 +321,7 @@ export const useCertificateStore = defineStore('certificate', () => {
 
     if (type === 'employee_id') {
       return {
+        id,
         type: 'employee_id',
         key: contentKey,
         value: value || '',
@@ -314,6 +331,7 @@ export const useCertificateStore = defineStore('certificate', () => {
 
     if (type === 'event_title') {
       return {
+        id,
         type: 'event_title',
         key: contentKey,
         value: value || '',
@@ -323,6 +341,7 @@ export const useCertificateStore = defineStore('certificate', () => {
 
     if (type === 'valid_thru') {
       return {
+        id,
         type: 'valid_thru',
         key: contentKey,
         value: value || '',
@@ -331,6 +350,7 @@ export const useCertificateStore = defineStore('certificate', () => {
     }
 
     return {
+      id,
       type: 'text',
       key: contentKey,
       value: value || '',
@@ -448,6 +468,7 @@ export const useCertificateStore = defineStore('certificate', () => {
 
     const clonedContent: ICertificateContentForm = JSON.parse(JSON.stringify(originalContent));
     clonedContent.key = newKey;
+    clonedContent.id = undefined; // Ensure duplicated content doesn't carry over the ID
     clonedContent.metadata.horizontal += 10;
     clonedContent.metadata.vertical += 10;
 
@@ -489,6 +510,7 @@ export const useCertificateStore = defineStore('certificate', () => {
     contentIdCounter.value = 0;
     selectedContentKey.value = null;
     uploadedBackgroundMeta.value = null;
+    deletedContents.value = [];
   };
 
   return {
@@ -502,6 +524,7 @@ export const useCertificateStore = defineStore('certificate', () => {
     selectedContentKey,
     certificateResponse,
     uploadedBackgroundMeta,
+    deletedContents,
 
     getForm,
 

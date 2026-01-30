@@ -108,6 +108,7 @@ export interface ICertificateNumberVariable {
 }
 
 export interface ICertificateContentImageForm {
+  id?: number;
   type: 'image';
   key: string;
   value: string | null;
@@ -116,6 +117,7 @@ export interface ICertificateContentImageForm {
 }
 
 export interface ICertificateContentTextForm {
+  id?: number;
   type: 'text';
   key: string;
   value: string;
@@ -123,6 +125,7 @@ export interface ICertificateContentTextForm {
 }
 
 export interface ICertificateContentCertificateNumberForm {
+  id?: number;
   type: 'certificate_number';
   key: string;
   value: string;
@@ -131,6 +134,7 @@ export interface ICertificateContentCertificateNumberForm {
 }
 
 export interface ICertificateContentLocationForm {
+  id?: number;
   type: 'location';
   key: string;
   value: string;
@@ -138,6 +142,7 @@ export interface ICertificateContentLocationForm {
 }
 
 export interface ICertificateContentFullNameForm {
+  id?: number;
   type: 'fullname';
   key: string;
   value: string;
@@ -145,6 +150,7 @@ export interface ICertificateContentFullNameForm {
 }
 
 export interface ICertificateContentEmployeeIdForm {
+  id?: number;
   type: 'employee_id';
   key: string;
   value: string;
@@ -152,6 +158,7 @@ export interface ICertificateContentEmployeeIdForm {
 }
 
 export interface ICertificateContentEventTitleForm {
+  id?: number;
   type: 'event_title';
   key: string;
   value: string;
@@ -159,6 +166,7 @@ export interface ICertificateContentEventTitleForm {
 }
 
 export interface ICertificateContentValidThruForm {
+  id?: number;
   type: 'valid_thru';
   key: string;
   value: string;
@@ -166,6 +174,7 @@ export interface ICertificateContentValidThruForm {
 }
 
 export interface ICertificateContentCertificateSigneeForm {
+  id?: number;
   type: 'sertificate_signee';
   key: string;
   value: string | null;
@@ -174,6 +183,7 @@ export interface ICertificateContentCertificateSigneeForm {
 }
 
 export interface ICertificateContentQRCodeForm {
+  id?: number;
   type: 'qr_code';
   key: string;
   value: string;
@@ -480,6 +490,8 @@ export interface ICertificateContentMetadataPayload {
 }
 
 export interface ICertificateContentPayload {
+  id?: number;
+  deleted?: boolean;
   type: string;
   key: string;
   value: string | null;

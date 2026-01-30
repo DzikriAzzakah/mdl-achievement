@@ -310,6 +310,8 @@ useQuery({
   },
   enabled: computed(() => isEditMode.value && !!routeId.value),
   refetchOnMount: 'always',
+  refetchOnWindowFocus: false,
+  refetchOnReconnect: false,
 });
 
 const {
@@ -376,6 +378,13 @@ const isSelectedContentLocked = computed(() => {
 function handleTabChange(value: string | number): void {
   if (isEditMode.value) {
     activeStep.value = value as TStep;
+
+    if (value === 'certificate-configuration') {
+      activeStepper.value = 1;
+    }
+    else if (value === 'accessibility') {
+      activeStepper.value = 2;
+    }
   }
 }
 
@@ -712,6 +721,12 @@ const handleSubmit = async () => {
         }),
       );
 
+      const deletedContentsPayload = store.deletedContents.map(content =>
+        buildContentPayload(content, null, null, true),
+      );
+
+      const finalContentsPayload = [...uploadedContents, ...deletedContentsPayload];
+
       const template = generateCertificateTemplate({
         backgroundUrl,
         contents: store.contents,
@@ -751,10 +766,12 @@ const handleSubmit = async () => {
         previewMeta,
         template,
         safeZone: store.safe_zone,
-        contents: uploadedContents,
+        contents: finalContentsPayload,
       });
 
-      submitCertificateForm(payload);
+      const finalPayload: any = { ...payload };
+
+      submitCertificateForm(finalPayload);
     }
     catch (err) {
       console.error('Error processing certificate:', err);
