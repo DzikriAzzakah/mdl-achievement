@@ -148,7 +148,29 @@ function generateTextContentCSS(content: TextContentType, safeZone: ICertificate
 
   const widthValue = width === 'fit-content' ? 'fit-content' : `${width}px`;
   const heightValue = height === 'fit-content' ? 'fit-content' : `${height}px`;
+  const baseMaxWidth
+  = CANVAS_WIDTH - (safeZone.left || 0) - (safeZone.right || 0);
 
+  const baseMaxHeight
+    = CANVAS_HEIGHT - (safeZone.top || 0) - (safeZone.bottom || 0);
+
+  const maxWidth
+  = width_mode === 'fill'
+    ? baseMaxWidth
+    : width_mode === 'fix'
+      ? typeof width === 'number'
+        ? width
+        : baseMaxWidth
+      : baseMaxWidth - (horizontal || 0);
+
+  const maxHeight
+    = height_mode === 'fill'
+      ? baseMaxHeight
+      : height_mode === 'fix'
+        ? typeof height === 'number'
+          ? height
+          : baseMaxHeight
+        : baseMaxHeight - (vertical || 0);
   return `
     .${className} {
         position: absolute;
@@ -156,6 +178,8 @@ function generateTextContentCSS(content: TextContentType, safeZone: ICertificate
         top: ${positionY}px;
         width: ${widthValue};
         height: ${heightValue};
+        max-width: ${maxWidth}px;
+        max-height: ${maxHeight}px;
         font-family: ${fontFamilyValue};
         font-size: ${font_size}px;
         font-weight: ${font_weight};
