@@ -267,9 +267,41 @@ const uploadedImageMeta = ref<any>(null);
 const currentZoomLevel = ref<number>(1);
 const isLoadingDetail = ref<boolean>(false);
 
+// State untuk Edit Mode Logic
+const initialFormState = ref<string>('');
+const hasJustSaved = ref<boolean>(false);
+
 const canvasRef = ref<HTMLElement | null>(null);
 
 const showSafeZone = ref<boolean>(true);
+
+const getFormSnapshot = () => {
+  return JSON.stringify({
+    title: store.title,
+    certificate_type: store.certificate_type,
+    image: store.image instanceof File
+      ? { name: store.image.name, size: store.image.size, lastModified: store.image.lastModified }
+      : store.image,
+    safe_zone: store.safe_zone,
+    contents: store.contents.map((c) => {
+      const contentFile = (c as any).file;
+      return {
+        ...c,
+        file: contentFile ? { name: contentFile.name, size: contentFile.size } : null,
+        metadata: c.metadata,
+      };
+    }),
+  });
+};
+
+const isFormChanged = computed(() => {
+  return getFormSnapshot() !== initialFormState.value;
+});
+
+const updateInitialState = () => {
+  initialFormState.value = getFormSnapshot();
+  hasJustSaved.value = false;
+};
 
 useQuery({
   queryKey: ['get-certificate-detail', routeId],
@@ -290,6 +322,9 @@ useQuery({
         certificateId.value = data.id;
 
         uploadedImageMeta.value = store.uploadedBackgroundMeta;
+
+        // Capture initial state setelah data di-load
+        updateInitialState();
       }
 
       return data;
@@ -388,14 +423,32 @@ function handleTabChange(value: string | number): void {
   }
 }
 
-function isFormDirty(): boolean {
+// Logic lama untuk prevent leave (tetap digunakan sebagai backup)
+function isFormDirtyLegacy(): boolean {
   return !!(store.title?.trim() || store.certificate_type || store.image);
 }
 
+// Button State Logic (Updated per requirement)
 const isDisabledSubmitBtn = computed(() => {
   if (activeStepper.value === 1) {
+    // Validasi basic field
     const isPrimaryDataInvalid = !(store.title?.trim() && store.certificate_type?.value && store.image);
-    return isPrimaryDataInvalid || Object.keys(errors.value).length > 0 || isLoadingDetail.value;
+    if (isPrimaryDataInvalid || Object.keys(errors.value).length > 0 || isLoadingDetail.value) {
+      return true;
+    }
+
+    if (isEditMode.value) {
+      // 1. Jika sudah disubmit (Saved) -> Disabled
+      if (hasJustSaved.value) {
+        return true;
+      }
+      // 2. Jika belum ada perubahan -> Disabled
+      if (!isFormChanged.value) {
+        return true;
+      }
+      // 3. Jika ada perubahan -> Enabled (false)
+      return false;
+    }
   }
 
   return false;
@@ -410,7 +463,15 @@ const buttonLabelSubmit = computed(() => {
     return 'Done';
   }
   if (activeStepper.value === CREATE_STEPPER.length - 1) {
-    return isEditMode.value ? 'Save Certificate' : 'Add Certificate';
+    if (isEditMode.value) {
+      // Jika baru saja disave -> "Saved"
+      if (hasJustSaved.value) {
+        return 'Saved';
+      }
+      // Default Edit
+      return 'Save Certificate';
+    }
+    return 'Add Certificate';
   }
   return 'Next';
 });
@@ -648,10 +709,15 @@ const { mutate: submitCertificateForm } = useMutation({
       store.certificateResponse = data;
       if (!isEditMode.value) {
         certificateId.value = data?.id || null;
+        activeStepper.value += 1;
+      }
+      else {
+        // Edit Mode: Update initial state to new current, set saved flag
+        updateInitialState();
+        hasJustSaved.value = true;
       }
 
       preventLeave.value = false;
-      activeStepper.value += 1;
     }
   },
   onSettled: () => {
@@ -771,6 +837,16 @@ const handleSubmit = async () => {
 
       const finalPayload: any = { ...payload };
 
+      if (isEditMode.value) {
+        if (store.title === store.detailCertificate?.title) {
+          delete finalPayload.title;
+        }
+
+        if (store.certificate_type?.value === store.detailCertificate?.certificate_type?.value) {
+          delete finalPayload.type;
+        }
+      }
+
       submitCertificateForm(finalPayload);
     }
     catch (err) {
@@ -793,9 +869,32 @@ const handleSubmit = async () => {
   }
 };
 
-watch(isFormDirty, (value) => {
-  preventLeave.value = value;
+// Gunakan isFormDirtyLegacy untuk prevent leave default,
+// atau gunakan logika isFormChanged di edit mode.
+// Untuk konsistensi, kita biarkan logic original untuk preventLeave saat create,
+// dan logic edit mode untuk reset saved state.
+watch(isFormDirtyLegacy, (value) => {
+  if (!isEditMode.value) {
+    preventLeave.value = value;
+  }
 });
+
+// Watcher untuk mereset "Saved" state saat user mengubah data kembali
+watch(
+  () => [store.title, store.certificate_type, store.image, store.contents, store.safe_zone],
+  () => {
+    if (isEditMode.value) {
+      // Jika user mengubah data, dan sebelumnya statusnya "Saved", reset kembali
+      if (hasJustSaved.value) {
+        hasJustSaved.value = false;
+      }
+
+      // Update preventLeave berdasarkan apakah form berubah dari initial state
+      preventLeave.value = isFormChanged.value;
+    }
+  },
+  { deep: true },
+);
 
 onBeforeMount(() => {
   store.$resetAll();

@@ -99,7 +99,6 @@ export const useCertificateStore = defineStore('certificate', () => {
     if (selectedContentKey.value === deletedKey) {
       selectedContentKey.value = null;
     }
-    console.log(contents.value);
   }
 
   function updateSafeZone(zone: ICertificateSafeZone): void {
