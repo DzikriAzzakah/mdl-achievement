@@ -90,30 +90,30 @@
 
                         <template
                           v-for="content in contents"
-                          :key="content.key"
+                          :key="content.element_id"
                         >
                           <img
                             v-if="content.type === 'image' || content.type === 'sertificate_signee'"
-                            :id="content.key"
+                            :id="content.element_id"
                             :src="getContentImageSrc(content)"
                             :style="getContentImageStyle(content)"
                             class="absolute cursor-pointer transition-none prevent-zoom-pan"
                             :class="[
-                              selectedContentKey === content.key ? 'selected-content' : '',
+                              selectedContentKey === content.element_id ? 'selected-content' : '',
                               content.metadata.isLocked ? 'locked-content' : '',
                             ]"
-                            @click.stop="(e) => handleSelectContent(e, content.key)"
+                            @click.stop="(e) => handleSelectContent(e, content.element_id)"
                           >
                           <div
                             v-else-if="content.type === 'qr_code'"
-                            :id="content.key"
+                            :id="content.element_id"
                             :style="getQRCodeContainerStyle(content)"
                             class="cursor-pointer transition-none prevent-zoom-pan"
                             :class="[
-                              selectedContentKey === content.key ? 'selected-content' : '',
+                              selectedContentKey === content.element_id ? 'selected-content' : '',
                               content.metadata.isLocked ? 'locked-content' : '',
                             ]"
-                            @click.stop="(e) => handleSelectContent(e, content.key)"
+                            @click.stop="(e) => handleSelectContent(e, content.element_id)"
                           >
                             <Qrcode
                               :value="content.value || 'https://example.com'"
@@ -129,15 +129,15 @@
                             />
                           </div>
                           <div
-                            v-else-if="['text', 'certificate_number', 'fullname', 'employee_id', 'event_title', 'location', 'valid_thru'].includes(content.type)"
-                            :id="content.key"
+                            v-else-if="['text', 'certificate_number', 'participant_name', 'nik', 'title', 'location', 'valid_thru'].includes(content.type)"
+                            :id="content.element_id"
                             :style="getContentTextStyle(content)"
                             class="cursor-pointer transition-none hover:border hover:border-blue-300 prevent-zoom-pan"
                             :class="[
-                              selectedContentKey === content.key ? 'selected-content' : '',
+                              selectedContentKey === content.element_id ? 'selected-content' : '',
                               content.metadata.isLocked ? 'locked-content' : '',
                             ]"
-                            @click.stop="(e) => handleSelectContent(e, content.key)"
+                            @click.stop="(e) => handleSelectContent(e, content.element_id)"
                           >
                             {{ getContentDisplayValue(content) }}
                           </div>
@@ -183,7 +183,7 @@
 </template>
 
 <script setup lang="ts">
-import type { ICertificateContentCertificateNumberForm, ICertificateContentCertificateSigneeForm, ICertificateContentEmployeeIdForm, ICertificateContentEventTitleForm, ICertificateContentFullNameForm, ICertificateContentImageForm, ICertificateContentLocationForm, ICertificateContentTextForm, ICertificateContentValidThruForm, ICertificateDetailResponseData } from '#achievement/config/types.ts';
+import type { ICertificateContentCertificateNumberForm, ICertificateContentCertificateSigneeForm, ICertificateContentEventTitleForm, ICertificateContentImageForm, ICertificateContentLocationForm, ICertificateContentNIKForm, ICertificateContentParticipantNameForm, ICertificateContentTextForm, ICertificateContentValidThruForm, ICertificateDetailResponseData } from '#achievement/config/types.ts';
 import { getCertificateDetail, patchEditCertificate, postAddCertificate, postUploadAchievementFile } from '#achievement/api/api.ts';
 import Accessibility from '#achievement/components/form/certificate/Accessibility.vue';
 
@@ -267,32 +267,36 @@ const uploadedImageMeta = ref<any>(null);
 const currentZoomLevel = ref<number>(1);
 const isLoadingDetail = ref<boolean>(false);
 
-// State untuk Edit Mode Logic
 const initialFormState = ref<string>('');
+const initialVisualState = ref<string>('');
 const hasJustSaved = ref<boolean>(false);
 
 const canvasRef = ref<HTMLElement | null>(null);
 
 const showSafeZone = ref<boolean>(true);
 
-const getFormSnapshot = () => {
-  return JSON.stringify({
-    title: store.title,
-    certificate_type: store.certificate_type,
-    image: store.image instanceof File
-      ? { name: store.image.name, size: store.image.size, lastModified: store.image.lastModified }
-      : store.image,
-    safe_zone: store.safe_zone,
-    contents: store.contents.map((c) => {
-      const contentFile = (c as any).file;
-      return {
-        ...c,
-        file: contentFile ? { name: contentFile.name, size: contentFile.size } : null,
-        metadata: c.metadata,
-      };
-    }),
-  });
-};
+const getVisualState = () => ({
+  image: store.image instanceof File
+    ? { name: store.image.name, size: store.image.size, lastModified: store.image.lastModified }
+    : store.image,
+  safe_zone: store.safe_zone,
+  contents: store.contents.map((c) => {
+    const contentFile = (c as any).file;
+    return {
+      ...c,
+      file: contentFile ? { name: contentFile.name, size: contentFile.size } : null,
+      metadata: c.metadata,
+    };
+  }),
+});
+
+const getVisualSnapshot = () => JSON.stringify(getVisualState());
+
+const getFormSnapshot = () => JSON.stringify({
+  title: store.title,
+  certificate_type: store.certificate_type,
+  visual: getVisualState(),
+});
 
 const isFormChanged = computed(() => {
   return getFormSnapshot() !== initialFormState.value;
@@ -300,6 +304,7 @@ const isFormChanged = computed(() => {
 
 const updateInitialState = () => {
   initialFormState.value = getFormSnapshot();
+  initialVisualState.value = getVisualSnapshot();
   hasJustSaved.value = false;
 };
 
@@ -323,7 +328,6 @@ useQuery({
 
         uploadedImageMeta.value = store.uploadedBackgroundMeta;
 
-        // Capture initial state setelah data di-load
         updateInitialState();
       }
 
@@ -364,7 +368,6 @@ const {
   selectedContentKey,
 });
 
-// Initialize keyboard shortcuts
 useKeyboardShortcuts();
 
 const canvasStyle = computed(() => ({
@@ -393,7 +396,7 @@ const selectedContentAspectRatioLocked = computed(() => {
     return false;
   }
 
-  const selectedContent = store.contents.find(c => c.key === selectedContentKey.value);
+  const selectedContent = store.contents.find(c => c.element_id === selectedContentKey.value);
   if (!selectedContent) {
     return false;
   }
@@ -406,7 +409,7 @@ const isSelectedContentLocked = computed(() => {
     return false;
   }
 
-  const content = store.contents.find(c => c.key === selectedContentKey.value);
+  const content = store.contents.find(c => c.element_id === selectedContentKey.value);
   return content?.metadata.isLocked === true;
 });
 
@@ -423,30 +426,26 @@ function handleTabChange(value: string | number): void {
   }
 }
 
-// Logic lama untuk prevent leave (tetap digunakan sebagai backup)
 function isFormDirtyLegacy(): boolean {
   return !!(store.title?.trim() || store.certificate_type || store.image);
 }
 
-// Button State Logic (Updated per requirement)
 const isDisabledSubmitBtn = computed(() => {
   if (activeStepper.value === 1) {
-    // Validasi basic field
     const isPrimaryDataInvalid = !(store.title?.trim() && store.certificate_type?.value && store.image);
     if (isPrimaryDataInvalid || Object.keys(errors.value).length > 0 || isLoadingDetail.value) {
       return true;
     }
 
     if (isEditMode.value) {
-      // 1. Jika sudah disubmit (Saved) -> Disabled
       if (hasJustSaved.value) {
         return true;
       }
-      // 2. Jika belum ada perubahan -> Disabled
+
       if (!isFormChanged.value) {
         return true;
       }
-      // 3. Jika ada perubahan -> Enabled (false)
+
       return false;
     }
   }
@@ -464,11 +463,10 @@ const buttonLabelSubmit = computed(() => {
   }
   if (activeStepper.value === CREATE_STEPPER.length - 1) {
     if (isEditMode.value) {
-      // Jika baru saja disave -> "Saved"
       if (hasJustSaved.value) {
         return 'Saved';
       }
-      // Default Edit
+
       return 'Save Certificate';
     }
     return 'Add Certificate';
@@ -538,17 +536,17 @@ function getContentImageStyle(content: ICertificateContentImageForm | ICertifica
   `;
 }
 
-function getContentDisplayValue(content: ICertificateContentTextForm | ICertificateContentCertificateNumberForm | ICertificateContentLocationForm | ICertificateContentFullNameForm | ICertificateContentEmployeeIdForm | ICertificateContentEventTitleForm | ICertificateContentValidThruForm): string {
+function getContentDisplayValue(content: ICertificateContentTextForm | ICertificateContentCertificateNumberForm | ICertificateContentLocationForm | ICertificateContentParticipantNameForm | ICertificateContentNIKForm | ICertificateContentEventTitleForm | ICertificateContentValidThruForm): string {
   if (content.type === 'certificate_number') {
     return '{{certificate_number}}';
   }
-  if (content.type === 'fullname') {
+  if (content.type === 'participant_name') {
     return '{{participant_name}}';
   }
-  if (content.type === 'employee_id') {
+  if (content.type === 'nik') {
     return '{{nik}}';
   }
-  if (content.type === 'event_title') {
+  if (content.type === 'title') {
     return '{{title}}';
   }
   if (content.type === 'location') {
@@ -557,12 +555,12 @@ function getContentDisplayValue(content: ICertificateContentTextForm | ICertific
   if (content.type === 'valid_thru') {
     return '{{expired_date}}';
   }
-  return content.value || '';
+  return content.element_value || '';
 }
 
-function getContentTextStyle(content: ICertificateContentTextForm | ICertificateContentCertificateNumberForm | ICertificateContentLocationForm | ICertificateContentFullNameForm | ICertificateContentEmployeeIdForm | ICertificateContentEventTitleForm | ICertificateContentValidThruForm): string {
-  const isDynamicContent = ['certificate_number', 'fullname', 'employee_id', 'event_title', 'location', 'valid_thru'].includes(content.type);
-  if (!isDynamicContent && !content.value) {
+function getContentTextStyle(content: ICertificateContentTextForm | ICertificateContentCertificateNumberForm | ICertificateContentLocationForm | ICertificateContentParticipantNameForm | ICertificateContentNIKForm | ICertificateContentEventTitleForm | ICertificateContentValidThruForm): string {
+  const isDynamicContent = ['certificate_number', 'participant_name', 'nik', 'title', 'location', 'valid_thru'].includes(content.type);
+  if (!isDynamicContent && !content.element_value) {
     return 'display: none;';
   }
 
@@ -712,7 +710,6 @@ const { mutate: submitCertificateForm } = useMutation({
         activeStepper.value += 1;
       }
       else {
-        // Edit Mode: Update initial state to new current, set saved flag
         updateInitialState();
         hasJustSaved.value = true;
       }
@@ -741,6 +738,27 @@ const handleSubmit = async () => {
       isLoading.value = true;
       showLoading('Processing certificate', 'Please wait while we prepare the certificate.');
 
+      const isVisualChanged = getVisualSnapshot() !== initialVisualState.value;
+
+      if (isEditMode.value && !isVisualChanged) {
+        const payload: any = {};
+        if (store.title !== store.detailCertificate?.title) {
+          payload.title = store.title;
+        }
+        if (store.certificate_type?.value !== store.detailCertificate?.certificate_type?.value) {
+          payload.type = store.certificate_type?.value;
+        }
+
+        if (Object.keys(payload).length > 0) {
+          submitCertificateForm(payload);
+        }
+        else {
+          isLoading.value = false;
+          hideLoading();
+        }
+        return;
+      }
+
       let backgroundUrl: string = '';
       let backgroundMeta: any = uploadedImageMeta.value || store.uploadedBackgroundMeta;
 
@@ -766,7 +784,7 @@ const handleSubmit = async () => {
             if (content.file) {
               const uploadResult = await uploadContentImage(content.file);
               if (uploadResult?.url) {
-                contentImageUrls[content.key] = {
+                contentImageUrls[content.element_id] = {
                   url: uploadResult.url,
                   originalFileName: uploadResult.meta?.original_file_name || content.file.name,
                 };
@@ -776,7 +794,7 @@ const handleSubmit = async () => {
 
             else if (content.value) {
               const contentMeta = content.metadata as Record<string, any>;
-              contentImageUrls[content.key] = {
+              contentImageUrls[content.element_id] = {
                 url: content.value,
                 originalFileName: contentMeta?.original_file_name,
               };
@@ -822,7 +840,8 @@ const handleSubmit = async () => {
       }
       catch (err) {
         console.error('[App] Could not generate/upload preview image:', err);
-        $toast({ variant: 'warning', title: 'Warning', text: 'Preview image generation failed, continuing without preview.' });
+        $toast({ variant: 'warning', title: 'Warning', text: 'Preview image generation failed' });
+        return;
       }
 
       const payload = buildCertificateCreatePayload({
@@ -869,27 +888,20 @@ const handleSubmit = async () => {
   }
 };
 
-// Gunakan isFormDirtyLegacy untuk prevent leave default,
-// atau gunakan logika isFormChanged di edit mode.
-// Untuk konsistensi, kita biarkan logic original untuk preventLeave saat create,
-// dan logic edit mode untuk reset saved state.
 watch(isFormDirtyLegacy, (value) => {
   if (!isEditMode.value) {
     preventLeave.value = value;
   }
 });
 
-// Watcher untuk mereset "Saved" state saat user mengubah data kembali
 watch(
   () => [store.title, store.certificate_type, store.image, store.contents, store.safe_zone],
   () => {
     if (isEditMode.value) {
-      // Jika user mengubah data, dan sebelumnya statusnya "Saved", reset kembali
       if (hasJustSaved.value) {
         hasJustSaved.value = false;
       }
 
-      // Update preventLeave berdasarkan apakah form berubah dari initial state
       preventLeave.value = isFormChanged.value;
     }
   },

@@ -1,12 +1,12 @@
 import type {
   ICertificateContentCertificateNumberForm,
   ICertificateContentCertificateSigneeForm,
-  ICertificateContentEmployeeIdForm,
   ICertificateContentEventTitleForm,
   ICertificateContentForm,
-  ICertificateContentFullNameForm,
   ICertificateContentImageForm,
   ICertificateContentLocationForm,
+  ICertificateContentNIKForm,
+  ICertificateContentParticipantNameForm,
   ICertificateContentQRCodeForm,
   ICertificateContentTextForm,
   ICertificateContentValidThruForm,
@@ -60,8 +60,10 @@ export const contentFactories: Record<string, ContentFactory<any>> = {
     createNew(key: string): ICertificateContentImageForm {
       return {
         type: 'image',
-        key,
+        key: 'image',
+        element_id: key,
         value: null,
+        element_value: null,
         metadata: {
           ...DEFAULT_IMAGE_DIMENSIONS,
           vertical: 0,
@@ -78,8 +80,10 @@ export const contentFactories: Record<string, ContentFactory<any>> = {
     createNew(key: string): ICertificateContentCertificateSigneeForm {
       return {
         type: 'sertificate_signee',
-        key,
+        key: 'sertificate_signee',
+        element_id: key,
         value: null,
+        element_value: null,
         metadata: {
           ...DEFAULT_IMAGE_DIMENSIONS,
           vertical: 0,
@@ -97,8 +101,10 @@ export const contentFactories: Record<string, ContentFactory<any>> = {
       const defaultText = 'Input Text Here';
       return {
         type: 'text',
-        key,
-        value: defaultText,
+        key: 'text',
+        element_id: key,
+        value: null,
+        element_value: defaultText,
         metadata: createTextMetadata(defaultText),
       };
     },
@@ -108,44 +114,52 @@ export const contentFactories: Record<string, ContentFactory<any>> = {
     createNew(key: string): ICertificateContentCertificateNumberForm {
       return {
         type: 'certificate_number',
-        key,
+        key: 'certificate_number',
+        element_id: key,
         value: '',
+        element_value: '',
         metadata: createTextMetadata(''),
       };
     },
   } as ContentFactory<ICertificateContentCertificateNumberForm>,
 
-  fullname: {
-    createNew(key: string): ICertificateContentFullNameForm {
-      const defaultText = '{{ fullname }}';
+  participant_name: {
+    createNew(key: string): ICertificateContentParticipantNameForm {
+      const defaultText = '{{ participant_name }}';
       return {
-        type: 'fullname',
-        key,
-        value: defaultText,
+        type: 'participant_name',
+        key: 'participant_name',
+        element_id: key,
+        value: null,
+        element_value: defaultText,
         metadata: createTextMetadata(defaultText),
       };
     },
-  } as ContentFactory<ICertificateContentFullNameForm>,
+  } as ContentFactory<ICertificateContentParticipantNameForm>,
 
-  employee_id: {
-    createNew(key: string): ICertificateContentEmployeeIdForm {
+  nik: {
+    createNew(key: string): ICertificateContentNIKForm {
       const defaultText = '{{ nik }}';
       return {
-        type: 'employee_id',
-        key,
-        value: defaultText,
+        type: 'nik',
+        key: 'nik',
+        element_id: key,
+        value: null,
+        element_value: defaultText,
         metadata: createTextMetadata(defaultText),
       };
     },
-  } as ContentFactory<ICertificateContentEmployeeIdForm>,
+  } as ContentFactory<ICertificateContentNIKForm>,
 
-  event_title: {
+  title: {
     createNew(key: string): ICertificateContentEventTitleForm {
-      const defaultText = '{{ event_title }}';
+      const defaultText = '{{ title }}';
       return {
-        type: 'event_title',
-        key,
-        value: defaultText,
+        type: 'title',
+        key: 'title',
+        element_id: key,
+        value: null,
+        element_value: defaultText,
         metadata: createTextMetadata(defaultText),
       };
     },
@@ -156,11 +170,13 @@ export const contentFactories: Record<string, ContentFactory<any>> = {
       const defaultText = '{{ location }}';
       return {
         type: 'location',
-        key,
-        value: defaultText,
+        key: 'location',
+        element_id: key,
+        value: null,
+        element_value: defaultText,
         metadata: {
           ...createTextMetadata(defaultText),
-          location: '',
+          city: '',
           date_format: 'DD/MM/YYYY',
         },
       };
@@ -172,8 +188,10 @@ export const contentFactories: Record<string, ContentFactory<any>> = {
       const defaultText = '{{ valid_thru }}';
       return {
         type: 'valid_thru',
-        key,
-        value: defaultText,
+        key: 'valid_thru',
+        element_id: key,
+        value: null,
+        element_value: defaultText,
         metadata: createTextMetadata(defaultText),
       };
     },
@@ -183,8 +201,10 @@ export const contentFactories: Record<string, ContentFactory<any>> = {
     createNew(key: string): ICertificateContentQRCodeForm {
       return {
         type: 'qr_code',
-        key,
+        key: 'qr_code',
+        element_id: key,
         value: '{{qr_code_url}}',
+        element_value: '{{qr_code_url}}',
         metadata: {
           width: QR_CODE_DEFAULT_CONFIG.width,
           height: QR_CODE_DEFAULT_CONFIG.height,

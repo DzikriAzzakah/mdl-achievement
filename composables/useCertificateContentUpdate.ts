@@ -118,7 +118,7 @@ export function useCertificateContentUpdate<T extends ICertificateContentForm>(
   };
 
   const updateLocation = (value: string | undefined) => {
-    updateMetadataField('location' as any, value || '');
+    updateMetadataField('city' as any, value || '');
   };
 
   const updateDateFormat = (value: string) => {

@@ -22,7 +22,7 @@ export function useKeyboardShortcuts() {
 
     // Find selected content
     const selectedContent = store.contents.find(
-      c => c.key === store.selectedContentKey,
+      c => c.element_id === store.selectedContentKey,
     );
     if (!selectedContent) {
       return;
@@ -41,7 +41,7 @@ export function useKeyboardShortcuts() {
       }
 
       const index = store.contents.findIndex(
-        c => c.key === store.selectedContentKey,
+        c => c.element_id === store.selectedContentKey,
       );
       if (index !== -1) {
         store.deleteContent(index);
@@ -57,7 +57,7 @@ export function useKeyboardShortcuts() {
       event.preventDefault();
 
       const index = store.contents.findIndex(
-        c => c.key === store.selectedContentKey,
+        c => c.element_id === store.selectedContentKey,
       );
       if (index !== -1) {
         store.contents[index].metadata.vertical -= moveAmount;
@@ -72,7 +72,7 @@ export function useKeyboardShortcuts() {
       event.preventDefault();
 
       const index = store.contents.findIndex(
-        c => c.key === store.selectedContentKey,
+        c => c.element_id === store.selectedContentKey,
       );
       if (index !== -1) {
         store.contents[index].metadata.vertical += moveAmount;
@@ -87,7 +87,7 @@ export function useKeyboardShortcuts() {
       event.preventDefault();
 
       const index = store.contents.findIndex(
-        c => c.key === store.selectedContentKey,
+        c => c.element_id === store.selectedContentKey,
       );
       if (index !== -1) {
         store.contents[index].metadata.horizontal -= moveAmount;
@@ -102,7 +102,7 @@ export function useKeyboardShortcuts() {
       event.preventDefault();
 
       const index = store.contents.findIndex(
-        c => c.key === store.selectedContentKey,
+        c => c.element_id === store.selectedContentKey,
       );
       if (index !== -1) {
         store.contents[index].metadata.horizontal += moveAmount;

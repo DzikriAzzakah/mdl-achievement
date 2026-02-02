@@ -32,9 +32,9 @@
       <template v-if="contentItem.type === 'location'">
         <UiFormGroup label="Location">
           <UiInput
-            :model-value="contentItem.metadata.location"
+            :model-value="contentItem.metadata.city"
             size="md"
-            placeholder="Enter location"
+            placeholder="Enter City"
             @update:model-value="updateHandlers.updateLocation"
           />
         </UiFormGroup>
@@ -59,7 +59,7 @@
         label="Text"
       >
         <UITextarea
-          :model-value="contentItem.value"
+          :model-value="contentItem.value ?? undefined"
           size="md"
           @update:model-value="handleValueUpdate"
         />
@@ -70,10 +70,10 @@
 
 <script setup lang="ts">
 import type {
-  ICertificateContentEmployeeIdForm,
   ICertificateContentEventTitleForm,
-  ICertificateContentFullNameForm,
   ICertificateContentLocationForm,
+  ICertificateContentNIKForm,
+  ICertificateContentParticipantNameForm,
   ICertificateContentTextForm,
   ICertificateContentValidThruForm,
 } from '#achievement/config/types';
@@ -89,8 +89,8 @@ import UiSelect from '#ui/components/molecules/select/index.vue';
 type TextBasedContentItem =
   | ICertificateContentTextForm
   | ICertificateContentLocationForm
-  | ICertificateContentFullNameForm
-  | ICertificateContentEmployeeIdForm
+  | ICertificateContentParticipantNameForm
+  | ICertificateContentNIKForm
   | ICertificateContentEventTitleForm
   | ICertificateContentValidThruForm;
 

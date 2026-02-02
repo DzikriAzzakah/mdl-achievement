@@ -34,18 +34,18 @@
       <div class="flex flex-col gap-4 w-full">
         <template
           v-for="(content, idx) in contents"
-          :key="content.key"
+          :key="content.element_id"
         >
           <component
             :is="getContentComponent(content.type)"
             :content-item="content"
             :index="idx"
-            :is-expanded="isContentExpanded(content.key)"
+            :is-expanded="isContentExpanded(content.element_id)"
             :safe-zone-width="safeZoneWidth"
             :safe-zone-height="safeZoneHeight"
             @delete="emit('deleteContent', idx)"
             @update:content-item="(updated: ICertificateContentForm) => emit('updateContent', idx, updated)"
-            @header-click="emit('contentClick', content.key)"
+            @header-click="emit('contentClick', content.element_id)"
           />
         </template>
       </div>
@@ -112,9 +112,9 @@ const availableContentTypes = [
   { type: 'sertificate_signee', label: 'Certificate Signee', icon: 'mdi:image' },
   { type: 'text', label: 'Text Area', icon: 'ic:round-text-fields' },
   { type: 'certificate_number', label: 'Certificate Number', icon: 'mdi:code-tags' },
-  { type: 'fullname', label: 'Fullname', icon: 'mdi:code-tags' },
-  { type: 'employee_id', label: 'Employee ID (NIK)', icon: 'mdi:code-tags' },
-  { type: 'event_title', label: 'Event Title', icon: 'mdi:code-tags' },
+  { type: 'participant_name', label: 'Participant Name', icon: 'mdi:code-tags' },
+  { type: 'nik', label: 'NIK', icon: 'mdi:code-tags' },
+  { type: 'title', label: 'Event Title', icon: 'mdi:code-tags' },
   { type: 'location', label: 'Location', icon: 'mdi:code-tags' },
   { type: 'qr_code', label: 'QR Code', icon: 'mdi:qrcode' },
   { type: 'valid_thru', label: 'Certificate Valid Thru', icon: 'mdi:code-tags' },
@@ -126,9 +126,9 @@ const COMPONENT_MAP: Record<string, any> = {
   qr_code: ContentQRCode,
   certificate_number: ContentCertificateNumber,
   text: ContentTextBase,
-  fullname: ContentTextBase,
-  employee_id: ContentTextBase,
-  event_title: ContentTextBase,
+  participant_name: ContentTextBase,
+  nik: ContentTextBase,
+  title: ContentTextBase,
   location: ContentTextBase,
   valid_thru: ContentTextBase,
 };

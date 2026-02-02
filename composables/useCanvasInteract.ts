@@ -49,7 +49,7 @@ export function useCanvasInteract(options: UseCanvasInteractOptions) {
       return;
     }
 
-    const contentIndex = contents.value.findIndex(c => c.key === selectedContentKey.value);
+    const contentIndex = contents.value.findIndex(c => c.element_id === selectedContentKey.value);
     if (contentIndex === -1) {
       return;
     }
@@ -79,7 +79,7 @@ export function useCanvasInteract(options: UseCanvasInteractOptions) {
       return;
     }
 
-    const contentIndex = contents.value.findIndex(c => c.key === selectedContentKey.value);
+    const contentIndex = contents.value.findIndex(c => c.element_id === selectedContentKey.value);
     if (contentIndex === -1) {
       return;
     }

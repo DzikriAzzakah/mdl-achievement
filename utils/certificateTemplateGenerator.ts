@@ -1,12 +1,12 @@
 import type {
   ICertificateContentCertificateNumberForm,
   ICertificateContentCertificateSigneeForm,
-  ICertificateContentEmployeeIdForm,
   ICertificateContentEventTitleForm,
   ICertificateContentForm,
-  ICertificateContentFullNameForm,
   ICertificateContentImageForm,
   ICertificateContentLocationForm,
+  ICertificateContentNIKForm,
+  ICertificateContentParticipantNameForm,
   ICertificateContentQRCodeForm,
   ICertificateContentTextForm,
   ICertificateContentValidThruForm,
@@ -27,8 +27,8 @@ type TextContentType =
   | ICertificateContentTextForm
   | ICertificateContentCertificateNumberForm
   | ICertificateContentLocationForm
-  | ICertificateContentFullNameForm
-  | ICertificateContentEmployeeIdForm
+  | ICertificateContentParticipantNameForm
+  | ICertificateContentNIKForm
   | ICertificateContentEventTitleForm
   | ICertificateContentValidThruForm;
 
@@ -59,7 +59,7 @@ ${linkTags}`;
 }
 
 function isTextBasedContent(content: ICertificateContentForm): content is TextContentType {
-  return ['text', 'certificate_number', 'location', 'fullname', 'employee_id', 'event_title', 'valid_thru'].includes(content.type);
+  return ['text', 'certificate_number', 'location', 'participant_name', 'nik', 'title', 'valid_thru'].includes(content.type);
 }
 
 function isImageBasedContent(
@@ -85,11 +85,11 @@ function getTemplatePlaceholder(
       return content.value || '';
     case 'certificate_number':
       return '{{certificate_number}}';
-    case 'fullname':
+    case 'participant_name':
       return '{{participant_name}}';
-    case 'employee_id':
+    case 'nik':
       return '{{nik}}';
-    case 'event_title':
+    case 'title':
       return '{{title}}';
     case 'location':
       return '{{city}}, {{date}}';

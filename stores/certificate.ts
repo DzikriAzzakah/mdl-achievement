@@ -181,7 +181,7 @@ export const useCertificateStore = defineStore('certificate', () => {
 
     if (mappedContents.length > 0) {
       const maxId = mappedContents.reduce((max, c) => {
-        const match = c.key.match(/_(\d+)$/);
+        const match = c.element_id.match(/_(\d+)$/);
         const id = match ? Number.parseInt(match[1], 10) : 0;
         return Math.max(max, id);
       }, 0);
@@ -206,9 +206,14 @@ export const useCertificateStore = defineStore('certificate', () => {
   }
 
   function mapContentPayloadToForm(content: ICertificateContentPayload, index: number): ICertificateContentForm {
-    const { type, key, value, metadata, variables, id } = content;
+    const { type, key, element_id, value, element_value, metadata, variables, id } = content;
 
-    const contentKey = key || generateContentKey(type, index + 1);
+    // Use element_id if available, otherwise generate from key or index
+    const contentElementId = element_id || key || generateContentKey(type, index + 1);
+    const contentKey = type;
+
+    // Use element_value if available, otherwise fallback to value for backward compatibility
+    const actualValue = element_value !== undefined ? element_value : value;
 
     const baseMetadata = {
       width: metadata.width,
@@ -225,7 +230,9 @@ export const useCertificateStore = defineStore('certificate', () => {
         id,
         type: 'image',
         key: contentKey,
+        element_id: contentElementId,
         value: value || metadata.full_path || null,
+        element_value: element_value || value || metadata.full_path || null,
         metadata: {
           ...baseMetadata,
           originalWidth: metadata.original_width,
@@ -240,7 +247,9 @@ export const useCertificateStore = defineStore('certificate', () => {
         id,
         type: 'sertificate_signee',
         key: contentKey,
+        element_id: contentElementId,
         value: value || metadata.full_path || null,
+        element_value: element_value || value || metadata.full_path || null,
         metadata: {
           ...baseMetadata,
           originalWidth: metadata.original_width,
@@ -255,7 +264,9 @@ export const useCertificateStore = defineStore('certificate', () => {
         id,
         type: 'qr_code',
         key: contentKey,
+        element_id: contentElementId,
         value: value || '',
+        element_value: actualValue || '',
         metadata: {
           ...baseMetadata,
           background_color: metadata.background_color || 'FFFFFF',
@@ -282,7 +293,9 @@ export const useCertificateStore = defineStore('certificate', () => {
         id,
         type: 'certificate_number',
         key: contentKey,
+        element_id: contentElementId,
         value: value || '',
+        element_value: actualValue || '',
         metadata: textMetadata,
         variables: variables?.map(v => ({
           id: v.id,
@@ -299,41 +312,49 @@ export const useCertificateStore = defineStore('certificate', () => {
         id,
         type: 'location',
         key: contentKey,
-        value: value || '',
+        element_id: contentElementId,
+        value: null,
+        element_value: actualValue || '',
         metadata: {
           ...textMetadata,
-          location: metadata.location || '',
+          city: metadata.city || '',
           date_format: metadata.date_format || 'DD/MM/YYYY',
         },
       };
     }
 
-    if (type === 'fullname') {
+    if (type === 'participant_name') {
       return {
         id,
-        type: 'fullname',
+        type: 'participant_name',
         key: contentKey,
-        value: value || '',
+        element_id: contentElementId,
+        value: null,
+        element_value: actualValue || '',
         metadata: textMetadata,
       };
     }
 
-    if (type === 'employee_id') {
+    if (type === 'nik') {
       return {
         id,
-        type: 'employee_id',
+        type: 'nik',
         key: contentKey,
-        value: value || '',
+        element_id: contentElementId,
+        value: null,
+        element_value: actualValue || '',
         metadata: textMetadata,
       };
     }
 
-    if (type === 'event_title') {
+    if (type === 'title') {
       return {
         id,
-        type: 'event_title',
+        type: 'title',
         key: contentKey,
-        value: value || '',
+        element_id: contentElementId,
+        value: null,
+        element_value: actualValue || '',
         metadata: textMetadata,
       };
     }
@@ -343,7 +364,9 @@ export const useCertificateStore = defineStore('certificate', () => {
         id,
         type: 'valid_thru',
         key: contentKey,
-        value: value || '',
+        element_id: contentElementId,
+        value: null,
+        element_value: actualValue || '',
         metadata: textMetadata,
       };
     }
@@ -352,7 +375,9 @@ export const useCertificateStore = defineStore('certificate', () => {
       id,
       type: 'text',
       key: contentKey,
-      value: value || '',
+      element_id: contentElementId,
+      value: null,
+      element_value: actualValue || '',
       metadata: textMetadata,
     };
   }
@@ -456,23 +481,23 @@ export const useCertificateStore = defineStore('certificate', () => {
 
   // Duplication Action
   function duplicateContent(key: string): void {
-    const index = contents.value.findIndex(c => c.key === key);
+    const index = contents.value.findIndex(c => c.element_id === key);
     if (index === -1) {
       return;
     }
 
     const originalContent = contents.value[index];
     contentIdCounter.value++;
-    const newKey = generateContentKey(originalContent.type, contentIdCounter.value);
+    const newElementId = generateContentKey(originalContent.type, contentIdCounter.value);
 
     const clonedContent: ICertificateContentForm = JSON.parse(JSON.stringify(originalContent));
-    clonedContent.key = newKey;
-    clonedContent.id = undefined; // Ensure duplicated content doesn't carry over the ID
+    clonedContent.element_id = newElementId;
+    clonedContent.id = undefined;
     clonedContent.metadata.horizontal += 10;
     clonedContent.metadata.vertical += 10;
 
     contents.value = [...contents.value, clonedContent];
-    selectedContentKey.value = newKey;
+    selectedContentKey.value = newElementId;
   }
 
   // Locking Action

@@ -10,7 +10,7 @@
           class="text-gray-500 w-5 h-5"
         />
         <p class="text-sm font-medium">
-          QR Code {{ index + 1 }}
+          QR Code
         </p>
       </div>
       <div class="flex items-center gap-2">

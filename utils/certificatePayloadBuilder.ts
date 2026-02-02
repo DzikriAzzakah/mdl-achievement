@@ -40,7 +40,7 @@ export interface ICertificateContentMetadataPayload {
   alignment?: { label: string; value: string; };
   color?: string;
   // For location type
-  location?: string;
+  city?: string;
   date_format?: string;
   // For QR Code type
   background_color?: string;
@@ -107,12 +107,17 @@ export function buildContentPayload(
   uploadedImageMeta?: IAchievementUploadResponse['data'] | null,
   isDeleted: boolean = false,
 ): ICertificateContentPayload {
+  // For text-based content types (excluding certificate_number), value should be null
+  const shouldNullifyValue = ['text', 'participant_name', 'nik', 'title', 'location', 'valid_thru'].includes(content.type);
+
   const basePayload: ICertificateContentPayload = {
     id: content.id,
     deleted: isDeleted,
     type: content.type,
     key: content.key,
-    value: uploadedImageUrl || content.value,
+    element_id: content.element_id,
+    value: shouldNullifyValue ? null : (uploadedImageUrl || content.value),
+    element_value: content.element_value,
     metadata: {
       ...content.metadata,
       width: content.metadata.width,
@@ -177,10 +182,10 @@ export function buildContentPayload(
 
   if (content.type === 'location') {
     const locationMetadata = content.metadata as {
-      location?: string;
+      city?: string;
       date_format?: string;
     };
-    basePayload.metadata.location = locationMetadata.location;
+    basePayload.metadata.city = locationMetadata.city;
     basePayload.metadata.date_format = locationMetadata.date_format;
   }
 
@@ -236,5 +241,5 @@ export function buildCertificateCreatePayload(options: {
 }
 
 function isTextBasedContent(type: string): boolean {
-  return ['text', 'certificate_number', 'location', 'fullname', 'employee_id', 'event_title', 'valid_thru'].includes(type);
+  return ['text', 'certificate_number', 'location', 'participant_name', 'nik', 'title', 'valid_thru'].includes(type);
 }
