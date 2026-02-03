@@ -1,6 +1,6 @@
-import type { ICertificateContentQRCodeForm } from '#achievement/config/types';
+import type { QRCodeContentForm } from '#achievement/config/types';
 
-export function generateQRCodeDataUrl(content: ICertificateContentQRCodeForm, _value: string = 'https://example.com'): string {
+export function generateQRCodeDataUrl(content: QRCodeContentForm, _value: string = 'https://example.com'): string {
   const { shape, shape_color } = content.metadata;
 
   // For template preview, we'll generate a simple placeholder QR code pattern

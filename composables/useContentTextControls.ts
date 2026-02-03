@@ -1,13 +1,13 @@
-import type { ICertificateContentForm, SizeMode } from '#achievement/config/types';
+import type { CertificateContentForm, SizeMode } from '#achievement/config/types';
 import { useCertificateContentUpdate } from '#achievement/composables/useCertificateContentUpdate';
 import {
   CANVAS_HEIGHT,
   CANVAS_WIDTH,
+  CONTENT_TYPE_CONFIGS,
   FONT_OPTIONS,
   FONT_WEIGHT_LABELS,
   SIZE_MODE_OPTIONS,
 } from '#achievement/config/constants';
-import { CONTENT_TYPE_CONFIGS } from '#achievement/config/types';
 
 interface ContentTextControlsProps<T> {
   contentItem: T;
@@ -27,7 +27,7 @@ interface SizeModeOption {
   value: SizeMode;
 }
 
-export function useContentTextControls<T extends ICertificateContentForm>(
+export function useContentTextControls<T extends CertificateContentForm>(
   props: ContentTextControlsProps<T>,
   emit: (event: 'update:contentItem' | 'delete' | 'headerClick', value?: any) => void,
 ) {

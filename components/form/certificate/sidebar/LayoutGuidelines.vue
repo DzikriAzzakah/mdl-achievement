@@ -117,26 +117,26 @@
 </template>
 
 <script setup lang="ts">
-import type { ICertificateSafeZone } from '#achievement/config/types.ts';
+import type { SafeZone } from '#achievement/config/types.ts';
 import {
   UiFormGroup,
   UiInput,
 } from '@mydigilearn-saas/web-ui';
 
 interface Props {
-  safeZone: ICertificateSafeZone;
+  safeZone: SafeZone;
   hasUploadedImage: boolean;
 }
 
 const props = defineProps<Props>();
 
 const emit = defineEmits<{
-  'update:safeZone': [zone: ICertificateSafeZone];
+  'update:safeZone': [zone: SafeZone];
 }>();
 
 const isCollapsed = ref<boolean>(false);
 
-const handleSafeZoneChange = (key: keyof ICertificateSafeZone, value: number | string) => {
+const handleSafeZoneChange = (key: keyof SafeZone, value: number | string) => {
   const numValue = typeof value === 'string' ? Number.parseInt(value, 10) || 0 : value;
   emit('update:safeZone', {
     ...props.safeZone,

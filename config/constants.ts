@@ -1,3 +1,5 @@
+import type { ContentTypeConfig } from '#achievement/config/types.ts';
+
 export const REMOTE_FEAT_FLAG_KEY = 'achievement';
 
 export const CANVAS_WIDTH = 842;
@@ -17,11 +19,6 @@ export const DEFAULT_TEXT_CONFIG = {
 export const DEFAULT_IMAGE_DIMENSIONS = {
   width: 200,
   height: 100,
-};
-
-export const DEFAULT_TEXT_DIMENSIONS = {
-  width: 200,
-  height: 50,
 };
 
 export const ACCESSIBILITY_OPTIONS = [
@@ -165,7 +162,7 @@ export const IMAGE_ERROR_MESSAGES = {
 
 export const QR_CODE_SHAPE_OPTIONS = [
   { label: 'Dots', value: 'dots', icon: 'mdi:dots-grid' },
-  { label: 'Square', value: 'square', icon: 'mdi:square' },
+  { label: 'Square', value: 'square', icon: 'mdi:view-grid' },
 ];
 
 export const QR_CODE_BORDER_OPTIONS = [
@@ -183,3 +180,55 @@ export const QR_CODE_DEFAULT_CONFIG = {
   border_style: 'rounded' as const,
   border_color: 'FFFFFF',
 };
+
+export const CONTENT_TYPE_CONFIGS: Readonly<Record<string, ContentTypeConfig>> = {
+  text: {
+    title: 'Text',
+    icon: 'material-symbols:text-fields-rounded',
+    fields: ['size', 'fontFamily', 'fontSize', 'fontWeight', 'alignment', 'fontColor'],
+    isSource: false,
+    hasCustomFields: false,
+  },
+  certificate_number: {
+    title: 'Certificate Number',
+    icon: 'material-symbols:code-rounded',
+    fields: ['size', 'fontFamily', 'fontSize', 'fontWeight', 'alignment', 'fontColor', 'vertical', 'horizontal'],
+    isSource: true,
+    hasCustomFields: true,
+  },
+  participant_name: {
+    title: 'Full Name',
+    icon: 'material-symbols:code-rounded',
+    fields: ['size', 'fontFamily', 'fontSize', 'fontWeight', 'alignment', 'fontColor', 'vertical', 'horizontal'],
+    isSource: true,
+    hasCustomFields: false,
+  },
+  nik: {
+    title: 'NIK',
+    icon: 'material-symbols:code-rounded',
+    fields: ['size', 'fontFamily', 'fontSize', 'fontWeight', 'alignment', 'fontColor', 'vertical', 'horizontal'],
+    isSource: true,
+    hasCustomFields: false,
+  },
+  title: {
+    title: 'Event Title',
+    icon: 'material-symbols:code-rounded',
+    fields: ['size', 'fontFamily', 'fontSize', 'fontWeight', 'alignment', 'fontColor', 'vertical', 'horizontal'],
+    isSource: true,
+    hasCustomFields: false,
+  },
+  location: {
+    title: 'Location',
+    icon: 'material-symbols:code-rounded',
+    fields: ['size', 'fontFamily', 'fontSize', 'fontWeight', 'alignment', 'fontColor', 'vertical', 'horizontal'],
+    isSource: true,
+    hasCustomFields: true,
+  },
+  valid_thru: {
+    title: 'Valid Thru',
+    icon: 'material-symbols:code-rounded',
+    fields: ['size', 'fontFamily', 'fontSize', 'fontWeight', 'alignment', 'fontColor', 'vertical', 'horizontal'],
+    isSource: true,
+    hasCustomFields: false,
+  },
+} as const;

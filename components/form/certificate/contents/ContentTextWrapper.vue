@@ -60,7 +60,7 @@
         <div class="flex items-center gap-2">
           <UiFormGroup
             label="Width"
-            class="flex-1"
+            class="flex-1 min-w-0"
           >
             <div class="size-mode-field">
               <template v-if="widthMode === 'fix'">
@@ -127,7 +127,7 @@
 
           <UiFormGroup
             label="Height"
-            class="flex-1"
+            class="flex-1 min-w-0"
           >
             <div class="size-mode-field">
               <template v-if="heightMode === 'fix'">
@@ -192,7 +192,7 @@
             </div>
           </UiFormGroup>
 
-          <UiFormGroup class="mt-5">
+          <UiFormGroup class="mt-5 flex-shrink-0">
             <UiButton
               v-tooltip="aspectRatioTooltip"
               square
@@ -318,40 +318,125 @@
             />
           </UiFormGroup>
         </div>
-
         <UiFormGroup label="Position">
-          <div class="flex items-center gap-4">
-            <UiInput
-              type="number"
-              :model-value="metadata.horizontal"
-              :disabled="widthMode === 'fill'"
-              placeholder="X"
-              size="md"
-              @update:model-value="emit('update:horizontal', $event)"
+          <div class="space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <UiButton
+                v-tooltip="isHorizontalAlignDisabled ? `Disabled in ${widthMode} mode` : 'Align Left'"
+                size="sm"
+                square
+                :disabled="isHorizontalAlignDisabled"
+                :variant="currentHorizontalAlign === 'left' ? 'solid' : 'soft'"
+                :color="currentHorizontalAlign === 'left' ? 'primary' : 'ghost'"
+                icon="fe:align-left"
+                @click="handleAlignContent('left')"
+              >
+                L
+              </UiButton>
+              <UiButton
+                v-tooltip="isCenterRightDisabled ? `Disabled in ${widthMode} mode` : 'Align Center'"
+                size="sm"
+                square
+                :disabled="isCenterRightDisabled"
+                :variant="currentHorizontalAlign === 'center' ? 'solid' : 'soft'"
+                :color="currentHorizontalAlign === 'center' ? 'primary' : 'ghost'"
+                icon="fe:align-center"
+                @click="handleAlignContent('center')"
+              >
+                C
+              </UiButton>
+              <UiButton
+                v-tooltip="isCenterRightDisabled ? `Disabled in ${widthMode} mode` : 'Align Right'"
+                size="sm"
+                square
+                :disabled="isCenterRightDisabled"
+                :variant="currentHorizontalAlign === 'right' ? 'solid' : 'soft'"
+                :color="currentHorizontalAlign === 'right' ? 'primary' : 'ghost'"
+                icon="fe:align-right"
+                @click="handleAlignContent('right')"
+              >
+                R
+              </UiButton>
+            </div>
+            <div class="flex items-center justify-between gap-2">
+              <UiButton
+                v-tooltip="isVerticalAlignDisabled ? `Disabled in ${heightMode} mode` : 'Align Top'"
+                size="sm"
+                square
+                :disabled="isVerticalAlignDisabled"
+                :variant="currentVerticalAlign === 'top' ? 'solid' : 'soft'"
+                :color="currentVerticalAlign === 'top' ? 'primary' : 'ghost'"
+                icon="fe:align-top"
+                @click="handleAlignContent('top')"
+              >
+                T
+              </UiButton>
+              <UiButton
+                v-tooltip="isMiddleBottomDisabled ? `Disabled in ${heightMode} mode` : 'Align Middle'"
+                size="sm"
+                square
+                :disabled="isMiddleBottomDisabled"
+                :variant="currentVerticalAlign === 'middle' ? 'solid' : 'soft'"
+                :color="currentVerticalAlign === 'middle' ? 'primary' : 'ghost'"
+                icon="fe:align-vertically"
+                @click="handleAlignContent('middle')"
+              >
+                M
+              </UiButton>
+              <UiButton
+                v-tooltip="isMiddleBottomDisabled ? `Disabled in ${heightMode} mode` : 'Align Bottom'"
+                size="sm"
+                square
+                :disabled="isMiddleBottomDisabled"
+                :variant="currentVerticalAlign === 'bottom' ? 'solid' : 'soft'"
+                :color="currentVerticalAlign === 'bottom' ? 'primary' : 'ghost'"
+                icon="fe:align-bottom"
+                @click="handleAlignContent('bottom')"
+              >
+                B
+              </UiButton>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 mt-2">
+            <UiFormGroup
+              label="Horizontal"
+              class="flex-1 min-w-0"
             >
-              <template #suffix>
-                <span class="text-xs text-gray-500">
-                  X
-                </span>
-              </template>
-            </UiInput>
-            <UiInput
-              type="number"
-              :model-value="metadata.vertical"
-              :disabled="heightMode === 'fill'"
-              placeholder="Y"
-              size="md"
-              @update:model-value="emit('update:vertical', $event)"
+              <UiInput
+                type="number"
+                :model-value="metadata.horizontal"
+                :disabled="widthMode === 'fill'"
+                size="md"
+                @update:model-value="emit('update:horizontal', $event)"
+              >
+                <template #suffix>
+                  <span class="text-xs text-gray-500">
+                    px
+                  </span>
+                </template>
+              </UiInput>
+            </UiFormGroup>
+
+            <UiFormGroup
+              label="Vertical"
+              class="flex-1 min-w-0"
             >
-              <template #suffix>
-                <span class="text-xs text-gray-500">
-                  Y
-                </span>
-              </template>
-            </UiInput>
+              <UiInput
+                type="number"
+                :model-value="metadata.vertical"
+                :disabled="heightMode === 'fill'"
+                size="md"
+                @update:model-value="emit('update:vertical', $event)"
+              >
+                <template #suffix>
+                  <span class="text-xs text-gray-500">
+                    px
+                  </span>
+                </template>
+              </UiInput>
+            </UiFormGroup>
           </div>
         </UiFormGroup>
-
         <slot name="after-fields" />
       </div>
     </div>
@@ -361,12 +446,10 @@
 </template>
 
 <script setup lang="ts">
-import type { ICertificateContentTextMetadata, IContentTypeConfig, SizeMode } from '#achievement/config/types';
-import { ALIGNMENT_OPTIONS, FONT_OPTIONS, SIZE_MODE_OPTIONS } from '#achievement/config/constants';
-import UiButton from '#ui/components/atoms/button/index.vue';
-import UiInput from '#ui/components/atoms/input/index.vue';
-import UiFormGroup from '#ui/components/molecules/form-group/index.vue';
-import UiSelect from '#ui/components/molecules/select/index.vue';
+import type { ContentTypeConfig, SizeMode, TextContentMetadata } from '#achievement/config/types';
+import { ALIGNMENT_OPTIONS, CANVAS_HEIGHT, CANVAS_WIDTH, FONT_OPTIONS, SIZE_MODE_OPTIONS } from '#achievement/config/constants';
+import { useCertificateStore } from '#achievement/stores/certificate';
+import { UiButton, UiFormGroup, UiInput, UiSelect } from '@mydigilearn-saas/web-ui';
 import { Dropdown } from 'floating-vue';
 
 interface FontOption {
@@ -387,8 +470,8 @@ interface SizeModeOption {
 interface Props {
   index: number;
   isCollapsed: boolean;
-  contentConfig: IContentTypeConfig;
-  metadata: ICertificateContentTextMetadata;
+  contentConfig: ContentTypeConfig;
+  metadata: TextContentMetadata;
   selectedFontObject: FontOption;
   selectedFontWeightObject: FontWeightOption;
   fontWeightOptions: FontWeightOption[];
@@ -398,6 +481,7 @@ interface Props {
   heightMode?: SizeMode;
   selectedWidthModeObject?: SizeModeOption;
   selectedHeightModeObject?: SizeModeOption;
+  elementId?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -432,6 +516,8 @@ const sizeModeOptions = SIZE_MODE_OPTIONS as SizeModeOption[];
 const colorPickerInput = ref<HTMLInputElement | null>(null);
 const widthDropdownRef = ref<InstanceType<typeof Dropdown> | null>(null);
 const heightDropdownRef = ref<InstanceType<typeof Dropdown> | null>(null);
+
+const certificateStore = useCertificateStore();
 
 const aspectRatioTooltip = computed(() => {
   if (!props.canLockAspectRatio) {
@@ -471,6 +557,72 @@ const handleHeightModeFromSelect = (value: any) => {
     emit('update:heightMode', value as SizeModeOption);
   }
 };
+
+const currentHorizontalAlign = computed(() => {
+  const horizontal = props.metadata.horizontal;
+  const width = props.metadata.width;
+  const elementWidth = width === 'fit-content' || typeof width !== 'number' ? 200 : width;
+
+  // Calculate safe zone width
+  const safeZoneLeft = certificateStore.safe_zone?.left || 0;
+  const safeZoneRight = certificateStore.safe_zone?.right || 0;
+  const safeZoneWidth = CANVAS_WIDTH - safeZoneLeft - safeZoneRight;
+
+  if (horizontal === 0) {
+    return 'left';
+  }
+  if (Math.abs(horizontal - (safeZoneWidth - elementWidth) / 2) < 1) {
+    return 'center';
+  }
+  if (Math.abs(horizontal - (safeZoneWidth - elementWidth)) < 1) {
+    return 'right';
+  }
+  return null;
+});
+
+const currentVerticalAlign = computed(() => {
+  const vertical = props.metadata.vertical;
+  const height = props.metadata.height;
+  const elementHeight = height === 'fit-content' || typeof height !== 'number' ? 200 : height;
+
+  // Calculate safe zone height
+  const safeZoneTop = certificateStore.safe_zone?.top || 0;
+  const safeZoneBottom = certificateStore.safe_zone?.bottom || 0;
+  const safeZoneHeight = CANVAS_HEIGHT - safeZoneTop - safeZoneBottom;
+
+  if (vertical === 0) {
+    return 'top';
+  }
+  if (Math.abs(vertical - (safeZoneHeight - elementHeight) / 2) < 1) {
+    return 'middle';
+  }
+  if (Math.abs(vertical - (safeZoneHeight - elementHeight)) < 1) {
+    return 'bottom';
+  }
+  return null;
+});
+
+const isHorizontalAlignDisabled = computed(() => {
+  return props.widthMode === 'fill';
+});
+
+const isVerticalAlignDisabled = computed(() => {
+  return props.heightMode === 'fill';
+});
+
+const isCenterRightDisabled = computed(() => {
+  return props.widthMode === 'fill' || props.metadata.width === 'fit-content';
+});
+
+const isMiddleBottomDisabled = computed(() => {
+  return props.heightMode === 'fill' || props.metadata.height === 'fit-content';
+});
+
+const handleAlignContent = (type: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => {
+  if (props.elementId) {
+    certificateStore.alignContent(props.elementId, type);
+  }
+};
 </script>
 
 <style scoped lang="postcss">
@@ -478,12 +630,46 @@ const handleHeightModeFromSelect = (value: any) => {
   @apply w-full;
 }
 
+:deep(.ui-form-group) {
+  min-width: 0;
+}
+
+:deep(.ui-input) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+:deep(.ui-input-wrapper) {
+  min-width: 0;
+  overflow: visible !important;
+}
+
+:deep(.ui-input-area) {
+  min-width: 0;
+}
+
+:deep(.ui-input-suffix) {
+  @apply flex items-center flex-shrink-0;
+  min-width: fit-content;
+}
+
+:deep(.ui-input-prefix) {
+  @apply flex items-center flex-shrink-0;
+  min-width: fit-content;
+}
+
 .size-mode-field {
   @apply w-full;
+  min-width: 0;
+}
+
+.size-mode-field :deep(.ui-input-wrapper) {
+  @apply flex-nowrap;
 }
 
 .size-mode-trigger {
-  @apply flex items-center justify-center p-1 hover:bg-gray-100 rounded cursor-pointer text-gray-500;
+  @apply flex items-center justify-center p-1 hover:bg-gray-100 rounded cursor-pointer text-gray-500 flex-shrink-0 whitespace-nowrap;
+  min-width: fit-content;
 }
 
 .size-mode-options {

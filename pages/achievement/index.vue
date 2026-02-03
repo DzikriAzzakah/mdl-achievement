@@ -156,7 +156,7 @@
           #body-certificate_type="{ item }"
         >
           <p class="capitalize">
-            {{ (item as ICertificate).certificate_type }}
+            {{ (item as Certificate).certificate_type }}
           </p>
         </template>
 
@@ -188,7 +188,7 @@
               size="md"
               square
               class="achievement-list__action-button"
-              @click="handleDetailItem(item as ICertificate | IBadge)"
+              @click="handleDetailItem(item as Certificate | Badge)"
             />
             <UiButton
               icon="mdi-pencil"
@@ -197,7 +197,7 @@
               size="md"
               square
               class="achievement-list__action-button"
-              @click="handleEditItem(item as ICertificate | IBadge)"
+              @click="handleEditItem(item as Certificate | Badge)"
             />
             <UiButton
               icon="mdi-delete"
@@ -206,7 +206,7 @@
               size="md"
               square
               class="achievement-list__action-button"
-              @click="handleDeleteItem(item as ICertificate | IBadge)"
+              @click="handleDeleteItem(item as Certificate | Badge)"
             />
           </div>
         </template>
@@ -216,7 +216,7 @@
 </template>
 
 <script setup lang="ts">
-import type { IBadge, ICertificate, IFilterAchievement } from '#achievement/config/types.ts';
+import type { AchievementFilter, Badge, Certificate } from '#achievement/config/types.ts';
 
 import { deleteBadge, deleteCertificate, getBadgeList, getCertificateList } from '#achievement/api/api.ts';
 
@@ -277,7 +277,7 @@ const activeTab = ref<string>('certificates');
 const search = ref<string>('');
 const debouncedSearch = ref<string>('');
 
-const filter = ref<IFilterAchievement>({
+const filter = ref<AchievementFilter>({
   certificateType: [],
   accessibility: [],
   created: '',
@@ -375,7 +375,7 @@ const { data, error, isError, isLoading: isLoadingData, refetch } = useQuery({
     pagination.value.totalData = response?.data?.pagination?.total_data || 0;
     pagination.value.totalPages = response?.data?.pagination?.total_pages || 1;
 
-    return (response?.data?.contents || []) as (ICertificate | IBadge)[];
+    return (response?.data?.contents || []) as (Certificate | Badge)[];
   },
   refetchOnMount: 'always',
   refetchOnWindowFocus: false,
@@ -450,7 +450,7 @@ function handleSort(sort: ISmartTableSortData | undefined) {
   sortOrder.value = sort;
 }
 
-function handleDetailItem(item: ICertificate | IBadge) {
+function handleDetailItem(item: Certificate | Badge) {
   if (isCertificates.value) {
     router.push(`/achievement/detail/certificate/${item.id}`);
   }
@@ -459,7 +459,7 @@ function handleDetailItem(item: ICertificate | IBadge) {
   }
 }
 
-function handleEditItem(item: ICertificate | IBadge) {
+function handleEditItem(item: Certificate | Badge) {
   if (isCertificates.value) {
     router.push(`/achievement/edit/certificate/${item.id}`);
   }
@@ -498,7 +498,7 @@ const deleteMutation = useMutation({
   },
 });
 
-function handleDeleteItem(item: ICertificate | IBadge) {
+function handleDeleteItem(item: Certificate | Badge) {
   const itemType = isCertificates.value ? 'certificate' : 'badge';
   const itemTitle = item.title;
 

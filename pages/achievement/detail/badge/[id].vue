@@ -21,7 +21,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { IBadgeDetail } from '#achievement/config/types.ts';
+import type { BadgeDetail } from '#achievement/config/types.ts';
 import { getBadgeDetail } from '#achievement/api/api.ts';
 import AccessibilityInformation from '#achievement/components/detail/badge/AccessibilityInformation.vue';
 import BadgeConfiguration from '#achievement/components/detail/badge/BadgeConfiguration.vue';
@@ -67,7 +67,7 @@ const { isLoading: isLoadingDetail, refetch } = useQuery({
       return { data: undefined };
     });
 
-    const content = response?.data as IBadgeDetail;
+    const content = response?.data as BadgeDetail;
     if (content) {
       detailBadge.value = {
         id: content.id,

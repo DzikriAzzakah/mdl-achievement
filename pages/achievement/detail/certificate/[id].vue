@@ -21,7 +21,7 @@
 </template>
 
 <script lang="ts" setup>
-import type { ICertificateDetailResponseData } from '#achievement/config/types.ts';
+import type { CertificateDetailResponseData } from '#achievement/config/types.ts';
 import { getCertificateDetail } from '#achievement/api/api.ts';
 import AccessibilityInformation from '#achievement/components/detail/certificate/AccessibilityInformation.vue';
 import CertificateConfiguration from '#achievement/components/detail/certificate/CertificateConfiguration.vue';
@@ -66,7 +66,7 @@ const { isLoading: isLoadingDetail, refetch } = useQuery({
       return { data: undefined };
     });
 
-    const content = response?.data as ICertificateDetailResponseData;
+    const content = response?.data as CertificateDetailResponseData;
     if (content) {
       const typeOption = TYPE_OPTIONS.find(opt => opt.value === content.type);
       const certificateType = typeOption

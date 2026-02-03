@@ -1,10 +1,10 @@
-import type { ICertificateContentForm, ICertificateSafeZone } from '#achievement/config/types.ts';
+import type { CertificateContentForm, SafeZone } from '#achievement/config/types.ts';
 import type { OnDrag, OnDragEnd, OnResize, OnResizeEnd } from 'vue3-moveable';
 import { nextTick } from 'vue';
 
 interface UseCanvasInteractOptions {
-  contents: Ref<ICertificateContentForm[]>;
-  safeZone: Ref<ICertificateSafeZone>;
+  contents: Ref<CertificateContentForm[]>;
+  safeZone: Ref<SafeZone>;
   selectedContentKey: Ref<string | null>;
 }
 

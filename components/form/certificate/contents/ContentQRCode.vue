@@ -64,7 +64,7 @@
                 @update:model-value="updateSize"
               >
                 <template #suffix>
-                  <span class="text-gray-400 text-xs">px</span>
+                  <span class="text-gray-500 text-xs">px</span>
                 </template>
               </UiInput>
             </div>
@@ -80,7 +80,7 @@
               @update:model-value="updateHorizontal"
             >
               <template #suffix>
-                <span class="text-gray-500">px</span>
+                <span class="text-gray-500 text-xs">px</span>
               </template>
             </UiInput>
           </UiFormGroup>
@@ -93,7 +93,7 @@
               @update:model-value="updateVertical"
             >
               <template #suffix>
-                <span class="text-gray-500">px</span>
+                <span class="text-gray-500 text-xs">px</span>
               </template>
             </UiInput>
           </UiFormGroup>
@@ -109,39 +109,40 @@
             />
             <div
               v-if="!contentItem.metadata.background_transparent"
-              class="flex items-center gap-2"
+              class="flex items-center gap-2 min-w-0 flex-1"
             >
-              <UiInput
-                type="text"
-                :model-value="contentItem.metadata.background_color"
-                size="md"
-                class="w-32"
-                @update:model-value="updateBackgroundColor"
-              >
-                <template #prefix>
-                  <span class="text-gray-500">#</span>
-                </template>
-                <template #suffix>
-                  <input
-                    ref="bgColorPickerInput"
-                    type="color"
-                    :value="`#${contentItem.metadata.background_color}`"
-                    class="invisible absolute"
-                    @input="handleBgColorChange"
-                  >
-                  <div
-                    class="w-6 h-6 rounded-md border border-gray-200 cursor-pointer"
-                    :style="{ backgroundColor: `#${contentItem.metadata.background_color}` }"
-                    @click="openBgColorPicker"
-                  />
-                </template>
-              </UiInput>
+              <div class="min-w-0 flex-shrink">
+                <UiInput
+                  type="text"
+                  :model-value="contentItem.metadata.background_color"
+                  size="md"
+                  @update:model-value="updateBackgroundColor"
+                >
+                  <template #prefix>
+                    <span class="text-gray-500">#</span>
+                  </template>
+                  <template #suffix>
+                    <input
+                      ref="bgColorPickerInput"
+                      type="color"
+                      :value="`#${contentItem.metadata.background_color}`"
+                      class="invisible absolute"
+                      @input="handleBgColorChange"
+                    >
+                    <div
+                      class="w-6 h-6 rounded-md border border-gray-200 cursor-pointer flex-shrink-0"
+                      :style="{ backgroundColor: `#${contentItem.metadata.background_color}` }"
+                      @click="openBgColorPicker"
+                    />
+                  </template>
+                </UiInput>
+              </div>
             </div>
           </div>
         </UiFormGroup>
 
         <UiFormGroup label="QR Shape">
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 flex-wrap">
             <UiButton
               v-for="option in QR_CODE_SHAPE_OPTIONS"
               :key="option.value"
@@ -153,12 +154,11 @@
               :icon="option.icon"
               @click="updateShape(option.value as QRCodeShape)"
             />
-            <div class="flex items-center gap-2 ml-2">
+            <div class="flex items-center gap-2 ml-2 min-w-0 flex-shrink">
               <UiInput
                 type="text"
                 :model-value="contentItem.metadata.shape_color"
                 size="md"
-                class="w-32"
                 @update:model-value="updateShapeColor"
               >
                 <template #prefix>
@@ -173,7 +173,7 @@
                     @input="handleShapeColorChange"
                   >
                   <div
-                    class="w-6 h-6 rounded-md border border-gray-200 cursor-pointer"
+                    class="w-6 h-6 rounded-md border border-gray-200 cursor-pointer flex-shrink-0"
                     :style="{ backgroundColor: `#${contentItem.metadata.shape_color}` }"
                     @click="openShapeColorPicker"
                   />
@@ -184,7 +184,7 @@
         </UiFormGroup>
 
         <UiFormGroup label="Border Style">
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 flex-wrap">
             <UiButton
               v-for="option in QR_CODE_BORDER_OPTIONS"
               :key="option.value"
@@ -196,12 +196,11 @@
               :icon="option.icon"
               @click="updateBorderStyle(option.value as QRCodeBorderStyle)"
             />
-            <div class="flex items-center gap-2 ml-2">
+            <div class="flex items-center gap-2 ml-2 min-w-0 flex-shrink">
               <UiInput
                 type="text"
                 :model-value="contentItem.metadata.border_color"
                 size="md"
-                class="w-32"
                 @update:model-value="updateBorderColor"
               >
                 <template #prefix>
@@ -216,7 +215,7 @@
                     @input="handleBorderColorChange"
                   >
                   <div
-                    class="w-6 h-6 rounded-md border border-gray-200 cursor-pointer"
+                    class="w-6 h-6 rounded-md border border-gray-200 cursor-pointer flex-shrink-0"
                     :style="{ backgroundColor: `#${contentItem.metadata.border_color}` }"
                     @click="openBorderColorPicker"
                   />
@@ -231,16 +230,13 @@
 </template>
 
 <script setup lang="ts">
-import type { ICertificateContentQRCodeForm, QRCodeBorderStyle, QRCodeShape } from '#achievement/config/types.ts';
+import type { QRCodeBorderStyle, QRCodeContentForm, QRCodeShape } from '#achievement/config/types.ts';
 import { QR_CODE_BORDER_OPTIONS, QR_CODE_SHAPE_OPTIONS } from '#achievement/config/constants.ts';
-import UiButton from '#ui/components/atoms/button/index.vue';
-import UiInput from '#ui/components/atoms/input/index.vue';
-import UiSwitch from '#ui/components/atoms/switch/index.vue';
-import UiFormGroup from '#ui/components/molecules/form-group/index.vue';
+import { UiButton, UiFormGroup, UiInput, UiSwitch } from '@mydigilearn-saas/web-ui';
 import { Dropdown } from 'floating-vue';
 
 const props = defineProps<{
-  contentItem: ICertificateContentQRCodeForm;
+  contentItem: QRCodeContentForm;
   index: number;
   isExpanded?: boolean;
   safeZoneWidth?: number;
@@ -249,7 +245,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   'delete': [index: number];
-  'update:contentItem': [value: ICertificateContentQRCodeForm];
+  'update:contentItem': [value: QRCodeContentForm];
   'headerClick': [];
 }>();
 
@@ -259,8 +255,8 @@ const bgColorPickerInput = ref<HTMLInputElement | null>(null);
 const shapeColorPickerInput = ref<HTMLInputElement | null>(null);
 const borderColorPickerInput = ref<HTMLInputElement | null>(null);
 
-const updateMetadata = (updates: Partial<ICertificateContentQRCodeForm['metadata']>) => {
-  const updatedItem: ICertificateContentQRCodeForm = {
+const updateMetadata = (updates: Partial<QRCodeContentForm['metadata']>) => {
+  const updatedItem: QRCodeContentForm = {
     ...props.contentItem,
     metadata: {
       ...props.contentItem.metadata,
@@ -348,5 +344,33 @@ const handleDelete = () => {
 <style scoped lang="postcss">
 :deep(.input-field .input-area) {
   @apply w-full;
+}
+
+:deep(.ui-form-group) {
+  min-width: 0;
+}
+
+:deep(.ui-input) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+:deep(.ui-input-wrapper) {
+  min-width: 0;
+  overflow: visible !important;
+}
+
+:deep(.ui-input-area) {
+  min-width: 0;
+}
+
+:deep(.ui-input-suffix) {
+  @apply flex items-center flex-shrink-0;
+  min-width: fit-content;
+}
+
+:deep(.ui-input-prefix) {
+  @apply flex items-center flex-shrink-0;
+  min-width: fit-content;
 }
 </style>

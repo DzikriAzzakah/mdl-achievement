@@ -1,19 +1,29 @@
 import type {
-  ICertificateContentForm,
+  CertificateContentForm,
   SizeMode,
 } from '#achievement/config/types';
 
-export function useCertificateContentUpdate<T extends ICertificateContentForm>(
+export function useCertificateContentUpdate<T extends CertificateContentForm>(
   getCurrentItem: () => T,
   emit: (event: 'update:contentItem', value: T) => void,
 ) {
   const updateValue = (value: string | undefined): void => {
     const contentItem = getCurrentItem();
-    const updatedItem = {
-      ...contentItem,
-      value: value || (contentItem.type === 'text' ? '' : `{{ ${contentItem.type} }}`),
-    } as T;
-    emit('update:contentItem', updatedItem);
+
+    if (contentItem.type === 'text') {
+      const updatedItem = {
+        ...contentItem,
+        element_value: value || '',
+      } as T;
+      emit('update:contentItem', updatedItem);
+    }
+    else {
+      const updatedItem = {
+        ...contentItem,
+        value: value || `{{ ${contentItem.type} }}`,
+      } as T;
+      emit('update:contentItem', updatedItem);
+    }
   };
 
   const updateMetadataField = <K extends keyof T['metadata']>(

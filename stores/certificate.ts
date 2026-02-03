@@ -1,15 +1,15 @@
 import type {
-  ICertificateBackgroundPayload,
-  ICertificateContentForm,
-  ICertificateContentPayload,
-  ICertificateCreatePayload,
-  ICertificateDetail,
-  ICertificateForm,
-  ICertificateResponse,
-  ICertificateSafeZone,
+  CertificateContentForm,
+  CertificateContentPayload,
+  CertificateCreatePayload,
+  CertificateDetail,
+  CertificateForm,
+  CertificateResponse,
   QRCodeBorderStyle,
   QRCodeShape,
+  SafeZone,
   SizeMode,
+  UploadedFileMeta,
 } from '#achievement/config/types.ts';
 import { CANVAS_HEIGHT, CANVAS_WIDTH, TYPE_OPTIONS } from '#achievement/config/constants.ts';
 import { createContent, generateContentKey } from '#achievement/utils/contentFactory';
@@ -18,7 +18,7 @@ import { defineStore } from 'pinia';
 import { useForm } from 'vee-validate';
 
 export const useCertificateStore = defineStore('certificate', () => {
-  const detailCertificate = ref<ICertificateDetail>();
+  const detailCertificate = ref<CertificateDetail>();
 
   const { errors, defineField, resetForm, values, setValues: setFormValues } = useForm({
     validationSchema: certificateValidationSchema,
@@ -33,14 +33,14 @@ export const useCertificateStore = defineStore('certificate', () => {
         bottom: 50,
         left: 50,
       },
-    } as ICertificateForm,
+    } as CertificateForm,
   });
 
   const getForm = computed(() => ({
     ...values,
   }));
 
-  const certificateResponse = ref<ICertificateResponse>();
+  const certificateResponse = ref<CertificateResponse>();
 
   const [title] = defineField('title');
   const [certificate_type] = defineField('certificate_type');
@@ -50,8 +50,8 @@ export const useCertificateStore = defineStore('certificate', () => {
 
   const contentIdCounter = ref<number>(0);
   const selectedContentKey = ref<string | null>(null);
-  const uploadedBackgroundMeta = ref<ICertificateBackgroundPayload | null>(null);
-  const deletedContents = ref<ICertificateContentForm[]>([]);
+  const uploadedBackgroundMeta = ref<UploadedFileMeta | null>(null);
+  const deletedContents = ref<CertificateContentForm[]>([]);
 
   function addContent(type: string): string | null {
     contentIdCounter.value++;
@@ -68,7 +68,7 @@ export const useCertificateStore = defineStore('certificate', () => {
     return key;
   }
 
-  function updateContentByIndex(index: number, data: ICertificateContentForm): void {
+  function updateContentByIndex(index: number, data: CertificateContentForm): void {
     if (index < 0 || index >= contents.value.length) {
       console.error(`Content at index ${index} not found`);
       return;
@@ -101,7 +101,7 @@ export const useCertificateStore = defineStore('certificate', () => {
     }
   }
 
-  function updateSafeZone(zone: ICertificateSafeZone): void {
+  function updateSafeZone(zone: SafeZone): void {
     const layoutWidth = 842;
     const oldSafeZone = safe_zone.value;
     const newSafeZoneWidth = layoutWidth - (zone?.left || 0) - (zone?.right || 0);
@@ -117,7 +117,7 @@ export const useCertificateStore = defineStore('certificate', () => {
 
         const currentWidth = content.metadata.width;
 
-        if (currentWidth !== 'fit-content' && currentWidth > newSafeZoneWidth) {
+        if (currentWidth !== 'fit-content' && typeof currentWidth === 'number' && currentWidth > newSafeZoneWidth) {
           return {
             ...content,
             metadata: {
@@ -153,7 +153,7 @@ export const useCertificateStore = defineStore('certificate', () => {
     }
   }
 
-  function setFormFromDetail(data: Omit<ICertificateCreatePayload, 'preview'> & { id?: number; preview_url?: string; }): void {
+  function setFormFromDetail(data: Omit<CertificateCreatePayload, 'preview'> & { id?: number; preview_url?: string; }): void {
     deletedContents.value = [];
 
     const typeOption = TYPE_OPTIONS.find(opt => opt.value === data.type);
@@ -168,14 +168,14 @@ export const useCertificateStore = defineStore('certificate', () => {
 
     uploadedBackgroundMeta.value = data.background || null;
 
-    const safeZone: ICertificateSafeZone = data.metadata?.safe_zone || {
+    const safeZone: SafeZone = data.metadata?.safe_zone || {
       top: 50,
       right: 50,
       bottom: 50,
       left: 50,
     };
 
-    const mappedContents: ICertificateContentForm[] = (data.contents || []).map((content, index) => {
+    const mappedContents: CertificateContentForm[] = (data.contents || []).map((content, index) => {
       return mapContentPayloadToForm(content, index);
     });
 
@@ -205,14 +205,12 @@ export const useCertificateStore = defineStore('certificate', () => {
     }
   }
 
-  function mapContentPayloadToForm(content: ICertificateContentPayload, index: number): ICertificateContentForm {
+  function mapContentPayloadToForm(content: CertificateContentPayload, index: number): CertificateContentForm {
     const { type, key, element_id, value, element_value, metadata, variables, id } = content;
 
-    // Use element_id if available, otherwise generate from key or index
     const contentElementId = element_id || key || generateContentKey(type, index + 1);
     const contentKey = type;
 
-    // Use element_value if available, otherwise fallback to value for backward compatibility
     const actualValue = element_value !== undefined ? element_value : value;
 
     const baseMetadata = {
@@ -382,7 +380,6 @@ export const useCertificateStore = defineStore('certificate', () => {
     };
   }
 
-  // Layering Actions
   function bringForward(key: string): void {
     const index = contents.value.findIndex(c => c.key === key);
     if (index === -1 || index >= contents.value.length - 1) {
@@ -433,40 +430,68 @@ export const useCertificateStore = defineStore('certificate', () => {
     contents.value = updatedContents;
   }
 
-  // Alignment Action
   function alignContent(key: string, type: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom'): void {
-    const index = contents.value.findIndex(c => c.key === key);
+    const index = contents.value.findIndex(c => c.element_id === key);
     if (index === -1) {
       return;
     }
 
     const content = contents.value[index];
-    const DEFAULT_DIMENSION = 200;
 
-    const elementWidth = content.metadata.width === 'fit-content' ? DEFAULT_DIMENSION : content.metadata.width;
-    const elementHeight = content.metadata.height === 'fit-content' ? DEFAULT_DIMENSION : content.metadata.height;
+    // Calculate safe zone dimensions
+    const safeZoneLeft = safe_zone.value?.left || 0;
+    const safeZoneRight = safe_zone.value?.right || 0;
+    const safeZoneTop = safe_zone.value?.top || 0;
+    const safeZoneBottom = safe_zone.value?.bottom || 0;
+
+    // Safe zone width and height (the actual usable area)
+    const safeZoneWidth = CANVAS_WIDTH - safeZoneLeft - safeZoneRight;
+    const safeZoneHeight = CANVAS_HEIGHT - safeZoneTop - safeZoneBottom;
+
+    // Determine element dimensions based on content type and mode
+    const metadata = content.metadata;
+    const widthMode = (metadata as any).width_mode;
+    const heightMode = (metadata as any).height_mode;
+
+    // For fill mode or fit-content, we can't do center/right or middle/bottom alignment
+    if (widthMode === 'fill' && (type === 'center' || type === 'right')) {
+      return;
+    }
+    if (heightMode === 'fill' && (type === 'middle' || type === 'bottom')) {
+      return;
+    }
+    if (metadata.width === 'fit-content' && (type === 'center' || type === 'right')) {
+      return;
+    }
+    if (metadata.height === 'fit-content' && (type === 'middle' || type === 'bottom')) {
+      return;
+    }
+
+    const elementWidth = typeof metadata.width === 'number' ? metadata.width : 0;
+    const elementHeight = typeof metadata.height === 'number' ? metadata.height : 0;
 
     const updatedContents = [...contents.value];
-    const updatedMetadata = { ...content.metadata };
+    const updatedMetadata = { ...metadata };
 
+    // Positions are RELATIVE to safe zone (0,0 is top-left of safe zone, not canvas)
     switch (type) {
       case 'left':
         updatedMetadata.horizontal = 0;
         break;
       case 'center':
-        updatedMetadata.horizontal = (CANVAS_WIDTH - elementWidth) / 2;
+        updatedMetadata.horizontal = Math.max(0, (safeZoneWidth - elementWidth) / 2);
         break;
       case 'right':
-        updatedMetadata.horizontal = CANVAS_WIDTH - elementWidth;
+        updatedMetadata.horizontal = Math.max(0, safeZoneWidth - elementWidth);
         break;
       case 'top':
         updatedMetadata.vertical = 0;
         break;
       case 'middle':
-        updatedMetadata.vertical = (CANVAS_HEIGHT - elementHeight) / 2;
+        updatedMetadata.vertical = Math.max(0, (safeZoneHeight - elementHeight) / 2);
         break;
       case 'bottom':
-        updatedMetadata.vertical = CANVAS_HEIGHT - elementHeight;
+        updatedMetadata.vertical = Math.max(0, safeZoneHeight - elementHeight);
         break;
       default:
         return;
@@ -475,11 +500,10 @@ export const useCertificateStore = defineStore('certificate', () => {
     updatedContents[index] = {
       ...content,
       metadata: updatedMetadata,
-    } as ICertificateContentForm;
+    } as CertificateContentForm;
     contents.value = updatedContents;
   }
 
-  // Duplication Action
   function duplicateContent(key: string): void {
     const index = contents.value.findIndex(c => c.element_id === key);
     if (index === -1) {
@@ -490,7 +514,7 @@ export const useCertificateStore = defineStore('certificate', () => {
     contentIdCounter.value++;
     const newElementId = generateContentKey(originalContent.type, contentIdCounter.value);
 
-    const clonedContent: ICertificateContentForm = JSON.parse(JSON.stringify(originalContent));
+    const clonedContent: CertificateContentForm = JSON.parse(JSON.stringify(originalContent));
     clonedContent.element_id = newElementId;
     clonedContent.id = undefined;
     clonedContent.metadata.horizontal += 10;
@@ -500,7 +524,6 @@ export const useCertificateStore = defineStore('certificate', () => {
     selectedContentKey.value = newElementId;
   }
 
-  // Locking Action
   function toggleLock(key: string): void {
     const index = contents.value.findIndex(c => c.key === key);
     if (index === -1) {
@@ -515,7 +538,7 @@ export const useCertificateStore = defineStore('certificate', () => {
         ...content.metadata,
         isLocked: !content.metadata.isLocked,
       },
-    } as ICertificateContentForm;
+    } as CertificateContentForm;
     contents.value = updatedContents;
   }
 
@@ -523,7 +546,7 @@ export const useCertificateStore = defineStore('certificate', () => {
    * Reorder contents array (for drag-and-drop layer ordering)
    * @param newContents - The reordered contents array
    */
-  function reorderContents(newContents: ICertificateContentForm[]): void {
+  function reorderContents(newContents: CertificateContentForm[]): void {
     contents.value = newContents;
   }
 

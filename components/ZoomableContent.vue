@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import UiButton from '#ui/components/atoms/button/index.vue';
+import { UiButton } from '@mydigilearn-saas/web-ui';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 
 const props = defineProps({

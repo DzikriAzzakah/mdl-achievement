@@ -39,7 +39,7 @@
 </template>
 
 <script setup lang="ts">
-import type { IAchievementUploadResponse, IBadgeDetail, IBadgePayload, IBadgeResponse } from '#achievement/config/types.ts';
+import type { BadgeDetail, BadgePayload, BadgeResponse, UploadResponse } from '#achievement/config/types.ts';
 import { getBadgeDetail, patchEditBadge, postAddBadge, postUploadAchievementFile } from '#achievement/api/api.ts';
 import Accessibility from '#achievement/components/form/badge/Accessibility.vue';
 import BadgeInformation from '#achievement/components/form/badge/BadgeInformation.vue';
@@ -258,7 +258,7 @@ const uploadImage = async (file: File): Promise<{ imageUrl: string; imageId: num
   try {
     isLoading.value = true;
     showLoading('Uploading image', 'Please wait while we upload the file.');
-    const response: IAchievementUploadResponse = await postUploadAchievementFile(file, 'badges');
+    const response: UploadResponse = await postUploadAchievementFile(file, 'badges');
     hideLoading();
 
     store.image = response?.data?.full_path || null;
@@ -280,7 +280,7 @@ const uploadImage = async (file: File): Promise<{ imageUrl: string; imageId: num
 };
 
 const { mutate: submitBadgeForm } = useMutation({
-  mutationFn: async (payload: IBadgePayload) => {
+  mutationFn: async (payload: BadgePayload) => {
     isLoading.value = true;
     showLoading('Creating badge', 'Please wait while we create the badge.');
     const response = await postAddBadge(payload).catch(() => {
@@ -292,7 +292,7 @@ const { mutate: submitBadgeForm } = useMutation({
     });
 
     if (response) {
-      const data = response.data as IBadgeResponse;
+      const data = response.data as BadgeResponse;
       store.badgeResponse = data;
 
       if (data?.id) {
@@ -347,7 +347,7 @@ const { isLoading: isLoadingEdit, refetch, isFetchedAfterMount } = useQuery({
       return { data: undefined };
     });
 
-    const content = response?.data as IBadgeDetail;
+    const content = response?.data as BadgeDetail;
     if (content) {
       detailBadge.value = {
         id: content.id,
@@ -435,7 +435,7 @@ const handleSubmit = async (): Promise<void> => {
           updateCreatedBadge({ id: createdBadgeId.value, payload });
         }
         else {
-          const payload: IBadgePayload = {
+          const payload: BadgePayload = {
             title: store.title,
             description: store.description,
             image_id: imageId,

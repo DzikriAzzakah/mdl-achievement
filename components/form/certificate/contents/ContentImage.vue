@@ -55,14 +55,14 @@
     >
       <div class="space-y-4 pt-2">
         <div>
-          <UIFileUploadFiles
+          <UiFileUploadFiles
             v-if="contentItem.value || contentItem.file"
             :files="displayUploadedImage"
             :enable-remove="true"
             @remove-file="handleRemoveImage"
             @cancel-fetch="handleRemoveImage"
           />
-          <UIFileUploadCompact
+          <UiFileUploadCompact
             v-else
             :id="`upload-content-${contentItem.key}`"
             :supported-file-types="displayConfig.fileTypes"
@@ -81,28 +81,48 @@
                 </div>
               </div>
             </template>
-          </UIFileUploadCompact>
+          </UiFileUploadCompact>
         </div>
-        <UiFormGroup label="Size">
-          <div class="flex items-center gap-2">
-            <div class="w-32">
-              <UiInput
-                type="number"
-                :model-value="contentItem.metadata.width"
-                size="md"
-                :disabled="!hasImage"
-                @update:model-value="updateWidth"
-              />
-            </div>
-            <div class="w-32">
-              <UiInput
-                type="number"
-                :model-value="contentItem.metadata.height"
-                size="md"
-                :disabled="!hasImage"
-                @update:model-value="updateHeight"
-              />
-            </div>
+        <div class="flex items-center gap-2">
+          <UiFormGroup
+            label="Width"
+            class="flex-1 min-w-0"
+          >
+            <UiInput
+              type="number"
+              :model-value="contentItem.metadata.width"
+              size="md"
+              :disabled="!hasImage"
+              @update:model-value="updateWidth"
+            >
+              <template #suffix>
+                <span class="text-xs text-gray-500">
+                  px
+                </span>
+              </template>
+            </UiInput>
+          </UiFormGroup>
+
+          <UiFormGroup
+            label="Height"
+            class="flex-1 min-w-0"
+          >
+            <UiInput
+              type="number"
+              :model-value="contentItem.metadata.height"
+              size="md"
+              :disabled="!hasImage"
+              @update:model-value="updateHeight"
+            >
+              <template #suffix>
+                <span class="text-xs text-gray-500">
+                  px
+                </span>
+              </template>
+            </UiInput>
+          </UiFormGroup>
+
+          <UiFormGroup class="mt-5 flex-shrink-0">
             <UiButton
               v-tooltip="isAspectRatioLocked ? 'Unlock Aspect Ratio' : 'Lock Aspect Ratio'"
               square
@@ -110,63 +130,148 @@
               variant="soft"
               icon="mdi:aspect-ratio"
               :color="isAspectRatioLocked ? 'primary' : 'ghost'"
-              :class="{
-                'cursor-pointer': hasImage,
-                'cursor-not-allowed': !hasImage,
-              }"
+              :disabled="!hasImage"
               @click="toggleAspectRatioLock"
             />
-          </div>
-        </UiFormGroup>
-        <div class="flex items-center gap-4">
-          <UiFormGroup label="Position X">
-            <UiInput
-              type="number"
-              :model-value="contentItem.metadata.horizontal"
-              size="md"
-              :disabled="!hasImage"
-              @update:model-value="updateHorizontal"
-            >
-              <template #suffix>
-                <span class="text-gray-500">px</span>
-              </template>
-            </UiInput>
-          </UiFormGroup>
-
-          <UiFormGroup label="Position Y">
-            <UiInput
-              type="number"
-              :model-value="contentItem.metadata.vertical"
-              size="md"
-              :disabled="!hasImage"
-              @update:model-value="updateVertical"
-            >
-              <template #suffix>
-                <span class="text-gray-500">px</span>
-              </template>
-            </UiInput>
           </UiFormGroup>
         </div>
+        <UiFormGroup label="Position">
+          <div class="space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <UiButton
+                v-tooltip="'Align Left'"
+                size="sm"
+                square
+                :disabled="!hasImage"
+                :variant="currentHorizontalAlign === 'left' ? 'solid' : 'soft'"
+                :color="currentHorizontalAlign === 'left' ? 'primary' : 'ghost'"
+                icon="fe:align-left"
+                @click="handleAlignContent('left')"
+              >
+                L
+              </UiButton>
+              <UiButton
+                v-tooltip="'Align Center'"
+                size="sm"
+                square
+                :disabled="!hasImage || isCenterRightDisabled"
+                :variant="currentHorizontalAlign === 'center' ? 'solid' : 'soft'"
+                :color="currentHorizontalAlign === 'center' ? 'primary' : 'ghost'"
+                icon="fe:align-center"
+                @click="handleAlignContent('center')"
+              >
+                C
+              </UiButton>
+              <UiButton
+                v-tooltip="'Align Right'"
+                size="sm"
+                square
+                :disabled="!hasImage || isCenterRightDisabled"
+                :variant="currentHorizontalAlign === 'right' ? 'solid' : 'soft'"
+                :color="currentHorizontalAlign === 'right' ? 'primary' : 'ghost'"
+                icon="fe:align-right"
+                @click="handleAlignContent('right')"
+              >
+                R
+              </UiButton>
+            </div>
+            <div class="flex items-center justify-between gap-2">
+              <UiButton
+                v-tooltip="'Align Top'"
+                size="sm"
+                square
+                :disabled="!hasImage"
+                :variant="currentVerticalAlign === 'top' ? 'solid' : 'soft'"
+                :color="currentVerticalAlign === 'top' ? 'primary' : 'ghost'"
+                icon="fe:align-top"
+                @click="handleAlignContent('top')"
+              >
+                T
+              </UiButton>
+              <UiButton
+                v-tooltip="'Align Middle'"
+                size="sm"
+                square
+                :disabled="!hasImage || isMiddleBottomDisabled"
+                :variant="currentVerticalAlign === 'middle' ? 'solid' : 'soft'"
+                :color="currentVerticalAlign === 'middle' ? 'primary' : 'ghost'"
+                icon="fe:align-vertically"
+                @click="handleAlignContent('middle')"
+              >
+                M
+              </UiButton>
+              <UiButton
+                v-tooltip="'Align Bottom'"
+                size="sm"
+                square
+                :disabled="!hasImage || isMiddleBottomDisabled"
+                :variant="currentVerticalAlign === 'bottom' ? 'solid' : 'soft'"
+                :color="currentVerticalAlign === 'bottom' ? 'primary' : 'ghost'"
+                icon="fe:align-bottom"
+                @click="handleAlignContent('bottom')"
+              >
+                B
+              </UiButton>
+            </div>
+          </div>
+          <div class="flex items-center gap-2 mt-2">
+            <UiFormGroup
+              label="Horizontal"
+              class="flex-1 min-w-0"
+            >
+              <UiInput
+                type="number"
+                :model-value="contentItem.metadata.horizontal"
+                size="md"
+                :disabled="!hasImage"
+                @update:model-value="updateHorizontal"
+              >
+                <template #suffix>
+                  <span class="text-xs text-gray-500">
+                    px
+                  </span>
+                </template>
+              </UiInput>
+            </UiFormGroup>
+            <UiFormGroup
+              label="Vertical"
+              class="flex-1 min-w-0"
+            >
+              <UiInput
+                type="number"
+                :model-value="contentItem.metadata.vertical"
+                size="md"
+                :disabled="!hasImage"
+                @update:model-value="updateVertical"
+              >
+                <template #suffix>
+                  <span class="text-xs text-gray-500">
+                    px
+                  </span>
+                </template>
+              </UiInput>
+            </UiFormGroup>
+          </div>
+        </UiFormGroup>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { ICertificateContentCertificateSigneeForm, ICertificateContentImageForm } from '#achievement/config/types.ts';
+import type { CertificateSigneeContentForm, ImageContentForm } from '#achievement/config/types.ts';
 import {
+  CANVAS_HEIGHT,
+  CANVAS_WIDTH,
   CERTIFICATE_IMAGE_FILE_TYPES,
   CERTIFICATE_IMAGE_MAX_SIZE,
   IMAGE_ERROR_MESSAGES,
 } from '#achievement/config/constants.ts';
-import UiButton from '#ui/components/atoms/button/index.vue';
-import UiInput from '#ui/components/atoms/input/index.vue';
-import UIFileUploadCompact from '#ui/components/molecules/fileupload/compact/index.vue';
-import UIFileUploadFiles from '#ui/components/molecules/fileupload/files/index.vue';
-import UiFormGroup from '#ui/components/molecules/form-group/index.vue';
+import { useCertificateStore } from '#achievement/stores/certificate';
+import { UiButton, UiFileUploadCompact, UiFileUploadFiles, UiFormGroup, UiInput } from '@mydigilearn-saas/web-ui';
 import { Dropdown } from 'floating-vue';
 
-type ContentItemType = ICertificateContentImageForm | ICertificateContentCertificateSigneeForm;
+type ContentItemType = ImageContentForm | CertificateSigneeContentForm;
 
 const props = defineProps<{
   contentItem: ContentItemType;
@@ -370,10 +475,97 @@ const handleRemoveImage = () => {
 const handleDelete = () => {
   emit('delete', props.index);
 };
+
+const certificateStore = useCertificateStore();
+
+const currentHorizontalAlign = computed(() => {
+  const horizontal = props.contentItem.metadata.horizontal;
+  const width = props.contentItem.metadata.width;
+  const elementWidth = typeof width === 'number' ? width : 200;
+
+  // Calculate safe zone width
+  const safeZoneWidth = CANVAS_WIDTH - (certificateStore.safe_zone?.left || 0) - (certificateStore.safe_zone?.right || 0);
+
+  if (horizontal === 0) {
+    return 'left';
+  }
+  if (Math.abs(horizontal - (safeZoneWidth - elementWidth) / 2) < 1) {
+    return 'center';
+  }
+  if (Math.abs(horizontal - (safeZoneWidth - elementWidth)) < 1) {
+    return 'right';
+  }
+  return null;
+});
+
+const currentVerticalAlign = computed(() => {
+  const vertical = props.contentItem.metadata.vertical;
+  const height = props.contentItem.metadata.height;
+  const elementHeight = typeof height === 'number' ? height : 200;
+
+  // Calculate safe zone height
+  const safeZoneTop = certificateStore.safe_zone?.top || 0;
+  const safeZoneBottom = certificateStore.safe_zone?.bottom || 0;
+  const safeZoneHeight = CANVAS_HEIGHT - safeZoneTop - safeZoneBottom;
+
+  if (vertical === 0) {
+    return 'top';
+  }
+  if (Math.abs(vertical - (safeZoneHeight - elementHeight) / 2) < 1) {
+    return 'middle';
+  }
+  if (Math.abs(vertical - (safeZoneHeight - elementHeight)) < 1) {
+    return 'bottom';
+  }
+  return null;
+});
+
+const isCenterRightDisabled = computed(() => {
+  return props.contentItem.metadata.width === 'fit-content';
+});
+
+const isMiddleBottomDisabled = computed(() => {
+  return props.contentItem.metadata.height === 'fit-content';
+});
+
+const handleAlignContent = (type: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => {
+  if (!hasImage.value) {
+    return;
+  }
+  certificateStore.alignContent(props.contentItem.element_id, type);
+};
 </script>
 
 <style scoped lang="postcss">
 :deep(.input-field .input-area) {
   @apply w-full;
+}
+
+:deep(.ui-form-group) {
+  min-width: 0;
+}
+
+:deep(.ui-input) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+:deep(.ui-input-wrapper) {
+  min-width: 0;
+  overflow: visible !important;
+}
+
+:deep(.ui-input-area) {
+  min-width: 0;
+}
+
+:deep(.ui-input-suffix) {
+  @apply flex items-center flex-shrink-0;
+  min-width: fit-content;
+}
+
+:deep(.ui-input-prefix) {
+  @apply flex items-center flex-shrink-0;
+  min-width: fit-content;
 }
 </style>

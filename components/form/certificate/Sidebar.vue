@@ -37,7 +37,7 @@
 </template>
 
 <script setup lang="ts">
-import type { ICertificateContentForm, ICertificateSafeZone } from '#achievement/config/types.ts';
+import type { CertificateContentForm, SafeZone } from '#achievement/config/types.ts';
 import CertificateInfoForm from '#achievement/components/form/certificate/sidebar/CertificateInfoForm.vue';
 import ContentList from '#achievement/components/form/certificate/sidebar/ContentList.vue';
 import LayoutGuidelines from '#achievement/components/form/certificate/sidebar/LayoutGuidelines.vue';
@@ -58,8 +58,8 @@ const { selectedContentKey } = storeToRefs(store);
 const title = defineModel<string>('title', { required: true });
 const certificateType = defineModel<{ label: string; value: string; }>('certificateType', { required: true });
 const image = defineModel<File | string | null>('image', { required: true });
-const contents = defineModel<ICertificateContentForm[]>('contents', { required: true });
-const safeZone = defineModel<ICertificateSafeZone>('safeZone', { required: true });
+const contents = defineModel<CertificateContentForm[]>('contents', { required: true });
+const safeZone = defineModel<SafeZone>('safeZone', { required: true });
 const uploadedImageMeta = defineModel<any>('uploadedImageMeta');
 
 const isContentListOpen = ref<boolean>(false);
@@ -79,7 +79,7 @@ const handleAddContent = (type: string) => {
   isContentListOpen.value = false;
 };
 
-const handleUpdateContent = (index: number, updatedContent: ICertificateContentForm) => {
+const handleUpdateContent = (index: number, updatedContent: CertificateContentForm) => {
   store.updateContentByIndex(index, updatedContent);
 };
 
@@ -91,7 +91,7 @@ const handleContentClick = (contentKey: string) => {
   store.toggleContentSelection(contentKey);
 };
 
-const handleUpdateSafeZone = (zone: ICertificateSafeZone) => {
+const handleUpdateSafeZone = (zone: SafeZone) => {
   store.updateSafeZone(zone);
 };
 </script>

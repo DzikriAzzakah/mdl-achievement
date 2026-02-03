@@ -1,40 +1,40 @@
 import type {
+  BadgeDetailResponse,
+  CertificateCreatePayload,
+  CertificateDetailResponse,
+  CreateResponse,
   FetchOptions,
-  IAchievementUploadResponse,
-  IBadgeDetailResponse,
-  ICertificateCreatePayload,
-  ICertificateDetailResponse,
-  ICreateResponse,
-  IGetListResponse,
-  IUUIDResponse,
+  ListResponse,
+  UploadResponse,
+  UUIDResponse,
 } from '#achievement/config/types.ts';
 
-export const getCertificateList: (params: Record<string, any>, options?: FetchOptions) => Promise<IGetListResponse> = (params, options = {}) => {
-  return useNuxtApp().$apiGateway<IGetListResponse>('/achievement/api/v1/cms/certificates', {
+export const getCertificateList: (params: Record<string, any>, options?: FetchOptions) => Promise<ListResponse> = (params, options = {}) => {
+  return useNuxtApp().$apiGateway<ListResponse>('/achievement/api/v1/cms/certificates', {
     ...options,
     params,
     method: 'get',
   });
 };
 
-export const getBadgeList: (params: Record<string, any>, options?: FetchOptions) => Promise<IGetListResponse> = (params, options = {}) => {
-  return useNuxtApp().$apiGateway<IGetListResponse>('/achievement/api/v1/cms/badges', {
+export const getBadgeList: (params: Record<string, any>, options?: FetchOptions) => Promise<ListResponse> = (params, options = {}) => {
+  return useNuxtApp().$apiGateway<ListResponse>('/achievement/api/v1/cms/badges', {
     ...options,
     params,
     method: 'get',
   });
 };
 
-export const postAddBadge: (body: Record<string, any>, options?: FetchOptions) => Promise<ICreateResponse> = (body, options = {}) => {
-  return useNuxtApp().$apiGateway<ICreateResponse>('/achievement/api/v1/cms/badges', {
+export const postAddBadge: (body: Record<string, any>, options?: FetchOptions) => Promise<CreateResponse> = (body, options = {}) => {
+  return useNuxtApp().$apiGateway<CreateResponse>('/achievement/api/v1/cms/badges', {
     ...options,
     body,
     method: 'post',
   });
 };
 
-export const postAddCertificate: (body: Record<string, any>, options?: FetchOptions) => Promise<ICreateResponse> = (body, options = {}) => {
-  return useNuxtApp().$apiGateway<ICreateResponse>('/achievement/api/v1/cms/certificates', {
+export const postAddCertificate: (body: Record<string, any>, options?: FetchOptions) => Promise<CreateResponse> = (body, options = {}) => {
+  return useNuxtApp().$apiGateway<CreateResponse>('/achievement/api/v1/cms/certificates', {
     ...options,
     body,
     method: 'post',
@@ -45,12 +45,12 @@ export const postUploadAchievementFile = async (
   file: File,
   key: string,
   options: FetchOptions = {},
-): Promise<IAchievementUploadResponse> => {
+): Promise<UploadResponse> => {
   const formData = new FormData();
   formData.append('file', file);
   formData.append('key', key);
 
-  return useNuxtApp().$apiGateway<IAchievementUploadResponse>('/achievement/api/v1/upload', {
+  return useNuxtApp().$apiGateway<UploadResponse>('/achievement/api/v1/upload', {
     ...options,
     body: formData,
     method: 'post',
@@ -60,8 +60,8 @@ export const postUploadAchievementFile = async (
 export const getBadgeDetail = async (
   id: number,
   options: FetchOptions = {},
-): Promise<IBadgeDetailResponse> => {
-  return useNuxtApp().$apiGateway<IBadgeDetailResponse>(`/achievement/api/v1/cms/badges/${id}`, {
+): Promise<BadgeDetailResponse> => {
+  return useNuxtApp().$apiGateway<BadgeDetailResponse>(`/achievement/api/v1/cms/badges/${id}`, {
     ...options,
     method: 'get',
   });
@@ -71,8 +71,8 @@ export const patchEditBadge = async (
   id: number,
   body: Record<string, any>,
   options: FetchOptions = {},
-): Promise<ICreateResponse> => {
-  return useNuxtApp().$apiGateway<ICreateResponse>(`/achievement/api/v1/cms/badges/${id}`, {
+): Promise<CreateResponse> => {
+  return useNuxtApp().$apiGateway<CreateResponse>(`/achievement/api/v1/cms/badges/${id}`, {
     ...options,
     body,
     method: 'patch',
@@ -82,8 +82,8 @@ export const patchEditBadge = async (
 export const deleteCertificate = async (
   id: number,
   options: FetchOptions = {},
-): Promise<ICreateResponse> => {
-  return useNuxtApp().$apiGateway<ICreateResponse>(`/achievement/api/v1/cms/certificates/${id}`, {
+): Promise<CreateResponse> => {
+  return useNuxtApp().$apiGateway<CreateResponse>(`/achievement/api/v1/cms/certificates/${id}`, {
     ...options,
     method: 'delete',
   });
@@ -92,8 +92,8 @@ export const deleteCertificate = async (
 export const deleteBadge = async (
   id: number,
   options: FetchOptions = {},
-): Promise<ICreateResponse> => {
-  return useNuxtApp().$apiGateway<ICreateResponse>(`/achievement/api/v1/cms/badges/${id}`, {
+): Promise<CreateResponse> => {
+  return useNuxtApp().$apiGateway<CreateResponse>(`/achievement/api/v1/cms/badges/${id}`, {
     ...options,
     method: 'delete',
   });
@@ -101,8 +101,8 @@ export const deleteBadge = async (
 
 export const getSerialNumberUUID = async (
   options: FetchOptions = {},
-): Promise<IUUIDResponse> => {
-  return useNuxtApp().$apiGateway<IUUIDResponse>('/achievement/api/v1/cms/setup/uuid', {
+): Promise<UUIDResponse> => {
+  return useNuxtApp().$apiGateway<UUIDResponse>('/achievement/api/v1/cms/setup/uuid', {
     ...options,
     method: 'get',
   });
@@ -111,8 +111,8 @@ export const getSerialNumberUUID = async (
 export const getCertificateDetail = async (
   id: number,
   options: FetchOptions = {},
-): Promise<ICertificateDetailResponse> => {
-  return useNuxtApp().$apiGateway<ICertificateDetailResponse>(`/achievement/api/v1/cms/certificates/${id}`, {
+): Promise<CertificateDetailResponse> => {
+  return useNuxtApp().$apiGateway<CertificateDetailResponse>(`/achievement/api/v1/cms/certificates/${id}`, {
     ...options,
     method: 'get',
   });
@@ -120,10 +120,10 @@ export const getCertificateDetail = async (
 
 export const patchEditCertificate = async (
   id: number,
-  body: ICertificateCreatePayload,
+  body: CertificateCreatePayload,
   options: FetchOptions = {},
-): Promise<ICreateResponse> => {
-  return useNuxtApp().$apiGateway<ICreateResponse>(`/achievement/api/v1/cms/certificates/${id}`, {
+): Promise<CreateResponse> => {
+  return useNuxtApp().$apiGateway<CreateResponse>(`/achievement/api/v1/cms/certificates/${id}`, {
     ...options,
     body,
     method: 'patch',

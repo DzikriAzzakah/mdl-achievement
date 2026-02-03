@@ -13,6 +13,7 @@
     :height-mode="heightMode"
     :selected-width-mode-object="selectedWidthModeObject"
     :selected-height-mode-object="selectedHeightModeObject"
+    :element-id="contentItem.element_id"
     @header-click="$emit('headerClick')"
     @delete="$emit('delete', $event)"
     @update:font-family="handleFontFamilyUpdate"
@@ -128,7 +129,7 @@
             cancel: 'Cancel',
             okDisabled: !isVariableFormValid,
           }"
-          :ui="{ divider: true }"
+          divider
           @ok="onSubmitVariable"
           @cancel="onCancelVariableModal"
         >
@@ -188,23 +189,26 @@
 
 <script setup lang="ts">
 import type {
-  ICertificateContentCertificateNumberForm,
-  ICertificateNumberVariable,
+  CertificateNumberContentForm,
+  CertificateNumberVariable,
 } from '#achievement/config/types';
 import { getSerialNumberUUID } from '#achievement/api/api';
 import ContentTextWrapper from '#achievement/components/form/certificate/contents/ContentTextWrapper.vue';
 import { useContentTextControls } from '#achievement/composables/useContentTextControls';
 import { CANVAS_HEIGHT, CANVAS_WIDTH, CERTIFICATE_NUMBER_VARIABLES } from '#achievement/config/constants';
-import UiButton from '#ui/components/atoms/button/index.vue';
-import UiInput from '#ui/components/atoms/input/index.vue';
-import UiFormGroup from '#ui/components/molecules/form-group/index.vue';
-import UiModal from '#ui/components/molecules/modal/index.vue';
-import UiSelect from '#ui/components/molecules/select/index.vue';
+import {
+  UiButton,
+  UiFormGroup,
+  UiInput,
+  UiModal,
+  UiSelect,
+} from '@mydigilearn-saas/web-ui';
+
 import { Dropdown } from 'floating-vue';
 import draggable from 'vuedraggable';
 
 interface Props {
-  contentItem: ICertificateContentCertificateNumberForm;
+  contentItem: CertificateNumberContentForm;
   index: number;
   isExpanded?: boolean;
   safeZoneWidth?: number;
@@ -218,7 +222,7 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<{
-  'update:contentItem': [value: ICertificateContentCertificateNumberForm];
+  'update:contentItem': [value: CertificateNumberContentForm];
   'delete': [index: number];
   'headerClick': [];
 }>();
@@ -255,7 +259,7 @@ const isLoadingUUID = ref(false);
 
 const isEditingVariable = computed(() => editingVariableIndex.value !== null);
 
-const generatePayloadValue = (variables: ICertificateNumberVariable[]): string => {
+const generatePayloadValue = (variables: CertificateNumberVariable[]): string => {
   return variables.map((v) => {
     if (v.type === 'text_area') {
       return v.customValue || '';
@@ -267,7 +271,7 @@ const generatePayloadValue = (variables: ICertificateNumberVariable[]): string =
   }).join('');
 };
 
-const generatePreviewValue = (variables: ICertificateNumberVariable[]): string => {
+const generatePreviewValue = (variables: CertificateNumberVariable[]): string => {
   return variables.map((v) => {
     if (v.type === 'text_area') {
       return v.customValue || '';
@@ -296,8 +300,8 @@ const certificateVariables = computed({
   get: () => {
     return props.contentItem.variables || [];
   },
-  set: (newVariables: ICertificateNumberVariable[]) => {
-    const updatedContent: ICertificateContentCertificateNumberForm = {
+  set: (newVariables: CertificateNumberVariable[]) => {
+    const updatedContent: CertificateNumberContentForm = {
       ...props.contentItem,
       variables: newVariables,
       value: generatePayloadValue(newVariables),
@@ -310,7 +314,7 @@ const certificateNumberPreview = computed(() => {
   return generatePreviewValue(certificateVariables.value);
 });
 
-const getVariableDisplayLabel = (variable: ICertificateNumberVariable): string => {
+const getVariableDisplayLabel = (variable: CertificateNumberVariable): string => {
   if (variable.type === 'text_area') {
     const text = variable.customValue || '';
     return text.length > 30 ? `${text.substring(0, 30)}...` : text || 'Text Area';
@@ -435,7 +439,7 @@ const onSubmitVariable = async () => {
     customValue = textAreaValue.value;
   }
 
-  const newVariable: ICertificateNumberVariable = {
+  const newVariable: CertificateNumberVariable = {
     id: variableId,
     type: selectedVariableType.value.key,
     label: selectedVariableType.value.label,

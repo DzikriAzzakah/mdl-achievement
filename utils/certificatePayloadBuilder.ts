@@ -1,23 +1,24 @@
 import type {
-  IAchievementUploadResponse,
-  ICertificateBackgroundPayload,
-  ICertificateContentForm,
-  ICertificateContentPayload,
-  ICertificateCreatePayload,
-  ICertificateMetadataPayload,
-  ICertificatePreviewPayload,
-  ICertificateSafeZone,
+  CertificateContentForm,
+  CertificateContentPayload,
+  CertificateCreatePayload,
+  CertificateMetadataPayload,
+  SafeZone,
+  UploadedFileMeta,
+
+  UploadResponse,
 } from '#achievement/config/types';
+
+import { isTextBasedContent } from '#achievement/helpers/checkContentType.ts';
 
 export type {
-  ICertificateBackgroundPayload,
-  ICertificateContentPayload,
-  ICertificateCreatePayload,
-  ICertificateMetadataPayload,
-  ICertificatePreviewPayload,
+  CertificateContentPayload,
+  CertificateCreatePayload,
+  CertificateMetadataPayload,
+  UploadedFileMeta,
 } from '#achievement/config/types';
 
-export interface ICertificateContentMetadataPayload {
+export interface CertificateContentMetadataPayload {
   width: number | 'fit-content';
   height: number | 'fit-content';
   vertical: number;
@@ -56,8 +57,8 @@ export interface ICertificateContentMetadataPayload {
 }
 
 function buildBackgroundPayload(
-  uploadedMeta?: IAchievementUploadResponse['data'] | null,
-): ICertificateBackgroundPayload {
+  uploadedMeta?: UploadResponse['data'] | null,
+): UploadedFileMeta {
   if (uploadedMeta) {
     return {
       id: uploadedMeta.id,
@@ -75,8 +76,8 @@ function buildBackgroundPayload(
 }
 
 function buildPreviewPayload(
-  uploadedMeta?: IAchievementUploadResponse['data'] | null,
-): ICertificatePreviewPayload {
+  uploadedMeta?: UploadResponse['data'] | null,
+): UploadedFileMeta {
   if (uploadedMeta) {
     return {
       id: uploadedMeta.id,
@@ -93,7 +94,7 @@ function buildPreviewPayload(
   return {};
 }
 
-function buildMetadataPayload(safeZone: ICertificateSafeZone): ICertificateMetadataPayload {
+function buildMetadataPayload(safeZone: SafeZone): CertificateMetadataPayload {
   return {
     safe_zone: { ...safeZone },
     canvas_width: 842,
@@ -102,15 +103,14 @@ function buildMetadataPayload(safeZone: ICertificateSafeZone): ICertificateMetad
 }
 
 export function buildContentPayload(
-  content: ICertificateContentForm,
+  content: CertificateContentForm,
   uploadedImageUrl?: string | null,
-  uploadedImageMeta?: IAchievementUploadResponse['data'] | null,
+  uploadedImageMeta?: UploadResponse['data'] | null,
   isDeleted: boolean = false,
-): ICertificateContentPayload {
-  // For text-based content types (excluding certificate_number), value should be null
+): CertificateContentPayload {
   const shouldNullifyValue = ['text', 'participant_name', 'nik', 'title', 'location', 'valid_thru'].includes(content.type);
 
-  const basePayload: ICertificateContentPayload = {
+  const basePayload: CertificateContentPayload = {
     id: content.id,
     deleted: isDeleted,
     type: content.type,
@@ -164,7 +164,7 @@ export function buildContentPayload(
     basePayload.metadata.border_color = qrMetadata.border_color;
   }
 
-  if (isTextBasedContent(content.type)) {
+  if (isTextBasedContent(content)) {
     const textMetadata = content.metadata as {
       font_family?: string;
       font_size?: number;
@@ -210,13 +210,13 @@ export function buildContentPayload(
 export function buildCertificateCreatePayload(options: {
   title: string;
   certificateType: string;
-  backgroundMeta?: IAchievementUploadResponse['data'] | null;
-  previewMeta?: IAchievementUploadResponse['data'] | null;
+  backgroundMeta?: UploadResponse['data'] | null;
+  previewMeta?: UploadResponse['data'] | null;
   template: string;
-  safeZone: ICertificateSafeZone;
-  contents: ICertificateContentPayload[];
+  safeZone: SafeZone;
+  contents: CertificateContentPayload[];
   status?: string;
-}): ICertificateCreatePayload {
+}): CertificateCreatePayload {
   const {
     title,
     certificateType,
@@ -238,8 +238,4 @@ export function buildCertificateCreatePayload(options: {
     metadata: buildMetadataPayload(safeZone),
     contents,
   };
-}
-
-function isTextBasedContent(type: string): boolean {
-  return ['text', 'certificate_number', 'location', 'participant_name', 'nik', 'title', 'valid_thru'].includes(type);
 }

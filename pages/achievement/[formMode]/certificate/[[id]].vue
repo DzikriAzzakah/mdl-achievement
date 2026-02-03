@@ -183,7 +183,7 @@
 </template>
 
 <script setup lang="ts">
-import type { ICertificateContentCertificateNumberForm, ICertificateContentCertificateSigneeForm, ICertificateContentEventTitleForm, ICertificateContentImageForm, ICertificateContentLocationForm, ICertificateContentNIKForm, ICertificateContentParticipantNameForm, ICertificateContentTextForm, ICertificateContentValidThruForm, ICertificateDetailResponseData } from '#achievement/config/types.ts';
+import type { CertificateDetailResponseData, CertificateNumberContentForm, CertificateSigneeContentForm, EventTitleContentForm, ImageContentForm, LocationContentForm, NIKContentForm, ParticipantNameContentForm, TextContentForm, ValidThruContentForm } from '#achievement/config/types.ts';
 import { getCertificateDetail, patchEditCertificate, postAddCertificate, postUploadAchievementFile } from '#achievement/api/api.ts';
 import Accessibility from '#achievement/components/form/certificate/Accessibility.vue';
 
@@ -193,9 +193,10 @@ import ZoomableContent from '#achievement/components/ZoomableContent.vue';
 import { useCanvasInteract } from '#achievement/composables/useCanvasInteract';
 import { useKeyboardShortcuts } from '#achievement/composables/useKeyboardShortcuts';
 
-import { CANVAS_HEIGHT, CANVAS_WIDTH, CERTIFICATE_TABS_EDIT, CREATE_STEPPER, DEFAULT_FONT_FAMILY, FormMode, TYPE_OPTIONS } from '#achievement/config/constants.ts';
+import { CANVAS_HEIGHT, CANVAS_WIDTH, CERTIFICATE_TABS_EDIT, CREATE_STEPPER, FormMode, TYPE_OPTIONS } from '#achievement/config/constants.ts';
 import { PERMISSION_CREATE, PERMISSION_EDIT, PERMISSION_LIST } from '#achievement/config/featureFlag.ts';
 
+import { generateInlineStyleFromConfig, getTextContentStyleConfig } from '#achievement/helpers/contentStyle';
 import FormLayout from '#achievement/layouts/FormLayout.vue';
 import { buildCertificateCreatePayload, buildContentPayload } from '#achievement/utils/certificatePayloadBuilder';
 import { generateCertificateTemplate } from '#achievement/utils/certificateTemplateGenerator';
@@ -320,7 +321,7 @@ useQuery({
 
     try {
       const response = await getCertificateDetail(Number(routeId.value));
-      const data = response?.data as ICertificateDetailResponseData;
+      const data = response?.data as CertificateDetailResponseData;
 
       if (data) {
         store.setFormFromDetail(data);
@@ -498,7 +499,7 @@ const imagePreview = computed(() => {
   return null;
 });
 
-function getContentImageSrc(content: ICertificateContentImageForm | ICertificateContentCertificateSigneeForm): string {
+function getContentImageSrc(content: ImageContentForm | CertificateSigneeContentForm): string {
   if (content.type === 'image' || content.type === 'sertificate_signee') {
     if (content.file) {
       return URL.createObjectURL(content.file);
@@ -515,7 +516,7 @@ function getMargins() {
   };
 }
 
-function getContentImageStyle(content: ICertificateContentImageForm | ICertificateContentCertificateSigneeForm): string {
+function getContentImageStyle(content: ImageContentForm | CertificateSigneeContentForm): string {
   if ((content.type !== 'image' && content.type !== 'sertificate_signee') || (!content.value && !content.file)) {
     return 'display: none;';
   }
@@ -536,7 +537,7 @@ function getContentImageStyle(content: ICertificateContentImageForm | ICertifica
   `;
 }
 
-function getContentDisplayValue(content: ICertificateContentTextForm | ICertificateContentCertificateNumberForm | ICertificateContentLocationForm | ICertificateContentParticipantNameForm | ICertificateContentNIKForm | ICertificateContentEventTitleForm | ICertificateContentValidThruForm): string {
+function getContentDisplayValue(content: TextContentForm | CertificateNumberContentForm | LocationContentForm | ParticipantNameContentForm | NIKContentForm | EventTitleContentForm | ValidThruContentForm): string {
   if (content.type === 'certificate_number') {
     return '{{certificate_number}}';
   }
@@ -558,46 +559,14 @@ function getContentDisplayValue(content: ICertificateContentTextForm | ICertific
   return content.element_value || '';
 }
 
-function getContentTextStyle(content: ICertificateContentTextForm | ICertificateContentCertificateNumberForm | ICertificateContentLocationForm | ICertificateContentParticipantNameForm | ICertificateContentNIKForm | ICertificateContentEventTitleForm | ICertificateContentValidThruForm): string {
+function getContentTextStyle(content: TextContentForm | CertificateNumberContentForm | LocationContentForm | ParticipantNameContentForm | NIKContentForm | EventTitleContentForm | ValidThruContentForm): string {
   const isDynamicContent = ['certificate_number', 'participant_name', 'nik', 'title', 'location', 'valid_thru'].includes(content.type);
   if (!isDynamicContent && !content.element_value) {
     return 'display: none;';
   }
 
-  const { width, height, font_family, font_size, font_weight, alignment, color, vertical, horizontal, width_mode, height_mode } = content.metadata;
-  const { left, top } = getMargins();
-
-  const renderX = (horizontal || 0) + left;
-  const renderY = (vertical || 0) + top;
-
-  const fontFamilyValue = font_family || DEFAULT_FONT_FAMILY;
-
-  const widthValue = width === 'fit-content' ? 'fit-content' : `${width}px`;
-  const heightValue = height === 'fit-content' ? 'fit-content' : `${height}px`;
-
-  const shouldHideOverflow = (width_mode === 'fill' || width_mode === 'fix') && (height_mode === 'fill' || height_mode === 'fix');
-  const overflowStyle = shouldHideOverflow ? 'hidden' : 'visible';
-
-  return `
-    position: absolute;
-    left: ${renderX}px;
-    top: ${renderY}px;
-    width: ${widthValue};
-    height: ${heightValue};
-    font-family: ${fontFamilyValue};
-    font-size: ${font_size}px;
-    font-weight: ${font_weight};
-    text-align: ${alignment?.value || 'left'};
-    color: #${color};
-    white-space: pre-wrap;
-    overflow: ${overflowStyle};
-    box-sizing: border-box;
-    display: block;
-    z-index: 10;
-    line-height: 1.4;
-    margin: 0;
-    padding: 0;
-  `;
+  const styleConfig = getTextContentStyleConfig(content, safe_zone.value || { top: 0, right: 0, bottom: 0, left: 0 });
+  return generateInlineStyleFromConfig(styleConfig);
 }
 
 function getQRCodeContainerStyle(content: any): string {

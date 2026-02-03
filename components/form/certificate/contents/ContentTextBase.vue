@@ -13,6 +13,7 @@
     :height-mode="heightMode"
     :selected-width-mode-object="selectedWidthModeObject"
     :selected-height-mode-object="selectedHeightModeObject"
+    :element-id="contentItem.element_id"
     @header-click="$emit('headerClick')"
     @delete="$emit('delete', $event)"
     @update:font-family="handleFontFamilyUpdate"
@@ -58,10 +59,9 @@
         v-if="!contentConfig.isSource"
         label="Text"
       >
-        <UITextarea
-          :model-value="contentItem.value ?? undefined"
+        <UiTextarea
+          v-model="textValue"
           size="md"
-          @update:model-value="handleValueUpdate"
         />
       </UiFormGroup>
     </template>
@@ -70,29 +70,26 @@
 
 <script setup lang="ts">
 import type {
-  ICertificateContentEventTitleForm,
-  ICertificateContentLocationForm,
-  ICertificateContentNIKForm,
-  ICertificateContentParticipantNameForm,
-  ICertificateContentTextForm,
-  ICertificateContentValidThruForm,
+  EventTitleContentForm,
+  LocationContentForm,
+  NIKContentForm,
+  ParticipantNameContentForm,
+  TextContentForm,
+  ValidThruContentForm,
 } from '#achievement/config/types';
 import ContentTextWrapper from '#achievement/components/form/certificate/contents/ContentTextWrapper.vue';
 import { useContentTextControls } from '#achievement/composables/useContentTextControls';
 import { CANVAS_HEIGHT, CANVAS_WIDTH, DATE_FORMAT_OPTIONS } from '#achievement/config/constants';
-import { isLocationContent } from '#achievement/config/types';
-import UiInput from '#ui/components/atoms/input/index.vue';
-import UITextarea from '#ui/components/atoms/textarea/index.vue';
-import UiFormGroup from '#ui/components/molecules/form-group/index.vue';
-import UiSelect from '#ui/components/molecules/select/index.vue';
+import { isLocationContent } from '#achievement/helpers/checkContentType';
+import { UiFormGroup, UiInput, UiSelect, UiTextarea } from '@mydigilearn-saas/web-ui';
 
 type TextBasedContentItem =
-  | ICertificateContentTextForm
-  | ICertificateContentLocationForm
-  | ICertificateContentParticipantNameForm
-  | ICertificateContentNIKForm
-  | ICertificateContentEventTitleForm
-  | ICertificateContentValidThruForm;
+  | TextContentForm
+  | LocationContentForm
+  | ParticipantNameContentForm
+  | NIKContentForm
+  | EventTitleContentForm
+  | ValidThruContentForm;
 
 interface Props {
   contentItem: TextBasedContentItem;
@@ -139,13 +136,34 @@ const {
   handleValueUpdate,
 } = useContentTextControls(props, emit as any);
 
+const textValue = computed({
+  get: () => {
+    // For text type, use element_value; for others use value
+    if (props.contentItem.type === 'text') {
+      return (props.contentItem as TextContentForm).element_value ?? '';
+    }
+    return props.contentItem.value ?? '';
+  },
+  set: (newValue) => {
+    handleValueUpdate(newValue);
+  },
+});
+
 const dateFormatOptions = DATE_FORMAT_OPTIONS;
 
 const selectedDateFormat = computed(() => {
   if (!isLocationContent(props.contentItem)) {
     return dateFormatOptions[0];
   }
-  return dateFormatOptions.find(opt => opt.value === props.contentItem.metadata.date_format) || dateFormatOptions[0];
+
+  const metadata = props.contentItem.metadata;
+
+  const selectedDateFormat
+    = 'date_format' in metadata
+      ? dateFormatOptions.find(opt => opt.value === metadata.date_format)
+      : undefined;
+
+  return selectedDateFormat || dateFormatOptions[0];
 });
 
 const handleDateFormatUpdate = (selectedOption: any) => {

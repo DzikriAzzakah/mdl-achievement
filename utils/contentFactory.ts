@@ -1,44 +1,28 @@
 import type {
-  ICertificateContentCertificateNumberForm,
-  ICertificateContentCertificateSigneeForm,
-  ICertificateContentEventTitleForm,
-  ICertificateContentForm,
-  ICertificateContentImageForm,
-  ICertificateContentLocationForm,
-  ICertificateContentNIKForm,
-  ICertificateContentParticipantNameForm,
-  ICertificateContentQRCodeForm,
-  ICertificateContentTextForm,
-  ICertificateContentValidThruForm,
+  CertificateContentForm,
+  CertificateNumberContentForm,
+  CertificateSigneeContentForm,
+  EventTitleContentForm,
+  ImageContentForm,
+  LocationContentForm,
+  NIKContentForm,
+  ParticipantNameContentForm,
+  QRCodeContentForm,
+  TextContentForm,
+  ValidThruContentForm,
 } from '#achievement/config/types';
 import {
   DEFAULT_IMAGE_DIMENSIONS,
   DEFAULT_TEXT_CONFIG,
-  DEFAULT_TEXT_DIMENSIONS,
   QR_CODE_DEFAULT_CONFIG,
 } from '#achievement/config/constants';
 
-function getTextDimensions(text: string, font: string, fontSize: number, fontWeight: number) {
-  const canvas = document.createElement('canvas');
-  const context = canvas.getContext('2d');
-  if (context) {
-    context.font = `${fontWeight} ${fontSize}px ${font}`;
-    const metrics = context.measureText(text);
-    return {
-      width: Math.ceil(metrics.width),
-      height: Math.ceil(fontSize * 1.5),
-    };
-  }
-  return DEFAULT_TEXT_DIMENSIONS;
-}
-
 function createTextMetadata(text: string, customConfig: Partial<typeof DEFAULT_TEXT_CONFIG> = {}) {
   const config = { ...DEFAULT_TEXT_CONFIG, ...customConfig };
-  const dims = getTextDimensions(text, config.font, config.size, config.weight);
 
   return {
-    width: dims.width + config.padding,
-    height: dims.height,
+    width: 'fit-content',
+    height: 'fit-content',
     font_family: config.font,
     font_size: config.size,
     font_weight: config.weight,
@@ -46,18 +30,18 @@ function createTextMetadata(text: string, customConfig: Partial<typeof DEFAULT_T
     color: config.color,
     vertical: 0,
     horizontal: 0,
-    width_mode: 'fix' as const,
-    height_mode: 'fix' as const,
+    width_mode: 'hug' as const,
+    height_mode: 'hug' as const,
   };
 }
 
-export interface ContentFactory<T extends ICertificateContentForm = ICertificateContentForm> {
+export interface ContentFactory<T extends CertificateContentForm = CertificateContentForm> {
   createNew: (key: string) => T;
 }
 
 export const contentFactories: Record<string, ContentFactory<any>> = {
   image: {
-    createNew(key: string): ICertificateContentImageForm {
+    createNew(key: string): ImageContentForm {
       return {
         type: 'image',
         key: 'image',
@@ -74,10 +58,10 @@ export const contentFactories: Record<string, ContentFactory<any>> = {
         file: null,
       };
     },
-  } as ContentFactory<ICertificateContentImageForm>,
+  } as ContentFactory<ImageContentForm>,
 
   sertificate_signee: {
-    createNew(key: string): ICertificateContentCertificateSigneeForm {
+    createNew(key: string): CertificateSigneeContentForm {
       return {
         type: 'sertificate_signee',
         key: 'sertificate_signee',
@@ -94,10 +78,10 @@ export const contentFactories: Record<string, ContentFactory<any>> = {
         file: null,
       };
     },
-  } as ContentFactory<ICertificateContentCertificateSigneeForm>,
+  } as ContentFactory<CertificateSigneeContentForm>,
 
   text: {
-    createNew(key: string): ICertificateContentTextForm {
+    createNew(key: string): TextContentForm {
       const defaultText = 'Input Text Here';
       return {
         type: 'text',
@@ -108,10 +92,10 @@ export const contentFactories: Record<string, ContentFactory<any>> = {
         metadata: createTextMetadata(defaultText),
       };
     },
-  } as ContentFactory<ICertificateContentTextForm>,
+  } as ContentFactory<TextContentForm>,
 
   certificate_number: {
-    createNew(key: string): ICertificateContentCertificateNumberForm {
+    createNew(key: string): CertificateNumberContentForm {
       return {
         type: 'certificate_number',
         key: 'certificate_number',
@@ -121,10 +105,10 @@ export const contentFactories: Record<string, ContentFactory<any>> = {
         metadata: createTextMetadata(''),
       };
     },
-  } as ContentFactory<ICertificateContentCertificateNumberForm>,
+  } as ContentFactory<CertificateNumberContentForm>,
 
   participant_name: {
-    createNew(key: string): ICertificateContentParticipantNameForm {
+    createNew(key: string): ParticipantNameContentForm {
       const defaultText = '{{ participant_name }}';
       return {
         type: 'participant_name',
@@ -135,10 +119,10 @@ export const contentFactories: Record<string, ContentFactory<any>> = {
         metadata: createTextMetadata(defaultText),
       };
     },
-  } as ContentFactory<ICertificateContentParticipantNameForm>,
+  } as ContentFactory<ParticipantNameContentForm>,
 
   nik: {
-    createNew(key: string): ICertificateContentNIKForm {
+    createNew(key: string): NIKContentForm {
       const defaultText = '{{ nik }}';
       return {
         type: 'nik',
@@ -149,10 +133,10 @@ export const contentFactories: Record<string, ContentFactory<any>> = {
         metadata: createTextMetadata(defaultText),
       };
     },
-  } as ContentFactory<ICertificateContentNIKForm>,
+  } as ContentFactory<NIKContentForm>,
 
   title: {
-    createNew(key: string): ICertificateContentEventTitleForm {
+    createNew(key: string): EventTitleContentForm {
       const defaultText = '{{ title }}';
       return {
         type: 'title',
@@ -163,10 +147,10 @@ export const contentFactories: Record<string, ContentFactory<any>> = {
         metadata: createTextMetadata(defaultText),
       };
     },
-  } as ContentFactory<ICertificateContentEventTitleForm>,
+  } as ContentFactory<EventTitleContentForm>,
 
   location: {
-    createNew(key: string): ICertificateContentLocationForm {
+    createNew(key: string): LocationContentForm {
       const defaultText = '{{ location }}';
       return {
         type: 'location',
@@ -181,10 +165,10 @@ export const contentFactories: Record<string, ContentFactory<any>> = {
         },
       };
     },
-  } as ContentFactory<ICertificateContentLocationForm>,
+  } as ContentFactory<LocationContentForm>,
 
   valid_thru: {
-    createNew(key: string): ICertificateContentValidThruForm {
+    createNew(key: string): ValidThruContentForm {
       const defaultText = '{{ valid_thru }}';
       return {
         type: 'valid_thru',
@@ -195,16 +179,16 @@ export const contentFactories: Record<string, ContentFactory<any>> = {
         metadata: createTextMetadata(defaultText),
       };
     },
-  } as ContentFactory<ICertificateContentValidThruForm>,
+  } as ContentFactory<ValidThruContentForm>,
 
   qr_code: {
-    createNew(key: string): ICertificateContentQRCodeForm {
+    createNew(key: string): QRCodeContentForm {
       return {
         type: 'qr_code',
         key: 'qr_code',
         element_id: key,
-        value: '{{qr_code_url}}',
-        element_value: '{{qr_code_url}}',
+        value: '{{qr_code}}',
+        element_value: '{{qr_code}}',
         metadata: {
           width: QR_CODE_DEFAULT_CONFIG.width,
           height: QR_CODE_DEFAULT_CONFIG.height,
@@ -221,10 +205,10 @@ export const contentFactories: Record<string, ContentFactory<any>> = {
         },
       };
     },
-  } as ContentFactory<ICertificateContentQRCodeForm>,
+  } as ContentFactory<QRCodeContentForm>,
 };
 
-export function createContent(type: string, key: string): ICertificateContentForm | null {
+export function createContent(type: string, key: string): CertificateContentForm | null {
   const factory = contentFactories[type];
   return factory ? factory.createNew(key) : null;
 }

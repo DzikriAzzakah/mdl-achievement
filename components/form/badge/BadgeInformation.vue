@@ -35,7 +35,7 @@
             class="flex flex-col gap-3 w-full"
             :error="errors.image"
           >
-            <UIFileUploadFiles
+            <UiFileUploadFiles
               v-if="image"
               :files="displayUploadedImage"
               :enable-remove="true"
@@ -43,7 +43,7 @@
               @cancel-fetch="handleCancelFetchImage"
             />
 
-            <UIFileUploadCompact
+            <UiFileUploadCompact
               v-else
               id="upload-image"
               dimensions="500 x 500"
@@ -66,7 +66,7 @@
                   </div>
                 </div>
               </template>
-            </UIFileUploadCompact>
+            </UiFileUploadCompact>
           </UiFormGroup>
         </div>
       </div>
@@ -100,16 +100,18 @@
 </template>
 
 <script setup lang="ts">
-import type { IUploadedFile } from '#achievement/config/types.ts';
+import type { UploadedFile } from '#achievement/config/types.ts';
 import ZoomableContent from '#achievement/components/ZoomableContent.vue';
 import FormLayout from '#achievement/layouts/FormLayout.vue';
 import { useBadgeStore } from '#achievement/stores/badge.ts';
 
-import UiInput from '#ui/components/atoms/input/index.vue';
-import UiTextarea from '#ui/components/atoms/textarea/index.vue';
-import UIFileUploadCompact from '#ui/components/molecules/fileupload/compact/index.vue';
-import UIFileUploadFiles from '#ui/components/molecules/fileupload/files/index.vue';
-import UiFormGroup from '#ui/components/molecules/form-group/index.vue';
+import {
+  UiFileUploadCompact,
+  UiFileUploadFiles,
+  UiFormGroup,
+  UiInput,
+  UiTextarea,
+} from '@mydigilearn-saas/web-ui';
 
 const store = useBadgeStore();
 const { errors, title, description, image, uploadedImageMeta } = storeToRefs(store);
@@ -124,7 +126,7 @@ const imagePreview = computed((): string | null => {
   return null;
 });
 
-const displayUploadedImage = computed((): IUploadedFile[] => {
+const displayUploadedImage = computed((): UploadedFile[] => {
   const currentImage = image.value;
 
   if (!currentImage) {

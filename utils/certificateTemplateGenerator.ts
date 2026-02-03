@@ -1,38 +1,40 @@
 import type {
-  ICertificateContentCertificateNumberForm,
-  ICertificateContentCertificateSigneeForm,
-  ICertificateContentEventTitleForm,
-  ICertificateContentForm,
-  ICertificateContentImageForm,
-  ICertificateContentLocationForm,
-  ICertificateContentNIKForm,
-  ICertificateContentParticipantNameForm,
-  ICertificateContentQRCodeForm,
-  ICertificateContentTextForm,
-  ICertificateContentValidThruForm,
-  ICertificateSafeZone,
+  CertificateContentForm,
+  CertificateNumberContentForm,
+  CertificateSigneeContentForm,
+  EventTitleContentForm,
+  ImageContentForm,
+  LocationContentForm,
+  NIKContentForm,
+  ParticipantNameContentForm,
+  QRCodeContentForm,
+  SafeZone,
+  TextContentForm,
+  ValidThruContentForm,
 } from '#achievement/config/types';
-import { CANVAS_HEIGHT, CANVAS_WIDTH, DEFAULT_FONT_FAMILY, FONT_OPTIONS } from '#achievement/config/constants';
+import { CANVAS_HEIGHT, CANVAS_WIDTH, FONT_OPTIONS } from '#achievement/config/constants';
+import { isQRCodeContent, isTextBasedContent } from '#achievement/helpers/checkContentType';
+import { generateCSSFromStyleConfig, getTextContentStyleConfig } from '#achievement/helpers/contentStyle';
 import { generateQRCodeDataUrl } from './qrCodeGenerator';
 
 export interface ICertificateTemplateOptions {
   backgroundUrl: string;
-  contents: ICertificateContentForm[];
-  safeZone: ICertificateSafeZone;
+  contents: CertificateContentForm[];
+  safeZone: SafeZone;
   useActualUrls?: boolean;
   contentImageUrls?: Record<string, { url: string; originalFileName?: string; }>;
 }
 
 type TextContentType =
-  | ICertificateContentTextForm
-  | ICertificateContentCertificateNumberForm
-  | ICertificateContentLocationForm
-  | ICertificateContentParticipantNameForm
-  | ICertificateContentNIKForm
-  | ICertificateContentEventTitleForm
-  | ICertificateContentValidThruForm;
+  | TextContentForm
+  | CertificateNumberContentForm
+  | LocationContentForm
+  | ParticipantNameContentForm
+  | NIKContentForm
+  | EventTitleContentForm
+  | ValidThruContentForm;
 
-function getUsedFontLinks(contents: ICertificateContentForm[]): string {
+function getUsedFontLinks(contents: CertificateContentForm[]): string {
   const usedFonts = new Set<string>();
 
   contents.forEach((content) => {
@@ -58,18 +60,10 @@ function getUsedFontLinks(contents: ICertificateContentForm[]): string {
 ${linkTags}`;
 }
 
-function isTextBasedContent(content: ICertificateContentForm): content is TextContentType {
-  return ['text', 'certificate_number', 'location', 'participant_name', 'nik', 'title', 'valid_thru'].includes(content.type);
-}
-
 function isImageBasedContent(
-  content: ICertificateContentForm,
-): content is ICertificateContentImageForm | ICertificateContentCertificateSigneeForm {
+  content: CertificateContentForm,
+): content is ImageContentForm | CertificateSigneeContentForm {
   return ['image', 'sertificate_signee'].includes(content.type);
-}
-
-function isQRCodeContent(content: ICertificateContentForm): content is ICertificateContentQRCodeForm {
-  return content.type === 'qr_code';
 }
 
 function generateClassName(key: string): string {
@@ -77,7 +71,7 @@ function generateClassName(key: string): string {
 }
 
 function getTemplatePlaceholder(
-  content: ICertificateContentForm,
+  content: CertificateContentForm,
   contentImageUrls?: Record<string, { url: string; originalFileName?: string; }>,
 ): string {
   switch (content.type) {
@@ -117,14 +111,14 @@ function getTemplatePlaceholder(
       return '{{sign}}';
     case 'qr_code':
 
-      return '{{qr_code_url}}';
+      return '{{qr_code}}';
     default:
       return '';
   }
 }
 
 function getImageAltText(
-  content: ICertificateContentImageForm | ICertificateContentCertificateSigneeForm,
+  content: ImageContentForm | CertificateSigneeContentForm,
   contentImageUrls?: Record<string, { url: string; originalFileName?: string; }>,
 ): string {
   if (contentImageUrls?.[content.key]?.originalFileName) {
@@ -134,70 +128,15 @@ function getImageAltText(
   return content.type === 'sertificate_signee' ? 'Signature' : 'Custom Image';
 }
 
-function generateTextContentCSS(content: TextContentType, safeZone: ICertificateSafeZone): string {
+function generateTextContentCSS(content: TextContentType, safeZone: SafeZone): string {
   const className = generateClassName(content.key);
-  const { width, height, font_family, font_size, font_weight, alignment, color, vertical, horizontal, width_mode, height_mode } = content.metadata;
-
-  const positionX = (horizontal || 0) + (safeZone.left || 0);
-  const positionY = (vertical || 0) + (safeZone.top || 0);
-
-  const fontFamilyValue = font_family || DEFAULT_FONT_FAMILY;
-
-  const shouldHideOverflow = (width_mode === 'fill' || width_mode === 'fix') && (height_mode === 'fill' || height_mode === 'fix');
-  const overflowStyle = shouldHideOverflow ? 'hidden' : 'visible';
-
-  const widthValue = width === 'fit-content' ? 'fit-content' : `${width}px`;
-  const heightValue = height === 'fit-content' ? 'fit-content' : `${height}px`;
-  const baseMaxWidth
-  = CANVAS_WIDTH - (safeZone.left || 0) - (safeZone.right || 0);
-
-  const baseMaxHeight
-    = CANVAS_HEIGHT - (safeZone.top || 0) - (safeZone.bottom || 0);
-
-  const maxWidth
-  = width_mode === 'fill'
-    ? baseMaxWidth
-    : width_mode === 'fix'
-      ? typeof width === 'number'
-        ? width
-        : baseMaxWidth
-      : baseMaxWidth - (horizontal || 0);
-
-  const maxHeight
-    = height_mode === 'fill'
-      ? baseMaxHeight
-      : height_mode === 'fix'
-        ? typeof height === 'number'
-          ? height
-          : baseMaxHeight
-        : baseMaxHeight - (vertical || 0);
-  return `
-    .${className} {
-        position: absolute;
-        left: ${positionX}px;
-        top: ${positionY}px;
-        width: ${widthValue};
-        height: ${heightValue};
-        max-width: ${maxWidth}px;
-        max-height: ${maxHeight}px;
-        font-family: ${fontFamilyValue};
-        font-size: ${font_size}px;
-        font-weight: ${font_weight};
-        text-align: ${alignment?.value || 'left'};
-        color: #${color || '000000'};
-        white-space: pre-wrap;
-        overflow: ${overflowStyle};
-        box-sizing: border-box;
-        line-height: 1.4;
-        margin: 0;
-        padding: 0;
-        display: block;
-    }`;
+  const styleConfig = getTextContentStyleConfig(content, safeZone);
+  return generateCSSFromStyleConfig(styleConfig, className);
 }
 
 function generateImageContentCSS(
-  content: ICertificateContentImageForm | ICertificateContentCertificateSigneeForm,
-  safeZone: ICertificateSafeZone,
+  content: ImageContentForm | CertificateSigneeContentForm,
+  safeZone: SafeZone,
 ): string {
   const className = generateClassName(content.key);
   const { width, height, vertical, horizontal } = content.metadata;
@@ -221,7 +160,7 @@ function generateImageContentCSS(
     }`;
 }
 
-function generateQRCodeContentCSS(content: ICertificateContentQRCodeForm, safeZone: ICertificateSafeZone): string {
+function generateQRCodeContentCSS(content: QRCodeContentForm, safeZone: SafeZone): string {
   const className = generateClassName(content.key);
   const { width, height, vertical, horizontal, background_color, background_transparent, border_style, border_color } = content.metadata;
 
@@ -267,7 +206,7 @@ function generateTextContentHTML(content: TextContentType): string {
 }
 
 function generateImageContentHTML(
-  content: ICertificateContentImageForm | ICertificateContentCertificateSigneeForm,
+  content: ImageContentForm | CertificateSigneeContentForm,
   useActualUrls?: boolean,
   contentImageUrls?: Record<string, { url: string; originalFileName?: string; }>,
 ): string {
@@ -280,12 +219,12 @@ function generateImageContentHTML(
         </div>`;
 }
 
-function generateQRCodeContentHTML(content: ICertificateContentQRCodeForm, useActualUrls?: boolean): string {
+function generateQRCodeContentHTML(content: QRCodeContentForm, useActualUrls?: boolean): string {
   const className = generateClassName(content.key);
 
   const qrSrc = useActualUrls
     ? generateQRCodeDataUrl(content, content.value || 'https://example.com')
-    : '{{qr_code_url}}';
+    : '{{qr_code}}';
 
   return `        <div class="${className}">
             <img src="${qrSrc}" alt="QR Code">

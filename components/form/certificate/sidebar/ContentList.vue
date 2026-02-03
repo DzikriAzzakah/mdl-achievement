@@ -44,7 +44,7 @@
             :safe-zone-width="safeZoneWidth"
             :safe-zone-height="safeZoneHeight"
             @delete="emit('deleteContent', idx)"
-            @update:content-item="(updated: ICertificateContentForm) => emit('updateContent', idx, updated)"
+            @update:content-item="(updated: CertificateContentForm) => emit('updateContent', idx, updated)"
             @header-click="emit('contentClick', content.element_id)"
           />
         </template>
@@ -82,7 +82,7 @@
 </template>
 
 <script setup lang="ts">
-import type { ICertificateContentForm } from '#achievement/config/types.ts';
+import type { CertificateContentForm } from '#achievement/config/types.ts';
 import ContentCertificateNumber from '#achievement/components/form/certificate/contents/ContentCertificateNumber.vue';
 import ContentImage from '#achievement/components/form/certificate/contents/ContentImage.vue';
 import ContentQRCode from '#achievement/components/form/certificate/contents/ContentQRCode.vue';
@@ -90,7 +90,7 @@ import ContentTextBase from '#achievement/components/form/certificate/contents/C
 import { UiButton } from '@mydigilearn-saas/web-ui';
 
 interface Props {
-  contents: ICertificateContentForm[];
+  contents: CertificateContentForm[];
   selectedContentKey: string | null;
   safeZoneWidth: number;
   safeZoneHeight: number;
@@ -100,7 +100,7 @@ const props = defineProps<Props>();
 const emit = defineEmits<{
   addContent: [type: string];
   deleteContent: [index: number];
-  updateContent: [index: number, updated: ICertificateContentForm];
+  updateContent: [index: number, updated: CertificateContentForm];
   contentClick: [key: string];
 }>();
 
