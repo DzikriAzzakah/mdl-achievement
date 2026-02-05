@@ -2,9 +2,10 @@ import type {
   CertificateContentForm,
   CertificateNumberContentForm,
   CertificateSigneeContentForm,
+  CityContentForm,
+  DateContentForm,
   EventTitleContentForm,
   ImageContentForm,
-  LocationContentForm,
   NIKContentForm,
   ParticipantNameContentForm,
   QRCodeContentForm,
@@ -28,7 +29,8 @@ export interface ICertificateTemplateOptions {
 type TextContentType =
   | TextContentForm
   | CertificateNumberContentForm
-  | LocationContentForm
+  | CityContentForm
+  | DateContentForm
   | ParticipantNameContentForm
   | NIKContentForm
   | EventTitleContentForm
@@ -76,7 +78,7 @@ function getTemplatePlaceholder(
 ): string {
   switch (content.type) {
     case 'text':
-      return content.value || '';
+      return (content as TextContentForm).element_value || '';
     case 'certificate_number':
       return '{{certificate_number}}';
     case 'participant_name':
@@ -85,32 +87,31 @@ function getTemplatePlaceholder(
       return '{{nik}}';
     case 'title':
       return '{{title}}';
-    case 'location':
-      return '{{city}}, {{date}}';
+    case 'city':
+      return (content as CityContentForm).element_value || '';
+    case 'date':
+      return '{{date}}';
     case 'valid_thru':
       return '{{expired_date}}';
     case 'image':
 
-      if (contentImageUrls?.[content.key]?.url) {
-        return contentImageUrls[content.key].url;
+      if (contentImageUrls?.[content.element_id]?.url) {
+        return contentImageUrls[content.element_id].url;
       }
-
-      if (content.value) {
-        return content.value;
+      if ((content as ImageContentForm).value) {
+        return (content as ImageContentForm).value!;
       }
       return '{{custom_image}}';
     case 'sertificate_signee':
 
-      if (contentImageUrls?.[content.key]?.url) {
-        return contentImageUrls[content.key].url;
+      if (contentImageUrls?.[content.element_id]?.url) {
+        return contentImageUrls[content.element_id].url;
       }
-
-      if (content.value) {
-        return content.value;
+      if ((content as CertificateSigneeContentForm).value) {
+        return (content as CertificateSigneeContentForm).value!;
       }
       return '{{sign}}';
     case 'qr_code':
-
       return '{{qr_code}}';
     default:
       return '';
@@ -121,8 +122,8 @@ function getImageAltText(
   content: ImageContentForm | CertificateSigneeContentForm,
   contentImageUrls?: Record<string, { url: string; originalFileName?: string; }>,
 ): string {
-  if (contentImageUrls?.[content.key]?.originalFileName) {
-    return contentImageUrls[content.key].originalFileName!;
+  if (contentImageUrls?.[content.element_id]?.originalFileName) {
+    return contentImageUrls[content.element_id].originalFileName!;
   }
 
   return content.type === 'sertificate_signee' ? 'Signature' : 'Custom Image';

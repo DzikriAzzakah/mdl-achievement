@@ -115,7 +115,8 @@ const availableContentTypes = [
   { type: 'participant_name', label: 'Participant Name', icon: 'mdi:code-tags' },
   { type: 'nik', label: 'NIK', icon: 'mdi:code-tags' },
   { type: 'title', label: 'Event Title', icon: 'mdi:code-tags' },
-  { type: 'location', label: 'Location', icon: 'mdi:code-tags' },
+  { type: 'city', label: 'City', icon: 'mdi:code-tags' },
+  { type: 'date', label: 'Date', icon: 'mdi:code-tags' },
   { type: 'qr_code', label: 'QR Code', icon: 'mdi:qrcode' },
   { type: 'valid_thru', label: 'Certificate Valid Thru', icon: 'mdi:code-tags' },
 ];
@@ -129,7 +130,8 @@ const COMPONENT_MAP: Record<string, any> = {
   participant_name: ContentTextBase,
   nik: ContentTextBase,
   title: ContentTextBase,
-  location: ContentTextBase,
+  city: ContentTextBase,
+  date: ContentTextBase,
   valid_thru: ContentTextBase,
 };
 

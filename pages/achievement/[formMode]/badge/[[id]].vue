@@ -40,19 +40,20 @@
 
 <script setup lang="ts">
 import type { BadgeDetail, BadgePayload, BadgeResponse, UploadResponse } from '#achievement/config/types.ts';
+import type { RouteLocationNormalized } from 'vue-router';
 import { getBadgeDetail, patchEditBadge, postAddBadge, postUploadAchievementFile } from '#achievement/api/api.ts';
 import Accessibility from '#achievement/components/form/badge/Accessibility.vue';
 import BadgeInformation from '#achievement/components/form/badge/BadgeInformation.vue';
-import { BADGE_TABS_EDIT, CREATE_STEPPER, FormMode } from '#achievement/config/constants.ts';
-import { PERMISSION_CREATE, PERMISSION_EDIT, PERMISSION_FEATURE_KEY, PERMISSION_LIST } from '#achievement/config/featureFlag.ts';
+import { BADGE_TABS_EDIT, CREATE_STEPPER } from '#achievement/config/constants.ts';
+import {
+  PERMISSION_BADGE_CREATE,
+  PERMISSION_BADGE_EDIT,
+  PERMISSION_FEATURE_KEY,
+} from '#achievement/config/featureFlag.ts';
 import TemplateManageLayout from '#core/components/templates/ManageLayout.vue';
-import { PermissionsCoreSegmentKey } from '#core/config/constants.ts';
-import { CMS_LIVE_EVENT_v2 } from '#core/config/permissions.ts';
 import { UiLoading } from '@mydigilearn-saas/web-ui';
 
 import { useMutation, useQuery } from '@tanstack/vue-query';
-
-import { type RouteLocationNormalized, useRouter } from 'vue-router';
 
 type TStep = 'badge-configuration' | 'accessibility';
 
@@ -70,6 +71,7 @@ const badgeId = computed(() => route.params.id as string | undefined);
 
 const isCreateMode = computed(() => formMode === 'create');
 const isEditMode = computed(() => formMode === 'edit');
+const { buildReturnUrl } = useQueryUrlParams();
 
 const activeStepper = ref<number>(1);
 
@@ -79,6 +81,8 @@ const isFormInitialized = ref(false);
 const isLoading = ref<boolean>(false);
 const initialImage = ref<string | null>(null);
 const initialForm = ref<Record<string, any>>({});
+
+const returnUrl = buildReturnUrl('/achievement');
 
 definePageMeta({
   layout: 'empty',
@@ -98,33 +102,22 @@ definePageMeta({
   },
   rbac: {
     feature: PERMISSION_FEATURE_KEY,
-    permissions: [PermissionsCoreSegmentKey.CREATE, PermissionsCoreSegmentKey.EDIT],
+    permissions: [PERMISSION_BADGE_CREATE, PERMISSION_BADGE_EDIT],
     matchFn: (permissions: string[], to: RouteLocationNormalized) => {
-      const set = new Set(permissions);
+      const formMode = to.params.formMode as string;
 
-      if (to?.params?.formMode === FormMode.CREATE) {
-        return set.has([CMS_LIVE_EVENT_v2, PermissionsCoreSegmentKey.CREATE].join(':'));
+      if (formMode === 'create') {
+        return permissions.includes(`cms:${PERMISSION_FEATURE_KEY}:${PERMISSION_BADGE_CREATE}`);
       }
 
-      if (to?.params?.formMode === FormMode.EDIT) {
-        return set.has([CMS_LIVE_EVENT_v2, PermissionsCoreSegmentKey.EDIT].join(':'));
+      if (formMode === 'edit') {
+        return permissions.includes(`cms:${PERMISSION_FEATURE_KEY}:${PERMISSION_BADGE_EDIT}`);
       }
 
       return false;
     },
   },
 });
-
-const rbacPermissions = computed(() => {
-  return isCreateMode.value ? [PERMISSION_CREATE] : [PERMISSION_EDIT];
-});
-
-const { checkPermission } = useRBAC();
-watch(() => rbacPermissions.value, (permissions) => {
-  if (!checkPermission(PERMISSION_LIST, permissions)) {
-    router.push('/');
-  }
-}, { immediate: true });
 
 const pageTitle = computed(() => isCreateMode.value ? 'Add Badge' : 'Edit Badge');
 
@@ -135,7 +128,7 @@ const breadcrumbs = computed(() => {
 
   return [
     { text: 'Master Data', href: '', active: false },
-    { text: 'Achievement', href: '/achievement', active: false },
+    { text: 'Achievement', href: returnUrl.value, active: false },
     { text: 'Edit', href: `/achievement/edit/badge/${badgeId.value}`, active: true },
   ];
 });
@@ -235,7 +228,7 @@ function isFormChanged(): boolean {
   return false;
 }
 
-watch(isFormDirty, (value) => {
+watch(isFormDirty, (value: any) => {
   preventLeave.value = value;
 });
 
@@ -322,7 +315,7 @@ const { mutate: updateCreatedBadge } = useMutation({
     isLoading.value = false;
     hideLoading();
   },
-  onError: (err) => {
+  onError: (err: any) => {
     $toast({
       variant: 'error',
       title: 'Error',
@@ -402,7 +395,7 @@ const { mutate: editBadgeForm } = useMutation({
     isLoading.value = false;
     hideLoading();
   },
-  onError: (err) => {
+  onError: (err: any) => {
     $toast({
       variant: 'error',
       title: 'Error',

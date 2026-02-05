@@ -1,8 +1,8 @@
-import { useCertificateStore } from '#achievement/stores/certificate';
+import { useCertificateCanvas } from '#achievement/composables/useCertificateCanvas';
 import { onBeforeUnmount, onMounted } from 'vue';
 
 export function useKeyboardShortcuts() {
-  const store = useCertificateStore();
+  const canvas = useCertificateCanvas();
 
   const handleKeyDown = (event: KeyboardEvent) => {
     // Skip if focus is on input elements
@@ -16,13 +16,13 @@ export function useKeyboardShortcuts() {
     }
 
     // Only process if something is selected
-    if (!store.selectedContentKey) {
+    if (!canvas.selectedContentKey.value) {
       return;
     }
 
     // Find selected content
-    const selectedContent = store.contents.find(
-      c => c.element_id === store.selectedContentKey,
+    const selectedContent = canvas.contents.value.find(
+      c => c.element_id === canvas.selectedContentKey.value,
     );
     if (!selectedContent) {
       return;
@@ -40,11 +40,11 @@ export function useKeyboardShortcuts() {
         return;
       }
 
-      const index = store.contents.findIndex(
-        c => c.element_id === store.selectedContentKey,
+      const index = canvas.contents.value.findIndex(
+        c => c.element_id === canvas.selectedContentKey.value,
       );
       if (index !== -1) {
-        store.deleteContent(index);
+        canvas.deleteContent(index);
       }
       return;
     }
@@ -56,11 +56,11 @@ export function useKeyboardShortcuts() {
       }
       event.preventDefault();
 
-      const index = store.contents.findIndex(
-        c => c.element_id === store.selectedContentKey,
+      const index = canvas.contents.value.findIndex(
+        c => c.element_id === canvas.selectedContentKey.value,
       );
       if (index !== -1) {
-        store.contents[index].metadata.vertical -= moveAmount;
+        canvas.contents.value[index].metadata.vertical -= moveAmount;
       }
       return;
     }
@@ -71,11 +71,11 @@ export function useKeyboardShortcuts() {
       }
       event.preventDefault();
 
-      const index = store.contents.findIndex(
-        c => c.element_id === store.selectedContentKey,
+      const index = canvas.contents.value.findIndex(
+        c => c.element_id === canvas.selectedContentKey.value,
       );
       if (index !== -1) {
-        store.contents[index].metadata.vertical += moveAmount;
+        canvas.contents.value[index].metadata.vertical += moveAmount;
       }
       return;
     }
@@ -86,11 +86,11 @@ export function useKeyboardShortcuts() {
       }
       event.preventDefault();
 
-      const index = store.contents.findIndex(
-        c => c.element_id === store.selectedContentKey,
+      const index = canvas.contents.value.findIndex(
+        c => c.element_id === canvas.selectedContentKey.value,
       );
       if (index !== -1) {
-        store.contents[index].metadata.horizontal -= moveAmount;
+        canvas.contents.value[index].metadata.horizontal -= moveAmount;
       }
       return;
     }
@@ -101,11 +101,11 @@ export function useKeyboardShortcuts() {
       }
       event.preventDefault();
 
-      const index = store.contents.findIndex(
-        c => c.element_id === store.selectedContentKey,
+      const index = canvas.contents.value.findIndex(
+        c => c.element_id === canvas.selectedContentKey.value,
       );
       if (index !== -1) {
-        store.contents[index].metadata.horizontal += moveAmount;
+        canvas.contents.value[index].metadata.horizontal += moveAmount;
       }
       return;
     }
@@ -113,34 +113,34 @@ export function useKeyboardShortcuts() {
     // Handle Ctrl+D - duplicate content
     if (isCtrl && key.toLowerCase() === 'd') {
       event.preventDefault();
-      store.duplicateContent(store.selectedContentKey);
+      canvas.duplicateContent(canvas.selectedContentKey.value);
       return;
     }
 
     // Handle Ctrl+[ - send backward
     if (isCtrl && key === '[') {
       event.preventDefault();
-      store.sendBackward(store.selectedContentKey);
+      canvas.reorderLayers(canvas.selectedContentKey.value, 'backward');
       return;
     }
 
     // Handle Ctrl+] - bring forward
     if (isCtrl && key === ']') {
       event.preventDefault();
-      store.bringForward(store.selectedContentKey);
+      canvas.reorderLayers(canvas.selectedContentKey.value, 'forward');
       return;
     }
 
     // Handle Escape - deselect
     if (key === 'Escape') {
-      store.selectedContentKey = null;
+      canvas.selectedContentKey.value = null;
       return;
     }
 
     // Handle Ctrl+A - multi-select (placeholder)
     if (isCtrl && key.toLowerCase() === 'a') {
       event.preventDefault();
-      console.warn('Multi-select not yet implemented');
+      console.warn('[App] Multi-select not yet implemented');
     }
   };
 

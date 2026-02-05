@@ -44,7 +44,7 @@
               @update:certificate-type="(value: { label: string; value: string; }) => store.certificate_type = value"
               @update:safe-zone="(value: any) => store.safe_zone = value"
               @update:image="(value: File | string | null) => store.image = value"
-              @update:contents="(value: any[]) => store.contents = value"
+              @update:contents="(value: any[]) => canvas.contents.value = value"
               @update:uploaded-image-meta="(value: any) => uploadedImageMeta = value"
             />
           </template>
@@ -115,21 +115,13 @@
                             ]"
                             @click.stop="(e) => handleSelectContent(e, content.element_id)"
                           >
-                            <Qrcode
-                              :value="content.value || 'https://example.com'"
-                              :variant="{
-                                pixel: content.metadata.shape === 'dots' ? 'circle' : 'default',
-                                marker: content.metadata.border_style === 'rounded' ? 'rounded' : 'default',
-                                inner: content.metadata.shape === 'dots' ? 'circle' : 'default',
-                              }"
-                              :radius="content.metadata.border_style === 'rounded' ? 1 : 0"
-                              :black-color="`#${content.metadata.shape_color}`"
-                              white-color="transparent"
-                              class="w-full h-full"
+                            <CoreUtilsQrCodeClient
+                              :data="content.value || 'https://example.com'"
+                              :qr-config="getQRCodeConfig(content)"
                             />
                           </div>
                           <div
-                            v-else-if="['text', 'certificate_number', 'participant_name', 'nik', 'title', 'location', 'valid_thru'].includes(content.type)"
+                            v-else-if="['text', 'certificate_number', 'participant_name', 'nik', 'title', 'city', 'date', 'valid_thru'].includes(content.type)"
                             :id="content.element_id"
                             :style="getContentTextStyle(content)"
                             class="cursor-pointer transition-none hover:border hover:border-blue-300 prevent-zoom-pan"
@@ -183,18 +175,38 @@
 </template>
 
 <script setup lang="ts">
-import type { CertificateDetailResponseData, CertificateNumberContentForm, CertificateSigneeContentForm, EventTitleContentForm, ImageContentForm, LocationContentForm, NIKContentForm, ParticipantNameContentForm, TextContentForm, ValidThruContentForm } from '#achievement/config/types.ts';
+import type {
+  CertificateDetailResponseData,
+  CertificateNumberContentForm,
+  CertificateSigneeContentForm,
+  CityContentForm,
+  DateContentForm,
+  EventTitleContentForm,
+  ImageContentForm,
+  NIKContentForm,
+  ParticipantNameContentForm,
+  TextContentForm,
+  ValidThruContentForm,
+} from '#achievement/config/types.ts';
+import type { Options } from 'qr-code-styling';
+import type { RouteLocationNormalized } from 'vue-router';
 import { getCertificateDetail, patchEditCertificate, postAddCertificate, postUploadAchievementFile } from '#achievement/api/api.ts';
+
 import Accessibility from '#achievement/components/form/certificate/Accessibility.vue';
 
 import Sidebar from '#achievement/components/form/certificate/Sidebar.vue';
 
 import ZoomableContent from '#achievement/components/ZoomableContent.vue';
 import { useCanvasInteract } from '#achievement/composables/useCanvasInteract';
+import { useCertificateCanvas } from '#achievement/composables/useCertificateCanvas';
 import { useKeyboardShortcuts } from '#achievement/composables/useKeyboardShortcuts';
 
 import { CANVAS_HEIGHT, CANVAS_WIDTH, CERTIFICATE_TABS_EDIT, CREATE_STEPPER, FormMode, TYPE_OPTIONS } from '#achievement/config/constants.ts';
-import { PERMISSION_CREATE, PERMISSION_EDIT, PERMISSION_LIST } from '#achievement/config/featureFlag.ts';
+import {
+  PERMISSION_CERTIFICATE_CREATE,
+  PERMISSION_CERTIFICATE_EDIT,
+  PERMISSION_FEATURE_KEY,
+} from '#achievement/config/featureFlag.ts';
 
 import { generateInlineStyleFromConfig, getTextContentStyleConfig } from '#achievement/helpers/contentStyle';
 import FormLayout from '#achievement/layouts/FormLayout.vue';
@@ -202,10 +214,11 @@ import { buildCertificateCreatePayload, buildContentPayload } from '#achievement
 import { generateCertificateTemplate } from '#achievement/utils/certificateTemplateGenerator';
 import { htmlToImageFile } from '#achievement/utils/htmlToImage';
 import TemplateManageLayout from '#core/components/templates/ManageLayout.vue';
+import CoreUtilsQrCodeClient from '#core/components/utils/QrCode.client.vue';
+
 import { UiSwitch } from '@mydigilearn-saas/web-ui';
 
 import { useMutation, useQuery } from '@tanstack/vue-query';
-
 import Moveable from 'vue3-moveable';
 
 type TStep = 'certificate-configuration' | 'accessibility';
@@ -235,18 +248,37 @@ definePageMeta({
     return ['create', 'edit'].includes(formMode);
   },
   rbac: {
-    feature: PERMISSION_LIST,
-    permissions: [PERMISSION_CREATE, PERMISSION_EDIT],
+    feature: PERMISSION_FEATURE_KEY,
+    permissions: [PERMISSION_CERTIFICATE_CREATE, PERMISSION_CERTIFICATE_EDIT],
+    matchFn: (permissions: string[], to: RouteLocationNormalized) => {
+      const formMode = to.params.formMode as string;
+
+      if (formMode === 'create') {
+        return permissions.includes(`cms:${PERMISSION_FEATURE_KEY}:${PERMISSION_CERTIFICATE_CREATE}`);
+      }
+
+      if (formMode === 'edit') {
+        return permissions.includes(`cms:${PERMISSION_FEATURE_KEY}:${PERMISSION_CERTIFICATE_EDIT}`);
+      }
+
+      return false;
+    },
   },
 });
 
 const store = useCertificateStore();
-const { errors, title, certificate_type, image, contents, safe_zone, selectedContentKey } = storeToRefs(store);
+const canvas = useCertificateCanvas();
+const { errors, title, certificate_type, image, safe_zone } = storeToRefs(store);
+const contents = toRef(canvas, 'contents');
+const selectedContentKey = toRef(canvas, 'selectedContentKey');
 
 const router = useRouter();
 const { showLoading, hideLoading } = useGlobalLoading();
 const { preventLeave } = useConfirmLeave();
 const { getApiErrorMessage } = useUtility();
+const { buildReturnUrl } = useQueryUrlParams();
+
+const returnUrl = buildReturnUrl('/achievement');
 
 const breadcrumbs = computed(() => {
   if (!isEditMode.value) {
@@ -255,7 +287,7 @@ const breadcrumbs = computed(() => {
 
   return [
     { text: 'Master Data', href: '', active: false },
-    { text: 'Achievement', href: '/achievement', active: false },
+    { text: 'Achievement', href: returnUrl.value, active: false },
     { text: 'Edit', href: `/achievement/edit/certificate/${routeId.value}`, active: true },
   ];
 });
@@ -281,7 +313,7 @@ const getVisualState = () => ({
     ? { name: store.image.name, size: store.image.size, lastModified: store.image.lastModified }
     : store.image,
   safe_zone: store.safe_zone,
-  contents: store.contents.map((c) => {
+  contents: canvas.contents.value.map((c: any) => {
     const contentFile = (c as any).file;
     return {
       ...c,
@@ -325,6 +357,11 @@ useQuery({
 
       if (data) {
         store.setFormFromDetail(data);
+
+        if (data.contents && data.contents.length > 0) {
+          canvas.loadContentsFromPayload(data.contents);
+        }
+
         certificateId.value = data.id;
 
         uploadedImageMeta.value = store.uploadedBackgroundMeta;
@@ -397,7 +434,7 @@ const selectedContentAspectRatioLocked = computed(() => {
     return false;
   }
 
-  const selectedContent = store.contents.find(c => c.element_id === selectedContentKey.value);
+  const selectedContent = canvas.contents.value.find((c: any) => c.element_id === selectedContentKey.value);
   if (!selectedContent) {
     return false;
   }
@@ -410,7 +447,7 @@ const isSelectedContentLocked = computed(() => {
     return false;
   }
 
-  const content = store.contents.find(c => c.element_id === selectedContentKey.value);
+  const content = canvas.contents.value.find((c: any) => c.element_id === selectedContentKey.value);
   return content?.metadata.isLocked === true;
 });
 
@@ -537,7 +574,7 @@ function getContentImageStyle(content: ImageContentForm | CertificateSigneeConte
   `;
 }
 
-function getContentDisplayValue(content: TextContentForm | CertificateNumberContentForm | LocationContentForm | ParticipantNameContentForm | NIKContentForm | EventTitleContentForm | ValidThruContentForm): string {
+function getContentDisplayValue(content: TextContentForm | CertificateNumberContentForm | CityContentForm | DateContentForm | ParticipantNameContentForm | NIKContentForm | EventTitleContentForm | ValidThruContentForm): string {
   if (content.type === 'certificate_number') {
     return '{{certificate_number}}';
   }
@@ -550,8 +587,11 @@ function getContentDisplayValue(content: TextContentForm | CertificateNumberCont
   if (content.type === 'title') {
     return '{{title}}';
   }
-  if (content.type === 'location') {
-    return '{{city}}, {{date}}';
+  if (content.type === 'city') {
+    return content.element_value || '';
+  }
+  if (content.type === 'date') {
+    return '{{date}}';
   }
   if (content.type === 'valid_thru') {
     return '{{expired_date}}';
@@ -559,8 +599,9 @@ function getContentDisplayValue(content: TextContentForm | CertificateNumberCont
   return content.element_value || '';
 }
 
-function getContentTextStyle(content: TextContentForm | CertificateNumberContentForm | LocationContentForm | ParticipantNameContentForm | NIKContentForm | EventTitleContentForm | ValidThruContentForm): string {
-  const isDynamicContent = ['certificate_number', 'participant_name', 'nik', 'title', 'location', 'valid_thru'].includes(content.type);
+function getContentTextStyle(content: TextContentForm | CertificateNumberContentForm | CityContentForm | DateContentForm | ParticipantNameContentForm | NIKContentForm | EventTitleContentForm | ValidThruContentForm): string {
+  const isDynamicContent = ['certificate_number', 'participant_name', 'nik', 'title', 'date', 'valid_thru'].includes(content.type);
+
   if (!isDynamicContent && !content.element_value) {
     return 'display: none;';
   }
@@ -576,7 +617,8 @@ function getQRCodeContainerStyle(content: any): string {
   const renderX = (horizontal || 0) + left;
   const renderY = (vertical || 0) + top;
 
-  const padding = Math.max(6, Math.floor(Math.min(width, height) / 10));
+  // const padding = Math.max(6, Math.floor(Math.min(width, height) / 10));
+  const padding = 0;
   const bgColor = background_transparent ? 'transparent' : `#${background_color}`;
   const borderRadius = border_style === 'rounded' ? '10px' : '0';
 
@@ -596,6 +638,42 @@ function getQRCodeContainerStyle(content: any): string {
     box-sizing: border-box;
     z-index: 10;
   `;
+}
+
+function getQRCodeConfig(content: any): Partial<Options> {
+  const { width, height, shape, border_style, shape_color } = content.metadata;
+
+  const qrSize = Math.min(width, height);
+  const padding = Math.max(6, Math.floor(qrSize / 10));
+  const actualQRSize = qrSize - (padding * 2);
+
+  return {
+    width: actualQRSize,
+    height: actualQRSize,
+    type: 'svg',
+    margin: 0,
+    data: content.value || 'https://example.com',
+    qrOptions: {
+      typeNumber: 0,
+      mode: 'Byte',
+      errorCorrectionLevel: 'Q',
+    },
+    dotsOptions: {
+      type: shape === 'dots' ? 'dots' : 'rounded',
+      color: `#${shape_color}`,
+    },
+    backgroundOptions: {
+      color: 'transparent',
+    },
+    cornersSquareOptions: {
+      type: border_style === 'rounded' ? 'extra-rounded' : 'square',
+      color: `#${shape_color}`,
+    },
+    cornersDotOptions: {
+      type: border_style === 'rounded' ? 'dot' : 'square',
+      color: `#${shape_color}`,
+    },
+  };
 }
 
 const uploadBackgroundImage = async (file: File) => {
@@ -748,7 +826,7 @@ const handleSubmit = async () => {
       const contentImageUrls: Record<string, { url: string; originalFileName?: string; }> = {};
 
       const uploadedContents = await Promise.all(
-        store.contents.map(async (content) => {
+        canvas.contents.value.map(async (content: any) => {
           if (content.type === 'image' || content.type === 'sertificate_signee') {
             if (content.file) {
               const uploadResult = await uploadContentImage(content.file);
@@ -774,7 +852,7 @@ const handleSubmit = async () => {
         }),
       );
 
-      const deletedContentsPayload = store.deletedContents.map(content =>
+      const deletedContentsPayload = canvas.deletedContents.value.map((content: any) =>
         buildContentPayload(content, null, null, true),
       );
 
@@ -782,7 +860,7 @@ const handleSubmit = async () => {
 
       const template = generateCertificateTemplate({
         backgroundUrl,
-        contents: store.contents,
+        contents: canvas.contents.value,
         safeZone: store.safe_zone,
         contentImageUrls,
       });
@@ -797,7 +875,7 @@ const handleSubmit = async () => {
 
         const previewTemplate = generateCertificateTemplate({
           backgroundUrl,
-          contents: store.contents,
+          contents: canvas.contents.value,
           safeZone: store.safe_zone,
           contentImageUrls,
           useActualUrls: true,
@@ -857,14 +935,14 @@ const handleSubmit = async () => {
   }
 };
 
-watch(isFormDirtyLegacy, (value) => {
+watch(isFormDirtyLegacy, (value: any) => {
   if (!isEditMode.value) {
     preventLeave.value = value;
   }
 });
 
 watch(
-  () => [store.title, store.certificate_type, store.image, store.contents, store.safe_zone],
+  () => [store.title, store.certificate_type, store.image, canvas.contents.value, store.safe_zone],
   () => {
     if (isEditMode.value) {
       if (hasJustSaved.value) {
@@ -879,6 +957,7 @@ watch(
 
 onBeforeMount(() => {
   store.$resetAll();
+  canvas.resetCanvas();
 });
 </script>
 

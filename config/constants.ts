@@ -1,5 +1,21 @@
 import type { ContentTypeConfig } from '#achievement/config/types.ts';
 
+export const CertificateContentType = {
+  TEXT: 'text',
+  IMAGE: 'image',
+  CERTIFICATE_NUMBER: 'certificate_number',
+  PARTICIPANT_NAME: 'participant_name',
+  NIK: 'nik',
+  TITLE: 'title',
+  CITY: 'city',
+  DATE: 'date',
+  VALID_THRU: 'valid_thru',
+  CERTIFICATE_SIGNEE: 'sertificate_signee',
+  QR_CODE: 'qr_code',
+} as const;
+
+export type CertificateContentTypeValue = typeof CertificateContentType[keyof typeof CertificateContentType];
+
 export const REMOTE_FEAT_FLAG_KEY = 'achievement';
 
 export const CANVAS_WIDTH = 842;
@@ -22,8 +38,10 @@ export const DEFAULT_IMAGE_DIMENSIONS = {
 };
 
 export const ACCESSIBILITY_OPTIONS = [
-  { value: 'PUBLIC', label: 'All Company' },
-  { value: 'RESTRICTED', label: 'Selected' },
+  { value: 'PUBLIC', label: 'Public', color: 'success' },
+  { value: 'COMPANY', label: 'Company', color: 'info' },
+  { value: 'COMPANY_STRUCTURE', label: 'Company Structure', color: 'info' },
+  { value: 'USER', label: 'User', color: 'info' },
 ];
 
 export const TYPE_OPTIONS = [
@@ -217,8 +235,15 @@ export const CONTENT_TYPE_CONFIGS: Readonly<Record<string, ContentTypeConfig>> =
     isSource: true,
     hasCustomFields: false,
   },
-  location: {
-    title: 'Location',
+  city: {
+    title: 'City',
+    icon: 'material-symbols:code-rounded',
+    fields: ['size', 'fontFamily', 'fontSize', 'fontWeight', 'alignment', 'fontColor', 'vertical', 'horizontal'],
+    isSource: true,
+    hasCustomFields: true,
+  },
+  date: {
+    title: 'Date',
     icon: 'material-symbols:code-rounded',
     fields: ['size', 'fontFamily', 'fontSize', 'fontWeight', 'alignment', 'fontColor', 'vertical', 'horizontal'],
     isSource: true,

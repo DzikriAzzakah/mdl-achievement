@@ -447,6 +447,7 @@
 
 <script setup lang="ts">
 import type { ContentTypeConfig, SizeMode, TextContentMetadata } from '#achievement/config/types';
+import { useCertificateCanvas } from '#achievement/composables/useCertificateCanvas';
 import { ALIGNMENT_OPTIONS, CANVAS_HEIGHT, CANVAS_WIDTH, FONT_OPTIONS, SIZE_MODE_OPTIONS } from '#achievement/config/constants';
 import { useCertificateStore } from '#achievement/stores/certificate';
 import { UiButton, UiFormGroup, UiInput, UiSelect } from '@mydigilearn-saas/web-ui';
@@ -518,6 +519,7 @@ const widthDropdownRef = ref<InstanceType<typeof Dropdown> | null>(null);
 const heightDropdownRef = ref<InstanceType<typeof Dropdown> | null>(null);
 
 const certificateStore = useCertificateStore();
+const canvas = useCertificateCanvas();
 
 const aspectRatioTooltip = computed(() => {
   if (!props.canLockAspectRatio) {
@@ -563,7 +565,6 @@ const currentHorizontalAlign = computed(() => {
   const width = props.metadata.width;
   const elementWidth = width === 'fit-content' || typeof width !== 'number' ? 200 : width;
 
-  // Calculate safe zone width
   const safeZoneLeft = certificateStore.safe_zone?.left || 0;
   const safeZoneRight = certificateStore.safe_zone?.right || 0;
   const safeZoneWidth = CANVAS_WIDTH - safeZoneLeft - safeZoneRight;
@@ -585,7 +586,6 @@ const currentVerticalAlign = computed(() => {
   const height = props.metadata.height;
   const elementHeight = height === 'fit-content' || typeof height !== 'number' ? 200 : height;
 
-  // Calculate safe zone height
   const safeZoneTop = certificateStore.safe_zone?.top || 0;
   const safeZoneBottom = certificateStore.safe_zone?.bottom || 0;
   const safeZoneHeight = CANVAS_HEIGHT - safeZoneTop - safeZoneBottom;
@@ -620,7 +620,7 @@ const isMiddleBottomDisabled = computed(() => {
 
 const handleAlignContent = (type: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => {
   if (props.elementId) {
-    certificateStore.alignContent(props.elementId, type);
+    canvas.alignContent(props.elementId, type, certificateStore.safe_zone);
   }
 };
 </script>

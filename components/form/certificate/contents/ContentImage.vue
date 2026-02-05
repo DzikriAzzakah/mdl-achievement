@@ -260,6 +260,7 @@
 
 <script setup lang="ts">
 import type { CertificateSigneeContentForm, ImageContentForm } from '#achievement/config/types.ts';
+import { useCertificateCanvas } from '#achievement/composables/useCertificateCanvas';
 import {
   CANVAS_HEIGHT,
   CANVAS_WIDTH,
@@ -477,13 +478,13 @@ const handleDelete = () => {
 };
 
 const certificateStore = useCertificateStore();
+const canvas = useCertificateCanvas();
 
 const currentHorizontalAlign = computed(() => {
   const horizontal = props.contentItem.metadata.horizontal;
   const width = props.contentItem.metadata.width;
   const elementWidth = typeof width === 'number' ? width : 200;
 
-  // Calculate safe zone width
   const safeZoneWidth = CANVAS_WIDTH - (certificateStore.safe_zone?.left || 0) - (certificateStore.safe_zone?.right || 0);
 
   if (horizontal === 0) {
@@ -503,7 +504,6 @@ const currentVerticalAlign = computed(() => {
   const height = props.contentItem.metadata.height;
   const elementHeight = typeof height === 'number' ? height : 200;
 
-  // Calculate safe zone height
   const safeZoneTop = certificateStore.safe_zone?.top || 0;
   const safeZoneBottom = certificateStore.safe_zone?.bottom || 0;
   const safeZoneHeight = CANVAS_HEIGHT - safeZoneTop - safeZoneBottom;
@@ -532,7 +532,7 @@ const handleAlignContent = (type: 'left' | 'center' | 'right' | 'top' | 'middle'
   if (!hasImage.value) {
     return;
   }
-  certificateStore.alignContent(props.contentItem.element_id, type);
+  canvas.alignContent(props.contentItem.element_id, type, certificateStore.safe_zone);
 };
 </script>
 

@@ -30,33 +30,37 @@
     @toggle-aspect-ratio="toggleAspectRatioLock"
   >
     <template #before-fields>
-      <template v-if="contentItem.type === 'location'">
-        <UiFormGroup label="Location">
-          <UiInput
-            :model-value="contentItem.metadata.city"
-            size="md"
-            placeholder="Enter City"
-            @update:model-value="updateHandlers.updateLocation"
-          />
-        </UiFormGroup>
-
-        <UiFormGroup label="Completion Date Format">
-          <UiSelect
-            :model-value="selectedDateFormat"
-            size="md"
-            :options="dateFormatOptions"
-            :select-props="{
-              useTeleport: true,
-              trackBy: 'value',
-              label: 'label',
-            }"
-            @update:model-value="handleDateFormatUpdate"
-          />
-        </UiFormGroup>
-      </template>
+      <UiFormGroup
+        v-if="contentItem.type === 'city'"
+        label="City"
+      >
+        <UiInput
+          :model-value="textValue"
+          size="md"
+          placeholder="Enter City"
+          @update:model-value="handleValueUpdate"
+        />
+      </UiFormGroup>
 
       <UiFormGroup
-        v-if="!contentConfig.isSource"
+        v-if="contentItem.type === 'date'"
+        label="Date Format"
+      >
+        <UiSelect
+          :model-value="selectedDateFormat"
+          size="md"
+          :options="dateFormatOptions"
+          :select-props="{
+            useTeleport: true,
+            trackBy: 'value',
+            label: 'label',
+          }"
+          @update:model-value="handleDateFormatUpdate"
+        />
+      </UiFormGroup>
+
+      <UiFormGroup
+        v-if="contentItem.type === 'text'"
         label="Text"
       >
         <UiTextarea
@@ -70,22 +74,26 @@
 
 <script setup lang="ts">
 import type {
+  CityContentForm,
+  DateContentForm,
   EventTitleContentForm,
-  LocationContentForm,
   NIKContentForm,
   ParticipantNameContentForm,
   TextContentForm,
   ValidThruContentForm,
 } from '#achievement/config/types';
 import ContentTextWrapper from '#achievement/components/form/certificate/contents/ContentTextWrapper.vue';
-import { useContentTextControls } from '#achievement/composables/useContentTextControls';
-import { CANVAS_HEIGHT, CANVAS_WIDTH, DATE_FORMAT_OPTIONS } from '#achievement/config/constants';
-import { isLocationContent } from '#achievement/helpers/checkContentType';
+import { useAlignmentControls } from '#achievement/composables/useAlignmentControls';
+import { useCertificateContentUpdate } from '#achievement/composables/useCertificateContentUpdate';
+import { useDimensionControls } from '#achievement/composables/useDimensionControls';
+import { useTypographyControls } from '#achievement/composables/useTypographyControls';
+import { CANVAS_HEIGHT, CANVAS_WIDTH, CONTENT_TYPE_CONFIGS, DATE_FORMAT_OPTIONS } from '#achievement/config/constants';
 import { UiFormGroup, UiInput, UiSelect, UiTextarea } from '@mydigilearn-saas/web-ui';
 
 type TextBasedContentItem =
   | TextContentForm
-  | LocationContentForm
+  | CityContentForm
+  | DateContentForm
   | ParticipantNameContentForm
   | NIKContentForm
   | EventTitleContentForm
@@ -111,36 +119,43 @@ const emit = defineEmits<{
   'headerClick': [];
 }>();
 
+const updateHandlers = useCertificateContentUpdate(() => props.contentItem, emit as any);
+
 const {
-  contentConfig,
-  isCollapsed,
   selectedFontObject,
   selectedFontWeightObject,
   fontWeightOptions,
-  isAspectRatioLocked,
-  canLockAspectRatio,
+  handleFontFamilyUpdate,
+  handleFontWeightUpdate,
+  handleFontSizeUpdate,
+} = useTypographyControls(props, emit as any);
+
+const {
   widthMode,
   heightMode,
   selectedWidthModeObject,
   selectedHeightModeObject,
-  updateHandlers,
-  handleFontFamilyUpdate,
-  handleFontWeightUpdate,
-  handleFontSizeUpdate,
-  handleAlignmentUpdate,
-  toggleAspectRatioLock,
+  isAspectRatioLocked,
+  canLockAspectRatio,
   handleWidthUpdate,
   handleHeightUpdate,
   handleWidthModeChange,
   handleHeightModeChange,
+  toggleAspectRatioLock,
+} = useDimensionControls(props, emit as any);
+
+const {
+  handleAlignmentUpdate,
   handleValueUpdate,
-} = useContentTextControls(props, emit as any);
+} = useAlignmentControls(props, emit as any);
+
+const contentConfig = computed(() => CONTENT_TYPE_CONFIGS[props.contentItem.type]);
+const isCollapsed = computed(() => !props.isExpanded);
 
 const textValue = computed({
   get: () => {
-    // For text type, use element_value; for others use value
-    if (props.contentItem.type === 'text') {
-      return (props.contentItem as TextContentForm).element_value ?? '';
+    if (props.contentItem.type === 'text' || props.contentItem.type === 'city') {
+      return props.contentItem.element_value ?? '';
     }
     return props.contentItem.value ?? '';
   },
@@ -152,18 +167,13 @@ const textValue = computed({
 const dateFormatOptions = DATE_FORMAT_OPTIONS;
 
 const selectedDateFormat = computed(() => {
-  if (!isLocationContent(props.contentItem)) {
+  if (props.contentItem.type !== 'date') {
     return dateFormatOptions[0];
   }
 
   const metadata = props.contentItem.metadata;
-
-  const selectedDateFormat
-    = 'date_format' in metadata
-      ? dateFormatOptions.find(opt => opt.value === metadata.date_format)
-      : undefined;
-
-  return selectedDateFormat || dateFormatOptions[0];
+  const selectedFormat = dateFormatOptions.find(opt => opt.value === metadata.format);
+  return selectedFormat || dateFormatOptions[0];
 });
 
 const handleDateFormatUpdate = (selectedOption: any) => {

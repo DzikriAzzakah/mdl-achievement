@@ -27,7 +27,10 @@ import AccessibilityInformation from '#achievement/components/detail/certificate
 import CertificateConfiguration from '#achievement/components/detail/certificate/CertificateConfiguration.vue';
 import CertificatePreview from '#achievement/components/detail/certificate/CertificatePreview.vue';
 import { CERTIFICATE_TABS, TYPE_OPTIONS } from '#achievement/config/constants.ts';
-import { PERMISSION_DETAIL, PERMISSION_LIST } from '#achievement/config/featureFlag.ts';
+import {
+  PERMISSION_CERTIFICATE_DETAIL,
+  PERMISSION_FEATURE_KEY,
+} from '#achievement/config/featureFlag.ts';
 import TemplateManageLayout from '#core/components/templates/ManageLayout.vue';
 import { useQuery } from '@tanstack/vue-query';
 
@@ -36,8 +39,8 @@ definePageMeta({
   middleware: ['app-auth', 'rbac'],
   auth: { authenticatedOnly: true, navigateUnauthenticatedTo: '/' },
   rbac: {
-    feature: PERMISSION_LIST,
-    permissions: [PERMISSION_DETAIL],
+    feature: PERMISSION_FEATURE_KEY,
+    permissions: [PERMISSION_CERTIFICATE_DETAIL],
   },
 });
 
@@ -48,9 +51,13 @@ const certificateId = route.params.id;
 
 const { $toast } = useNuxtApp();
 const activeTab = ref('certificate-configuration');
+const { buildReturnUrl } = useQueryUrlParams();
+
+const returnUrl = buildReturnUrl('/achievement');
+
 const breadcrumbs = computed(() => [
   { text: 'Master Data', href: '', active: false },
-  { text: 'Achievement', href: '/achievement', active: false },
+  { text: 'Achievement', href: returnUrl.value, active: false },
   { text: 'Details', href: `/achievement/detail/certificate/${certificateId}`, active: true },
 ]);
 

@@ -194,8 +194,11 @@ import type {
 } from '#achievement/config/types';
 import { getSerialNumberUUID } from '#achievement/api/api';
 import ContentTextWrapper from '#achievement/components/form/certificate/contents/ContentTextWrapper.vue';
-import { useContentTextControls } from '#achievement/composables/useContentTextControls';
-import { CANVAS_HEIGHT, CANVAS_WIDTH, CERTIFICATE_NUMBER_VARIABLES } from '#achievement/config/constants';
+import { useAlignmentControls } from '#achievement/composables/useAlignmentControls';
+import { useCertificateContentUpdate } from '#achievement/composables/useCertificateContentUpdate';
+import { useDimensionControls } from '#achievement/composables/useDimensionControls';
+import { useTypographyControls } from '#achievement/composables/useTypographyControls';
+import { CANVAS_HEIGHT, CANVAS_WIDTH, CERTIFICATE_NUMBER_VARIABLES, CONTENT_TYPE_CONFIGS } from '#achievement/config/constants';
 import {
   UiButton,
   UiFormGroup,
@@ -227,28 +230,36 @@ const emit = defineEmits<{
   'headerClick': [];
 }>();
 
+const updateHandlers = useCertificateContentUpdate(() => props.contentItem, emit as any);
+
 const {
-  contentConfig,
-  isCollapsed,
   selectedFontObject,
   selectedFontWeightObject,
   fontWeightOptions,
-  isAspectRatioLocked,
-  canLockAspectRatio,
+  handleFontFamilyUpdate,
+  handleFontWeightUpdate,
+} = useTypographyControls(props, emit as any);
+
+const {
   widthMode,
   heightMode,
   selectedWidthModeObject,
   selectedHeightModeObject,
-  updateHandlers,
-  handleFontFamilyUpdate,
-  handleFontWeightUpdate,
-  handleAlignmentUpdate,
-  toggleAspectRatioLock,
+  isAspectRatioLocked,
+  canLockAspectRatio,
   handleWidthUpdate,
   handleHeightUpdate,
   handleWidthModeChange,
   handleHeightModeChange,
-} = useContentTextControls(props, emit as any);
+  toggleAspectRatioLock,
+} = useDimensionControls(props, emit as any);
+
+const {
+  handleAlignmentUpdate,
+} = useAlignmentControls(props, emit as any);
+
+const contentConfig = computed(() => CONTENT_TYPE_CONFIGS[props.contentItem.type]);
+const isCollapsed = computed(() => !props.isExpanded);
 
 const showSelectVariableModal = ref(false);
 const selectedVariableType = ref<typeof CERTIFICATE_NUMBER_VARIABLES[0] | null>(null);

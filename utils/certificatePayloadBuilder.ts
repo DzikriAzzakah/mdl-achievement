@@ -40,9 +40,6 @@ export interface CertificateContentMetadataPayload {
   font_weight?: number;
   alignment?: { label: string; value: string; };
   color?: string;
-  // For location type
-  city?: string;
-  date_format?: string;
   // For QR Code type
   background_color?: string;
   background_transparent?: boolean;
@@ -108,7 +105,7 @@ export function buildContentPayload(
   uploadedImageMeta?: UploadResponse['data'] | null,
   isDeleted: boolean = false,
 ): CertificateContentPayload {
-  const shouldNullifyValue = ['text', 'participant_name', 'nik', 'title', 'location', 'valid_thru'].includes(content.type);
+  const shouldNullifyValue = ['text', 'participant_name', 'nik', 'title', 'city', 'date', 'valid_thru', 'qr_code'].includes(content.type);
 
   const basePayload: CertificateContentPayload = {
     id: content.id,
@@ -180,13 +177,9 @@ export function buildContentPayload(
     basePayload.metadata.color = textMetadata.color;
   }
 
-  if (content.type === 'location') {
-    const locationMetadata = content.metadata as {
-      city?: string;
-      date_format?: string;
-    };
-    basePayload.metadata.city = locationMetadata.city;
-    basePayload.metadata.date_format = locationMetadata.date_format;
+  if (content.type === 'date') {
+    const dateMetadata = content.metadata as { format?: string; };
+    basePayload.metadata.format = dateMetadata.format;
   }
 
   if (content.type === 'certificate_number') {

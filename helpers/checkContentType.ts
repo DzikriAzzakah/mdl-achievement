@@ -1,25 +1,23 @@
 import type {
   CertificateContentForm,
   CertificateNumberContentForm,
+  CityContentForm,
+  DateContentForm,
   EventTitleContentForm,
-  LocationContentForm,
   NIKContentForm,
   ParticipantNameContentForm,
   QRCodeContentForm,
   TextContentForm,
   ValidThruContentForm,
 } from '#achievement/config/types.ts';
-
-export function isLocationContent(content: CertificateContentForm): content is LocationContentForm {
-  return content.type === 'location';
-}
+import { CertificateContentType } from '#achievement/config/constants';
 
 export function isCertificateNumberContent(content: CertificateContentForm): content is CertificateNumberContentForm {
-  return content.type === 'certificate_number';
+  return content.type === CertificateContentType.CERTIFICATE_NUMBER;
 }
 
 export function isQRCodeContent(content: CertificateContentForm): content is QRCodeContentForm {
-  return content.type === 'qr_code';
+  return content.type === CertificateContentType.QR_CODE;
 }
 
 export function isTextBasedContent(
@@ -27,10 +25,20 @@ export function isTextBasedContent(
 ): content is
 | TextContentForm
 | CertificateNumberContentForm
-| LocationContentForm
+| CityContentForm
+| DateContentForm
 | ParticipantNameContentForm
 | NIKContentForm
 | EventTitleContentForm
 | ValidThruContentForm {
-  return ['text', 'certificate_number', 'location', 'participant_name', 'nik', 'title', 'valid_thru'].includes(content.type);
+  return [
+    CertificateContentType.TEXT,
+    CertificateContentType.CERTIFICATE_NUMBER,
+    CertificateContentType.CITY,
+    CertificateContentType.DATE,
+    CertificateContentType.PARTICIPANT_NAME,
+    CertificateContentType.NIK,
+    CertificateContentType.TITLE,
+    CertificateContentType.VALID_THRU,
+  ].includes(content.type as any);
 }

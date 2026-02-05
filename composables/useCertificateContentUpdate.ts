@@ -10,7 +10,7 @@ export function useCertificateContentUpdate<T extends CertificateContentForm>(
   const updateValue = (value: string | undefined): void => {
     const contentItem = getCurrentItem();
 
-    if (contentItem.type === 'text') {
+    if (contentItem.type === 'text' || contentItem.type === 'city') {
       const updatedItem = {
         ...contentItem,
         element_value: value || '',
@@ -132,7 +132,7 @@ export function useCertificateContentUpdate<T extends CertificateContentForm>(
   };
 
   const updateDateFormat = (value: string) => {
-    updateMetadataField('date_format' as any, value);
+    updateMetadataField('format' as any, value);
   };
 
   return {

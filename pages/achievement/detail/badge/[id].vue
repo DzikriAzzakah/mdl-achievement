@@ -27,7 +27,10 @@ import AccessibilityInformation from '#achievement/components/detail/badge/Acces
 import BadgeConfiguration from '#achievement/components/detail/badge/BadgeConfiguration.vue';
 import BadgeImage from '#achievement/components/detail/badge/BadgeImage.vue';
 import { BADGE_TABS } from '#achievement/config/constants.ts';
-import { PERMISSION_DETAIL, PERMISSION_LIST } from '#achievement/config/featureFlag.ts';
+import {
+  PERMISSION_BADGE_DETAIL,
+  PERMISSION_FEATURE_KEY,
+} from '#achievement/config/featureFlag.ts';
 import { useBadgeStore } from '#achievement/stores/badge.ts';
 import TemplateManageLayout from '#core/components/templates/ManageLayout.vue';
 import { useQuery } from '@tanstack/vue-query';
@@ -37,8 +40,8 @@ definePageMeta({
   middleware: ['app-auth', 'rbac'],
   auth: { authenticatedOnly: true, navigateUnauthenticatedTo: '/' },
   rbac: {
-    feature: PERMISSION_LIST,
-    permissions: [PERMISSION_DETAIL],
+    feature: PERMISSION_FEATURE_KEY,
+    permissions: [PERMISSION_BADGE_DETAIL],
   },
 });
 
@@ -49,9 +52,13 @@ const badgeId = route.params.id;
 
 const { $toast } = useNuxtApp();
 const activeTab = ref('badge-configuration');
+const { buildReturnUrl } = useQueryUrlParams();
+
+const returnUrl = buildReturnUrl('/achievement');
+
 const breadcrumbs = computed(() => [
   { text: 'Master Data', href: '', active: false },
-  { text: 'Achievement', href: '/achievement', active: false },
+  { text: 'Achievement', href: returnUrl.value, active: false },
   { text: 'Details', href: `/achievement/detail/badge/${badgeId}`, active: true },
 ]);
 

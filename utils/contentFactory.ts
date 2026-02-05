@@ -2,9 +2,10 @@ import type {
   CertificateContentForm,
   CertificateNumberContentForm,
   CertificateSigneeContentForm,
+  CityContentForm,
+  DateContentForm,
   EventTitleContentForm,
   ImageContentForm,
-  LocationContentForm,
   NIKContentForm,
   ParticipantNameContentForm,
   QRCodeContentForm,
@@ -12,6 +13,7 @@ import type {
   ValidThruContentForm,
 } from '#achievement/config/types';
 import {
+  CertificateContentType,
   DEFAULT_IMAGE_DIMENSIONS,
   DEFAULT_TEXT_CONFIG,
   QR_CODE_DEFAULT_CONFIG,
@@ -40,11 +42,11 @@ export interface ContentFactory<T extends CertificateContentForm = CertificateCo
 }
 
 export const contentFactories: Record<string, ContentFactory<any>> = {
-  image: {
+  [CertificateContentType.IMAGE]: {
     createNew(key: string): ImageContentForm {
       return {
-        type: 'image',
-        key: 'image',
+        type: CertificateContentType.IMAGE,
+        key: CertificateContentType.IMAGE,
         element_id: key,
         value: null,
         element_value: null,
@@ -60,11 +62,11 @@ export const contentFactories: Record<string, ContentFactory<any>> = {
     },
   } as ContentFactory<ImageContentForm>,
 
-  sertificate_signee: {
+  [CertificateContentType.CERTIFICATE_SIGNEE]: {
     createNew(key: string): CertificateSigneeContentForm {
       return {
-        type: 'sertificate_signee',
-        key: 'sertificate_signee',
+        type: CertificateContentType.CERTIFICATE_SIGNEE,
+        key: CertificateContentType.CERTIFICATE_SIGNEE,
         element_id: key,
         value: null,
         element_value: null,
@@ -80,12 +82,12 @@ export const contentFactories: Record<string, ContentFactory<any>> = {
     },
   } as ContentFactory<CertificateSigneeContentForm>,
 
-  text: {
+  [CertificateContentType.TEXT]: {
     createNew(key: string): TextContentForm {
       const defaultText = 'Input Text Here';
       return {
-        type: 'text',
-        key: 'text',
+        type: CertificateContentType.TEXT,
+        key: CertificateContentType.TEXT,
         element_id: key,
         value: null,
         element_value: defaultText,
@@ -94,11 +96,11 @@ export const contentFactories: Record<string, ContentFactory<any>> = {
     },
   } as ContentFactory<TextContentForm>,
 
-  certificate_number: {
+  [CertificateContentType.CERTIFICATE_NUMBER]: {
     createNew(key: string): CertificateNumberContentForm {
       return {
-        type: 'certificate_number',
-        key: 'certificate_number',
+        type: CertificateContentType.CERTIFICATE_NUMBER,
+        key: CertificateContentType.CERTIFICATE_NUMBER,
         element_id: key,
         value: '',
         element_value: '',
@@ -107,12 +109,12 @@ export const contentFactories: Record<string, ContentFactory<any>> = {
     },
   } as ContentFactory<CertificateNumberContentForm>,
 
-  participant_name: {
+  [CertificateContentType.PARTICIPANT_NAME]: {
     createNew(key: string): ParticipantNameContentForm {
       const defaultText = '{{ participant_name }}';
       return {
-        type: 'participant_name',
-        key: 'participant_name',
+        type: CertificateContentType.PARTICIPANT_NAME,
+        key: CertificateContentType.PARTICIPANT_NAME,
         element_id: key,
         value: null,
         element_value: defaultText,
@@ -121,12 +123,12 @@ export const contentFactories: Record<string, ContentFactory<any>> = {
     },
   } as ContentFactory<ParticipantNameContentForm>,
 
-  nik: {
+  [CertificateContentType.NIK]: {
     createNew(key: string): NIKContentForm {
       const defaultText = '{{ nik }}';
       return {
-        type: 'nik',
-        key: 'nik',
+        type: CertificateContentType.NIK,
+        key: CertificateContentType.NIK,
         element_id: key,
         value: null,
         element_value: defaultText,
@@ -135,12 +137,12 @@ export const contentFactories: Record<string, ContentFactory<any>> = {
     },
   } as ContentFactory<NIKContentForm>,
 
-  title: {
+  [CertificateContentType.TITLE]: {
     createNew(key: string): EventTitleContentForm {
       const defaultText = '{{ title }}';
       return {
-        type: 'title',
-        key: 'title',
+        type: CertificateContentType.TITLE,
+        key: CertificateContentType.TITLE,
         element_id: key,
         value: null,
         element_value: defaultText,
@@ -149,30 +151,43 @@ export const contentFactories: Record<string, ContentFactory<any>> = {
     },
   } as ContentFactory<EventTitleContentForm>,
 
-  location: {
-    createNew(key: string): LocationContentForm {
-      const defaultText = '{{ location }}';
+  [CertificateContentType.CITY]: {
+    createNew(key: string): CityContentForm {
+      const defaultText = 'Bandung';
       return {
-        type: 'location',
-        key: 'location',
+        type: CertificateContentType.CITY,
+        key: CertificateContentType.CITY,
+        element_id: key,
+        value: null,
+        element_value: defaultText,
+        metadata: createTextMetadata(defaultText),
+      };
+    },
+  } as ContentFactory<CityContentForm>,
+
+  [CertificateContentType.DATE]: {
+    createNew(key: string): DateContentForm {
+      const defaultText = '{{ date }}';
+      return {
+        type: CertificateContentType.DATE,
+        key: CertificateContentType.DATE,
         element_id: key,
         value: null,
         element_value: defaultText,
         metadata: {
           ...createTextMetadata(defaultText),
-          city: '',
-          date_format: 'DD/MM/YYYY',
+          format: 'DD/MM/YYYY',
         },
       };
     },
-  } as ContentFactory<LocationContentForm>,
+  } as ContentFactory<DateContentForm>,
 
-  valid_thru: {
+  [CertificateContentType.VALID_THRU]: {
     createNew(key: string): ValidThruContentForm {
       const defaultText = '{{ valid_thru }}';
       return {
-        type: 'valid_thru',
-        key: 'valid_thru',
+        type: CertificateContentType.VALID_THRU,
+        key: CertificateContentType.VALID_THRU,
         element_id: key,
         value: null,
         element_value: defaultText,
@@ -181,11 +196,11 @@ export const contentFactories: Record<string, ContentFactory<any>> = {
     },
   } as ContentFactory<ValidThruContentForm>,
 
-  qr_code: {
+  [CertificateContentType.QR_CODE]: {
     createNew(key: string): QRCodeContentForm {
       return {
-        type: 'qr_code',
-        key: 'qr_code',
+        type: CertificateContentType.QR_CODE,
+        key: CertificateContentType.QR_CODE,
         element_id: key,
         value: '{{qr_code}}',
         element_value: '{{qr_code}}',

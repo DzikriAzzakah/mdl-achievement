@@ -32,10 +32,10 @@ export interface UploadedFileMeta {
 }
 
 export interface AchievementFilter {
-  readonly certificateType?: readonly SelectOption[];
-  readonly accessibility?: readonly SelectOption[];
-  readonly created?: string;
-  readonly lastUpdate?: string;
+  certificateType?: SelectOption[];
+  accessibility?: SelectOption[];
+  created?: string;
+  lastUpdate?: string;
 }
 
 export interface UploadedFile {
@@ -99,15 +99,15 @@ export interface Certificate {
 }
 
 export interface CertificateDetail {
-  readonly id: number;
-  readonly title: string;
-  readonly certificate_type: SelectOption;
-  readonly image_url?: string;
-  readonly created_at?: string;
-  readonly updated_at?: string;
-  readonly created_by_id?: number | string;
-  readonly created_by_full_name?: string;
-  readonly is_delete?: boolean;
+  id: number;
+  title: string;
+  certificate_type: SelectOption;
+  image_url?: string;
+  created_at?: string;
+  updated_at?: string;
+  created_by_id?: number | string;
+  created_by_full_name?: string;
+  is_delete?: boolean;
 }
 
 export interface CertificateResponse {
@@ -156,6 +156,12 @@ export interface LocationContentMetadata extends TextContentMetadata {
   date_format: string;
 }
 
+export interface CityContentMetadata extends TextContentMetadata {}
+
+export interface DateContentMetadata extends TextContentMetadata {
+  format: string;
+}
+
 export type QRCodeShape = 'dots' | 'square';
 
 export type QRCodeBorderStyle = 'square' | 'rounded';
@@ -200,7 +206,11 @@ export interface CertificateNumberContentForm extends ContentFormBase<'certifica
   variables?: CertificateNumberVariable[];
 }
 
-export interface LocationContentForm extends ContentFormBase<'location', LocationContentMetadata> {
+export interface CityContentForm extends ContentFormBase<'city', CityContentMetadata> {
+  element_value: string;
+}
+
+export interface DateContentForm extends ContentFormBase<'date', DateContentMetadata> {
   element_value: string;
 }
 
@@ -233,7 +243,8 @@ export type CertificateContentForm =
   | ImageContentForm
   | TextContentForm
   | CertificateNumberContentForm
-  | LocationContentForm
+  | CityContentForm
+  | DateContentForm
   | ParticipantNameContentForm
   | NIKContentForm
   | EventTitleContentForm
@@ -286,7 +297,7 @@ export interface CertificateContentMetadataPayload {
   color?: string;
   // Location-specific
   city?: string;
-  date_format?: string;
+  format?: string;
   // QR Code-specific
   background_color?: string;
   background_transparent?: boolean;
@@ -294,6 +305,7 @@ export interface CertificateContentMetadataPayload {
   shape_color?: string;
   border_style?: string;
   border_color?: string;
+
 }
 
 export interface CertificateContentPayload {

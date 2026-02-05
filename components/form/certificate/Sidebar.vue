@@ -41,7 +41,9 @@ import type { CertificateContentForm, SafeZone } from '#achievement/config/types
 import CertificateInfoForm from '#achievement/components/form/certificate/sidebar/CertificateInfoForm.vue';
 import ContentList from '#achievement/components/form/certificate/sidebar/ContentList.vue';
 import LayoutGuidelines from '#achievement/components/form/certificate/sidebar/LayoutGuidelines.vue';
+import { useCertificateCanvas } from '#achievement/composables/useCertificateCanvas';
 import { CANVAS_HEIGHT, CANVAS_WIDTH } from '#achievement/config/constants.ts';
+import { adjustTextWidthsForSafeZone } from '#achievement/utils/certificateHelpers';
 
 interface Props {
   errors: Record<string, any>;
@@ -53,7 +55,8 @@ interface Props {
 defineProps<Props>();
 
 const store = useCertificateStore();
-const { selectedContentKey } = storeToRefs(store);
+const canvas = useCertificateCanvas();
+const selectedContentKey = toRef(canvas, 'selectedContentKey');
 
 const title = defineModel<string>('title', { required: true });
 const certificateType = defineModel<{ label: string; value: string; }>('certificateType', { required: true });
@@ -74,25 +77,44 @@ const calculatedSafeZoneHeight = computed(() => {
   return CANVAS_HEIGHT - (safeZone.value?.top || 0) - (safeZone.value?.bottom || 0);
 });
 
+watch(() => canvas.contents.value, (newContents) => {
+  contents.value = newContents;
+}, { deep: true });
+
+watch(() => contents.value, (newContents) => {
+  if (JSON.stringify(newContents) !== JSON.stringify(canvas.contents.value)) {
+    canvas.contents.value = newContents;
+  }
+}, { deep: true, immediate: true });
+
 const handleAddContent = (type: string) => {
-  store.addContent(type);
+  canvas.addContent(type);
   isContentListOpen.value = false;
 };
 
 const handleUpdateContent = (index: number, updatedContent: CertificateContentForm) => {
-  store.updateContentByIndex(index, updatedContent);
+  canvas.updateContentByIndex(index, updatedContent);
 };
 
 const handleDeleteContent = (index: number) => {
-  store.deleteContent(index);
+  canvas.deleteContent(index);
 };
 
 const handleContentClick = (contentKey: string) => {
-  store.toggleContentSelection(contentKey);
+  canvas.toggleContentSelection(contentKey);
 };
 
 const handleUpdateSafeZone = (zone: SafeZone) => {
+  const oldSafeZone = { ...safeZone.value };
   store.updateSafeZone(zone);
+
+  const adjustedContents = adjustTextWidthsForSafeZone(
+    canvas.contents.value,
+    zone,
+    oldSafeZone,
+    CANVAS_WIDTH,
+  );
+  canvas.contents.value = adjustedContents;
 };
 </script>
 
