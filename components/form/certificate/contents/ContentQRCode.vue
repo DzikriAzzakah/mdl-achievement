@@ -1,54 +1,12 @@
 <template>
   <div class="bg-white border border-solid border-gray-50 shadow-sm rounded-xl p-4 w-full">
-    <div
-      class="flex justify-between items-center w-full"
-      :class="{ 'border-b-2 border-gray-50 pb-2': !isCollapsed }"
-    >
-      <div class="flex items-center gap-2">
-        <Icon
-          name="mdi:qrcode"
-          class="text-gray-500 w-5 h-5"
-        />
-        <p class="text-sm font-medium">
-          QR Code
-        </p>
-      </div>
-      <div class="flex items-center gap-2">
-        <Dropdown
-          placement="bottom-end"
-          popper-class="experience-more-actions"
-        >
-          <UiButton
-            size="md"
-            variant="transparent"
-            color="ghost"
-            icon="mdi:dots-horizontal"
-            square
-            @click.stop
-          />
-          <template #popper>
-            <div class="flex flex-col gap-2.5 w-64 items-start shadow-md p-1.5 btn-experiences-user">
-              <UiButton
-                size="md"
-                class="w-full text-left"
-                variant="transparent"
-                color="ghost"
-                icon="mdi-delete"
-                @click="handleDelete"
-              >
-                Delete
-              </UiButton>
-            </div>
-          </template>
-        </Dropdown>
-        <Icon
-          name="mdi:chevron-down"
-          class="transition-transform duration-300 cursor-pointer"
-          :class="{ 'rotate-180': isCollapsed }"
-          @click="emit('headerClick')"
-        />
-      </div>
-    </div>
+    <ContentItemHeader
+      icon="mdi:qrcode"
+      title="QR Code"
+      :is-collapsed="isCollapsed"
+      @delete="handleDelete"
+      @toggle-collapse="emit('headerClick')"
+    />
     <div
       class="overflow-hidden transition-all duration-300 ease-in-out"
       :class="isCollapsed ? 'max-h-0' : 'max-h-[1000px]'"
@@ -71,33 +29,15 @@
           </div>
         </UiFormGroup>
 
-        <div class="flex items-center gap-4">
-          <UiFormGroup label="Position X">
-            <UiInput
-              type="number"
-              :model-value="contentItem.metadata.horizontal"
-              size="md"
-              @update:model-value="updateHorizontal"
-            >
-              <template #suffix>
-                <span class="text-gray-500 text-xs">px</span>
-              </template>
-            </UiInput>
-          </UiFormGroup>
-
-          <UiFormGroup label="Position Y">
-            <UiInput
-              type="number"
-              :model-value="contentItem.metadata.vertical"
-              size="md"
-              @update:model-value="updateVertical"
-            >
-              <template #suffix>
-                <span class="text-gray-500 text-xs">px</span>
-              </template>
-            </UiInput>
-          </UiFormGroup>
-        </div>
+        <PositionAlignmentControl
+          :horizontal="contentItem.metadata.horizontal"
+          :vertical="contentItem.metadata.vertical"
+          :current-horizontal-align="currentHorizontalAlign"
+          :current-vertical-align="currentVerticalAlign"
+          @align="handleAlignContent"
+          @update:horizontal="updateHorizontal"
+          @update:vertical="updateVertical"
+        />
 
         <UiFormGroup label="Background">
           <div class="flex items-center gap-3">
@@ -112,115 +52,59 @@
               class="flex items-center gap-2 min-w-0 flex-1"
             >
               <div class="min-w-0 flex-shrink">
-                <UiInput
-                  type="text"
+                <ColorPickerInput
                   :model-value="contentItem.metadata.background_color"
-                  size="md"
                   @update:model-value="updateBackgroundColor"
-                >
-                  <template #prefix>
-                    <span class="text-gray-500">#</span>
-                  </template>
-                  <template #suffix>
-                    <input
-                      ref="bgColorPickerInput"
-                      type="color"
-                      :value="`#${contentItem.metadata.background_color}`"
-                      class="invisible absolute"
-                      @input="handleBgColorChange"
-                    >
-                    <div
-                      class="w-6 h-6 rounded-md border border-gray-200 cursor-pointer flex-shrink-0"
-                      :style="{ backgroundColor: `#${contentItem.metadata.background_color}` }"
-                      @click="openBgColorPicker"
-                    />
-                  </template>
-                </UiInput>
+                />
               </div>
             </div>
           </div>
         </UiFormGroup>
 
         <UiFormGroup label="QR Shape">
-          <div class="flex items-center gap-2 flex-wrap">
-            <UiButton
-              v-for="option in QR_CODE_SHAPE_OPTIONS"
-              :key="option.value"
-              v-tooltip="option.label"
-              square
-              size="md"
-              :variant="contentItem.metadata.shape === option.value ? 'solid' : 'soft'"
-              :color="contentItem.metadata.shape === option.value ? 'primary' : 'ghost'"
-              :icon="option.icon"
-              @click="updateShape(option.value as QRCodeShape)"
-            />
-            <div class="flex items-center gap-2 ml-2 min-w-0 flex-shrink">
-              <UiInput
-                type="text"
-                :model-value="contentItem.metadata.shape_color"
+          <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 flex-shrink-0">
+              <UiButton
+                v-for="option in QR_CODE_SHAPE_OPTIONS"
+                :key="option.value"
+                v-tooltip="option.label"
+                square
                 size="md"
+                :variant="contentItem.metadata.shape === option.value ? 'solid' : 'soft'"
+                :color="contentItem.metadata.shape === option.value ? 'primary' : 'ghost'"
+                :icon="option.icon"
+                @click="updateShape(option.value as QRCodeShape)"
+              />
+            </div>
+            <div class="flex items-center gap-2 min-w-0 flex-1">
+              <ColorPickerInput
+                :model-value="contentItem.metadata.shape_color"
                 @update:model-value="updateShapeColor"
-              >
-                <template #prefix>
-                  <span class="text-gray-500">#</span>
-                </template>
-                <template #suffix>
-                  <input
-                    ref="shapeColorPickerInput"
-                    type="color"
-                    :value="`#${contentItem.metadata.shape_color}`"
-                    class="invisible absolute"
-                    @input="handleShapeColorChange"
-                  >
-                  <div
-                    class="w-6 h-6 rounded-md border border-gray-200 cursor-pointer flex-shrink-0"
-                    :style="{ backgroundColor: `#${contentItem.metadata.shape_color}` }"
-                    @click="openShapeColorPicker"
-                  />
-                </template>
-              </UiInput>
+              />
             </div>
           </div>
         </UiFormGroup>
 
         <UiFormGroup label="Border Style">
-          <div class="flex items-center gap-2 flex-wrap">
-            <UiButton
-              v-for="option in QR_CODE_BORDER_OPTIONS"
-              :key="option.value"
-              v-tooltip="option.label"
-              square
-              size="md"
-              :variant="contentItem.metadata.border_style === option.value ? 'solid' : 'soft'"
-              :color="contentItem.metadata.border_style === option.value ? 'primary' : 'ghost'"
-              :icon="option.icon"
-              @click="updateBorderStyle(option.value as QRCodeBorderStyle)"
-            />
-            <div class="flex items-center gap-2 ml-2 min-w-0 flex-shrink">
-              <UiInput
-                type="text"
-                :model-value="contentItem.metadata.border_color"
+          <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 flex-shrink-0">
+              <UiButton
+                v-for="option in QR_CODE_BORDER_OPTIONS"
+                :key="option.value"
+                v-tooltip="option.label"
+                square
                 size="md"
+                :variant="contentItem.metadata.border_style === option.value ? 'solid' : 'soft'"
+                :color="contentItem.metadata.border_style === option.value ? 'primary' : 'ghost'"
+                :icon="option.icon"
+                @click="updateBorderStyle(option.value as QRCodeBorderStyle)"
+              />
+            </div>
+            <div class="flex items-center gap-2 min-w-0 flex-1">
+              <ColorPickerInput
+                :model-value="contentItem.metadata.border_color"
                 @update:model-value="updateBorderColor"
-              >
-                <template #prefix>
-                  <span class="text-gray-500">#</span>
-                </template>
-                <template #suffix>
-                  <input
-                    ref="borderColorPickerInput"
-                    type="color"
-                    :value="`#${contentItem.metadata.border_color}`"
-                    class="invisible absolute"
-                    @input="handleBorderColorChange"
-                  >
-                  <div
-                    class="w-6 h-6 rounded-md border border-gray-200 cursor-pointer flex-shrink-0"
-                    :style="{ backgroundColor: `#${contentItem.metadata.border_color}` }"
-                    @click="openBorderColorPicker"
-                  />
-                </template>
-              </UiInput>
+              />
             </div>
           </div>
         </UiFormGroup>
@@ -231,16 +115,18 @@
 
 <script setup lang="ts">
 import type { QRCodeBorderStyle, QRCodeContentForm, QRCodeShape } from '#achievement/config/types.ts';
-import { QR_CODE_BORDER_OPTIONS, QR_CODE_SHAPE_OPTIONS } from '#achievement/config/constants.ts';
+import ColorPickerInput from '#achievement/components/form/certificate/shared/ColorPickerInput.vue';
+import ContentItemHeader from '#achievement/components/form/certificate/shared/ContentItemHeader.vue';
+import PositionAlignmentControl from '#achievement/components/form/certificate/shared/PositionAlignmentControl.vue';
+import { useCertificateCanvas } from '#achievement/composables/useCertificateCanvas';
+import { CANVAS_HEIGHT, CANVAS_WIDTH, QR_CODE_BORDER_OPTIONS, QR_CODE_SHAPE_OPTIONS } from '#achievement/config/constants.ts';
+import { useCertificateStore } from '#achievement/stores/certificate';
 import { UiButton, UiFormGroup, UiInput, UiSwitch } from '@mydigilearn-saas/web-ui';
-import { Dropdown } from 'floating-vue';
 
 const props = defineProps<{
   contentItem: QRCodeContentForm;
   index: number;
   isExpanded?: boolean;
-  safeZoneWidth?: number;
-  safeZoneHeight?: number;
 }>();
 
 const emit = defineEmits<{
@@ -249,11 +135,10 @@ const emit = defineEmits<{
   'headerClick': [];
 }>();
 
-const isCollapsed = computed(() => !props.isExpanded);
+const certificateStore = useCertificateStore();
+const canvas = useCertificateCanvas();
 
-const bgColorPickerInput = ref<HTMLInputElement | null>(null);
-const shapeColorPickerInput = ref<HTMLInputElement | null>(null);
-const borderColorPickerInput = ref<HTMLInputElement | null>(null);
+const isCollapsed = computed(() => !props.isExpanded);
 
 const updateMetadata = (updates: Partial<QRCodeContentForm['metadata']>) => {
   const updatedItem: QRCodeContentForm = {
@@ -264,36 +149,6 @@ const updateMetadata = (updates: Partial<QRCodeContentForm['metadata']>) => {
     },
   };
   emit('update:contentItem', updatedItem);
-};
-
-const openBgColorPicker = () => {
-  bgColorPickerInput.value?.click();
-};
-
-const openShapeColorPicker = () => {
-  shapeColorPickerInput.value?.click();
-};
-
-const openBorderColorPicker = () => {
-  borderColorPickerInput.value?.click();
-};
-
-const handleBgColorChange = (event: Event) => {
-  const input = event.target as HTMLInputElement;
-  const color = input.value.replace('#', '');
-  updateMetadata({ background_color: color });
-};
-
-const handleShapeColorChange = (event: Event) => {
-  const input = event.target as HTMLInputElement;
-  const color = input.value.replace('#', '');
-  updateMetadata({ shape_color: color });
-};
-
-const handleBorderColorChange = (event: Event) => {
-  const input = event.target as HTMLInputElement;
-  const color = input.value.replace('#', '');
-  updateMetadata({ border_color: color });
 };
 
 const updateSize = (value: number | string) => {
@@ -338,6 +193,50 @@ const updateBorderColor = (value: string) => {
 
 const handleDelete = () => {
   emit('delete', props.index);
+};
+
+const currentHorizontalAlign = computed(() => {
+  const horizontal = props.contentItem.metadata.horizontal;
+  const width = props.contentItem.metadata.width;
+  const elementWidth = typeof width === 'number' ? width : 100;
+
+  const safeZoneWidth = CANVAS_WIDTH - (certificateStore.safe_zone?.left || 0) - (certificateStore.safe_zone?.right || 0);
+
+  if (horizontal === 0) {
+    return 'left';
+  }
+  if (Math.abs(horizontal - (safeZoneWidth - elementWidth) / 2) < 1) {
+    return 'center';
+  }
+  if (Math.abs(horizontal - (safeZoneWidth - elementWidth)) < 1) {
+    return 'right';
+  }
+  return null;
+});
+
+const currentVerticalAlign = computed(() => {
+  const vertical = props.contentItem.metadata.vertical;
+  const height = props.contentItem.metadata.height;
+  const elementHeight = typeof height === 'number' ? height : 100;
+
+  const safeZoneTop = certificateStore.safe_zone?.top || 0;
+  const safeZoneBottom = certificateStore.safe_zone?.bottom || 0;
+  const safeZoneHeight = CANVAS_HEIGHT - safeZoneTop - safeZoneBottom;
+
+  if (vertical === 0) {
+    return 'top';
+  }
+  if (Math.abs(vertical - (safeZoneHeight - elementHeight) / 2) < 1) {
+    return 'middle';
+  }
+  if (Math.abs(vertical - (safeZoneHeight - elementHeight)) < 1) {
+    return 'bottom';
+  }
+  return null;
+});
+
+const handleAlignContent = (type: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => {
+  canvas.alignContent(props.contentItem.element_id, type, certificateStore.safe_zone);
 };
 </script>
 

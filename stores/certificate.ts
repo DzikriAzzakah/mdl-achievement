@@ -3,6 +3,7 @@ import type {
   CertificateDetail,
   CertificateForm,
   CertificateResponse,
+  LayoutGuideline,
   SafeZone,
   UploadedFileMeta,
 } from '#achievement/config/types.ts';
@@ -15,6 +16,13 @@ export const useCertificateStore = defineStore('certificate', () => {
   const detailCertificate = ref<CertificateDetail>();
   const certificateResponse = ref<CertificateResponse>();
   const uploadedBackgroundMeta = ref<UploadedFileMeta | null>(null);
+  const layoutGuideline = ref<LayoutGuideline>({
+    enabled: false,
+    type: 'grid',
+    count: 12,
+    gutter: 20,
+    color: '#FF0080',
+  });
 
   const { errors, defineField, resetForm, values, setValues: setFormValues } = useForm({
     validationSchema: certificateValidationSchema,
@@ -83,11 +91,22 @@ export const useCertificateStore = defineStore('certificate', () => {
     safe_zone.value = { ...zone };
   }
 
+  function updateLayoutGuideline(guideline: LayoutGuideline): void {
+    layoutGuideline.value = { ...guideline };
+  }
+
   const $resetAll = () => {
     resetForm();
     detailCertificate.value = undefined;
     certificateResponse.value = undefined;
     uploadedBackgroundMeta.value = null;
+    layoutGuideline.value = {
+      enabled: false,
+      type: 'grid',
+      count: 12,
+      gutter: 20,
+      color: '#FF0080',
+    };
   };
 
   return {
@@ -100,6 +119,7 @@ export const useCertificateStore = defineStore('certificate', () => {
     safe_zone,
     certificateResponse,
     uploadedBackgroundMeta,
+    layoutGuideline,
 
     getForm,
 
@@ -108,5 +128,6 @@ export const useCertificateStore = defineStore('certificate', () => {
     $resetAll,
     setFormFromDetail,
     updateSafeZone,
+    updateLayoutGuideline,
   };
 });

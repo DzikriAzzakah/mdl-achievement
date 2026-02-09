@@ -4,6 +4,7 @@ import type {
   CityContentForm,
   DateContentForm,
   EventTitleContentForm,
+  ModuleTypeContentForm,
   NIKContentForm,
   ParticipantNameContentForm,
   QRCodeContentForm,
@@ -28,6 +29,7 @@ export function isTextBasedContent(
 | CityContentForm
 | DateContentForm
 | ParticipantNameContentForm
+| ModuleTypeContentForm
 | NIKContentForm
 | EventTitleContentForm
 | ValidThruContentForm {
@@ -37,6 +39,7 @@ export function isTextBasedContent(
     CertificateContentType.CITY,
     CertificateContentType.DATE,
     CertificateContentType.PARTICIPANT_NAME,
+    CertificateContentType.MODULE_TYPE,
     CertificateContentType.NIK,
     CertificateContentType.TITLE,
     CertificateContentType.VALID_THRU,

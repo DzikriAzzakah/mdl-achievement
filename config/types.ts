@@ -1,9 +1,11 @@
-export interface SelectOption<T = string> {
+type ContentTextField = 'size' | 'fontFamily' | 'fontSize' | 'fontWeight' | 'alignment' | 'fontColor' | 'vertical' | 'horizontal';
+
+interface SelectOption<T = string> {
   readonly label: string;
   readonly value: T;
 }
 
-export interface ApiResponse<T = unknown> {
+interface ApiResponse<T = unknown> {
   readonly success?: boolean;
   readonly message?: string;
   readonly status_code?: number;
@@ -12,13 +14,138 @@ export interface ApiResponse<T = unknown> {
   readonly data?: T;
 }
 
-export interface PaginationMeta {
+interface PaginationMeta {
   readonly total_pages: number;
   readonly per_page: number;
   readonly current_page: number;
   readonly total_data: number;
   readonly end_of_page: boolean;
 }
+
+interface ContentMetadataBase {
+  vertical: number;
+  horizontal: number;
+  width: number | string;
+  height: number | string;
+  width_mode?: SizeMode;
+  height_mode?: SizeMode;
+  isAspectRatioLocked?: boolean;
+  isLocked?: boolean;
+  isHidden?: boolean;
+}
+
+interface ImageContentMetadata extends ContentMetadataBase {
+  originalWidth?: number;
+  originalHeight?: number;
+}
+
+interface TextContentMetadata extends ContentMetadataBase {
+  color: string;
+  alignment: SelectOption;
+  font_size: number;
+  font_weight: number;
+  font_family: string;
+}
+
+interface CityContentMetadata extends TextContentMetadata {}
+
+interface DateContentMetadata extends TextContentMetadata {
+  format: string;
+}
+
+interface QRCodeContentMetadata extends ContentMetadataBase {
+  background_color: string;
+  background_transparent: boolean;
+  shape: QRCodeShape;
+  shape_color: string;
+  border_style: QRCodeBorderStyle;
+  border_color: string;
+}
+
+interface CertificateContentMetadataPayload {
+  width: number | string;
+  height: number | string;
+  vertical: number;
+  horizontal: number;
+  width_mode?: string;
+  height_mode?: string;
+  isAspectRatioLocked?: boolean;
+  // Image-specific
+  id?: number;
+  original_width?: number;
+  original_height?: number;
+  image_host?: string;
+  full_path?: string;
+  file_path?: string;
+  file_name?: string;
+  file_mime?: string;
+  folder?: string;
+  original_file_name?: string;
+  // Text-specific
+  font_family?: string;
+  font_size?: number;
+  font_weight?: number;
+  alignment?: SelectOption;
+  color?: string;
+  // Location-specific
+  city?: string;
+  format?: string;
+  // QR Code-specific
+  background_color?: string;
+  background_transparent?: boolean;
+  shape?: string;
+  shape_color?: string;
+  border_style?: string;
+  border_color?: string;
+
+}
+interface ListResponseData<T = any> {
+  readonly contents?: readonly T[];
+  readonly pagination?: PaginationMeta;
+  readonly [key: string]: any;
+}
+interface BadgeDetailResponseData {
+  readonly id: number;
+  readonly title: string;
+  readonly type?: string;
+  readonly url?: string;
+}
+
+export type SizeMode = 'fix' | 'fill' | 'hug';
+export type GuidelineType = 'grid' | 'column' | 'row';
+export type QRCodeShape = 'dots' | 'square';
+export type QRCodeBorderStyle = 'square' | 'rounded';
+export type ListResponse<T = any> = ApiResponse<ListResponseData<T>>;
+export type CreateResponse = ApiResponse<any>;
+export type UploadResponse = ApiResponse<UploadedFileMeta>;
+export type BadgeDetailResponse = ApiResponse<BadgeDetailResponseData>;
+export type UUIDResponse = ApiResponse<UUIDResponseData>;
+export type CertificateDetailResponse = ApiResponse<CertificateDetailResponseData>;
+
+export type CertificateContentForm =
+  | ImageContentForm
+  | TextContentForm
+  | CertificateNumberContentForm
+  | CityContentForm
+  | DateContentForm
+  | ParticipantNameContentForm
+  | ModuleTypeContentForm
+  | NIKContentForm
+  | EventTitleContentForm
+  | ValidThruContentForm
+  | CertificateSigneeContentForm
+  | QRCodeContentForm;
+
+export type TextContentType =
+  | TextContentForm
+  | CertificateNumberContentForm
+  | CityContentForm
+  | DateContentForm
+  | ModuleTypeContentForm
+  | ParticipantNameContentForm
+  | NIKContentForm
+  | EventTitleContentForm
+  | ValidThruContentForm;
 
 export interface UploadedFileMeta {
   readonly id?: number;
@@ -33,7 +160,6 @@ export interface UploadedFileMeta {
 
 export interface AchievementFilter {
   certificateType?: SelectOption[];
-  accessibility?: SelectOption[];
   created?: string;
   lastUpdate?: string;
 }
@@ -56,7 +182,6 @@ export interface BadgePayload {
 export interface Badge {
   readonly id: number;
   readonly title: string;
-  readonly accessibility: string;
   readonly creator: string;
   readonly created_at: string;
   readonly updated_at: string;
@@ -92,7 +217,7 @@ export interface Certificate {
   readonly id: number;
   readonly title: string;
   readonly certificate_type: SelectOption;
-  readonly accessibility: string;
+  readonly is_main: boolean;
   readonly creator: string;
   readonly created_at: string;
   readonly updated_at: string;
@@ -117,8 +242,6 @@ export interface CertificateResponse {
   readonly image_url?: string;
 }
 
-export type SizeMode = 'fix' | 'fill' | 'hug';
-
 export interface SafeZone {
   top: number;
   right: number;
@@ -126,53 +249,12 @@ export interface SafeZone {
   left: number;
 }
 
-interface ContentMetadataBase {
-  vertical: number;
-  horizontal: number;
-  width: number | string;
-  height: number | string;
-  width_mode?: SizeMode;
-  height_mode?: SizeMode;
-  isAspectRatioLocked?: boolean;
-  isLocked?: boolean;
-  isHidden?: boolean;
-}
-
-export interface ImageContentMetadata extends ContentMetadataBase {
-  originalWidth?: number;
-  originalHeight?: number;
-}
-
-export interface TextContentMetadata extends ContentMetadataBase {
+export interface LayoutGuideline {
+  enabled: boolean;
+  type: GuidelineType;
+  count: number;
+  gutter: number;
   color: string;
-  alignment: SelectOption;
-  font_size: number;
-  font_weight: number;
-  font_family: string;
-}
-
-export interface LocationContentMetadata extends TextContentMetadata {
-  city: string;
-  date_format: string;
-}
-
-export interface CityContentMetadata extends TextContentMetadata {}
-
-export interface DateContentMetadata extends TextContentMetadata {
-  format: string;
-}
-
-export type QRCodeShape = 'dots' | 'square';
-
-export type QRCodeBorderStyle = 'square' | 'rounded';
-
-export interface QRCodeContentMetadata extends ContentMetadataBase {
-  background_color: string;
-  background_transparent: boolean;
-  shape: QRCodeShape;
-  shape_color: string;
-  border_style: QRCodeBorderStyle;
-  border_color: string;
 }
 
 export interface CertificateNumberVariable {
@@ -218,6 +300,10 @@ export interface ParticipantNameContentForm extends ContentFormBase<'participant
   element_value: string;
 }
 
+export interface ModuleTypeContentForm extends ContentFormBase<'module_type', TextContentMetadata> {
+  element_value: string;
+}
+
 export interface NIKContentForm extends ContentFormBase<'nik', TextContentMetadata> {
   element_value: string;
 }
@@ -239,21 +325,6 @@ export interface QRCodeContentForm extends ContentFormBase<'qr_code', QRCodeCont
   element_value: string;
 }
 
-export type CertificateContentForm =
-  | ImageContentForm
-  | TextContentForm
-  | CertificateNumberContentForm
-  | CityContentForm
-  | DateContentForm
-  | ParticipantNameContentForm
-  | NIKContentForm
-  | EventTitleContentForm
-  | ValidThruContentForm
-  | CertificateSigneeContentForm
-  | QRCodeContentForm;
-
-export type ContentTextField = 'size' | 'fontFamily' | 'fontSize' | 'fontWeight' | 'alignment' | 'fontColor' | 'vertical' | 'horizontal';
-
 export interface ContentTypeConfig {
   readonly title: string;
   readonly icon: string;
@@ -268,44 +339,6 @@ export interface CertificateForm {
   image: File | string | null;
   contents: CertificateContentForm[];
   safe_zone: SafeZone;
-}
-
-export interface CertificateContentMetadataPayload {
-  width: number | string;
-  height: number | string;
-  vertical: number;
-  horizontal: number;
-  width_mode?: string;
-  height_mode?: string;
-  isAspectRatioLocked?: boolean;
-  // Image-specific
-  id?: number;
-  original_width?: number;
-  original_height?: number;
-  image_host?: string;
-  full_path?: string;
-  file_path?: string;
-  file_name?: string;
-  file_mime?: string;
-  folder?: string;
-  original_file_name?: string;
-  // Text-specific
-  font_family?: string;
-  font_size?: number;
-  font_weight?: number;
-  alignment?: SelectOption;
-  color?: string;
-  // Location-specific
-  city?: string;
-  format?: string;
-  // QR Code-specific
-  background_color?: string;
-  background_transparent?: boolean;
-  shape?: string;
-  shape_color?: string;
-  border_style?: string;
-  border_color?: string;
-
 }
 
 export interface CertificateContentPayload {
@@ -348,34 +381,9 @@ export interface CertificateDetailResponseData extends Omit<CertificateCreatePay
   readonly preview_url?: string;
 }
 
-export interface ListResponseData<T = any> {
-  readonly contents?: readonly T[];
-  readonly pagination?: PaginationMeta;
-  readonly [key: string]: any;
-}
-
-export type ListResponse<T = any> = ApiResponse<ListResponseData<T>>;
-
-export type CreateResponse = ApiResponse<any>;
-
-export type UploadResponse = ApiResponse<UploadedFileMeta>;
-
-export interface BadgeDetailResponseData {
-  readonly id: number;
-  readonly title: string;
-  readonly type?: string;
-  readonly url?: string;
-}
-
-export type BadgeDetailResponse = ApiResponse<BadgeDetailResponseData>;
-
 export interface UUIDResponseData {
   readonly uuid: string;
 }
-
-export type UUIDResponse = ApiResponse<UUIDResponseData>;
-
-export type CertificateDetailResponse = ApiResponse<CertificateDetailResponseData>;
 
 export interface FetchOptions {
   headers?: Record<string, string>;

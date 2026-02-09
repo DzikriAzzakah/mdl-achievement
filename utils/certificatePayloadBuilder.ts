@@ -18,41 +18,6 @@ export type {
   UploadedFileMeta,
 } from '#achievement/config/types';
 
-export interface CertificateContentMetadataPayload {
-  width: number | 'fit-content';
-  height: number | 'fit-content';
-  vertical: number;
-  horizontal: number;
-  // For image types - upload metadata
-  id?: number;
-  original_width?: number;
-  original_height?: number;
-  image_host?: string;
-  full_path?: string;
-  file_path?: string;
-  file_name?: string;
-  file_mime?: string;
-  folder?: string;
-  original_file_name?: string;
-  // For text types
-  font_family?: string;
-  font_size?: number;
-  font_weight?: number;
-  alignment?: { label: string; value: string; };
-  color?: string;
-  // For QR Code type
-  background_color?: string;
-  background_transparent?: boolean;
-  shape?: string;
-  shape_color?: string;
-  border_style?: string;
-  border_color?: string;
-  // Common
-  width_mode?: string;
-  height_mode?: string;
-  isAspectRatioLocked?: boolean;
-}
-
 function buildBackgroundPayload(
   uploadedMeta?: UploadResponse['data'] | null,
 ): UploadedFileMeta {
@@ -105,7 +70,7 @@ export function buildContentPayload(
   uploadedImageMeta?: UploadResponse['data'] | null,
   isDeleted: boolean = false,
 ): CertificateContentPayload {
-  const shouldNullifyValue = ['text', 'participant_name', 'nik', 'title', 'city', 'date', 'valid_thru', 'qr_code'].includes(content.type);
+  const shouldNullifyValue = ['text', 'participant_name', 'module_type', 'nik', 'title', 'city', 'date', 'valid_thru', 'qr_code'].includes(content.type);
 
   const basePayload: CertificateContentPayload = {
     id: content.id,

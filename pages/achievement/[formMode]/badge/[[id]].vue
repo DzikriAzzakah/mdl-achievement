@@ -3,7 +3,6 @@
     :title="pageTitle"
     :class="[
       isCreateMode ? 'layout-add-badge' : 'layout-edit-badge',
-      activeStepper === 2 ? 'layout-badge--accessibility' : '',
     ]"
     :active-stepper="isCreateMode ? activeStepper : activeStep"
     :breadcrumbs="breadcrumbs"
@@ -18,7 +17,7 @@
     :fixed-bottom-footer="true"
     :is-use-breadcrumbs="isEditMode"
     :show-cancel="isCreateMode"
-    :show-submit="isCreateMode || activeStep !== 'accessibility'"
+    :show-submit="true"
     show-header-button
     disable-footer
     @on-cancel="handleCancel"
@@ -32,7 +31,6 @@
       />
       <template v-else>
         <BadgeInformation v-if="showBadgeInformation" />
-        <Accessibility v-if="showAccessibility" />
       </template>
     </template>
   </TemplateManageLayout>
@@ -42,7 +40,6 @@
 import type { BadgeDetail, BadgePayload, BadgeResponse, UploadResponse } from '#achievement/config/types.ts';
 import type { RouteLocationNormalized } from 'vue-router';
 import { getBadgeDetail, patchEditBadge, postAddBadge, postUploadAchievementFile } from '#achievement/api/api.ts';
-import Accessibility from '#achievement/components/form/badge/Accessibility.vue';
 import BadgeInformation from '#achievement/components/form/badge/BadgeInformation.vue';
 import { BADGE_TABS_EDIT, CREATE_STEPPER } from '#achievement/config/constants.ts';
 import {
@@ -55,7 +52,7 @@ import { UiLoading } from '@mydigilearn-saas/web-ui';
 
 import { useMutation, useQuery } from '@tanstack/vue-query';
 
-type TStep = 'badge-configuration' | 'accessibility';
+type TStep = 'badge-configuration';
 
 const { $toast } = useNuxtApp();
 const route = useRoute();
@@ -81,6 +78,7 @@ const isFormInitialized = ref(false);
 const isLoading = ref<boolean>(false);
 const initialImage = ref<string | null>(null);
 const initialForm = ref<Record<string, any>>({});
+const hasJustSaved = ref<boolean>(false);
 
 const returnUrl = buildReturnUrl('/achievement');
 
@@ -140,13 +138,6 @@ const showBadgeInformation = computed(() => {
   return activeStep.value === 'badge-configuration';
 });
 
-const showAccessibility = computed(() => {
-  if (isCreateMode.value) {
-    return activeStepper.value === 2;
-  }
-  return activeStep.value === 'accessibility';
-});
-
 const isDisabledSubmitBtn = computed((): boolean => {
   const isAllRequiredFilled = !!(
     store.title
@@ -157,14 +148,17 @@ const isDisabledSubmitBtn = computed((): boolean => {
   );
 
   if (isCreateMode.value) {
-    if (activeStepper.value === 1) {
-      return !isAllRequiredFilled || Object.keys(errors.value).length > 0;
-    }
-    return false;
+    return !isAllRequiredFilled || Object.keys(errors.value).length > 0;
   }
 
-  if (isAllRequiredFilled && isFormChanged()) {
-    return false;
+  if (isEditMode.value) {
+    if (hasJustSaved.value) {
+      return true;
+    }
+
+    if (isAllRequiredFilled && isFormChanged()) {
+      return false;
+    }
   }
 
   if (Object.keys(errors.value).length > 0) {
@@ -180,16 +174,14 @@ const buttonLabelCancel = computed((): string => {
 
 const buttonLabelSubmit = computed((): string => {
   if (isCreateMode.value) {
-    if (activeStepper.value === CREATE_STEPPER.length) {
-      return 'Done';
-    }
-    if (activeStepper.value === CREATE_STEPPER.length - 1) {
-      return 'Add Badge';
-    }
-    return 'Next';
+    return 'Add';
   }
 
-  return 'Save Badge Information';
+  if (isEditMode.value && hasJustSaved.value) {
+    return 'Saved';
+  }
+
+  return 'Save';
 });
 
 function isFormDirty(): boolean {
@@ -293,7 +285,13 @@ const { mutate: submitBadgeForm } = useMutation({
       }
 
       preventLeave.value = false;
-      activeStepper.value += 1;
+
+      $toast({
+        variant: 'success',
+        title: 'Success',
+        text: 'Badge successfully added.',
+      });
+      router.push(returnUrl.value);
     }
   },
   onSettled: () => {
@@ -312,6 +310,11 @@ const { mutate: updateCreatedBadge } = useMutation({
     activeStepper.value += 1;
   },
   onSettled: () => {
+    $toast({
+      variant: 'success',
+      title: 'Success',
+      text: 'Badge successfully updated.',
+    });
     isLoading.value = false;
     hideLoading();
   },
@@ -386,6 +389,7 @@ const { mutate: editBadgeForm } = useMutation({
     initialForm.value = JSON.parse(JSON.stringify(getForm.value));
     initialImage.value = store.image as string;
     preventLeave.value = false;
+    hasJustSaved.value = true;
 
     if (isEditMode.value) {
       refetch();
@@ -406,45 +410,35 @@ const { mutate: editBadgeForm } = useMutation({
 
 const handleSubmit = async (): Promise<void> => {
   if (isCreateMode.value) {
-    if (activeStepper.value === 1) {
-      let imageId: number | undefined;
+    let imageId: number | undefined;
 
-      if (store.image instanceof File) {
-        const uploadResult = await uploadImage(store.image);
-        imageId = uploadResult?.imageId;
-      }
-      else if (typeof store.image === 'string' && store.uploadedImageMeta?.id) {
-        imageId = store.uploadedImageMeta.id;
-      }
-
-      if (imageId) {
-        if (createdBadgeId.value) {
-          const payload: Record<string, any> = {
-            title: store.title,
-            description: store.description,
-            image_id: imageId,
-          };
-
-          updateCreatedBadge({ id: createdBadgeId.value, payload });
-        }
-        else {
-          const payload: BadgePayload = {
-            title: store.title,
-            description: store.description,
-            image_id: imageId,
-          };
-
-          submitBadgeForm(payload);
-        }
-      }
+    if (store.image instanceof File) {
+      const uploadResult = await uploadImage(store.image);
+      imageId = uploadResult?.imageId;
     }
-    else {
-      $toast({
-        variant: 'success',
-        title: 'Success',
-        text: 'Badge successfully added.',
-      });
-      router.push({ name: 'achievement' });
+    else if (typeof store.image === 'string' && store.uploadedImageMeta?.id) {
+      imageId = store.uploadedImageMeta.id;
+    }
+
+    if (imageId) {
+      if (createdBadgeId.value) {
+        const payload: Record<string, any> = {
+          title: store.title,
+          description: store.description,
+          image_id: imageId,
+        };
+
+        updateCreatedBadge({ id: createdBadgeId.value, payload });
+      }
+      else {
+        const payload: BadgePayload = {
+          title: store.title,
+          description: store.description,
+          image_id: imageId,
+        };
+
+        submitBadgeForm(payload);
+      }
     }
   }
   else {
@@ -499,6 +493,7 @@ watch(
     }
     else {
       preventLeave.value = true;
+      hasJustSaved.value = false;
     }
   },
   { flush: 'post' },
@@ -514,16 +509,8 @@ onBeforeMount(() => {
   @apply h-screen w-full !bg-gray-25 !m-0;
 }
 
-.empty-layout:has(.layout-add-badge.layout-badge--accessibility) {
-  @apply !bg-white;
-}
-
 .empty-layout:has(.layout-edit-badge) {
   @apply m-0 h-screen w-full !bg-gray-25;
-}
-
-.empty-layout:has(.layout-edit-badge.layout-badge--accessibility) {
-  @apply !bg-white;
 }
 
 .template-manage {

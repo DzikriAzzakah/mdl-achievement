@@ -99,6 +99,16 @@ export const deleteBadge = async (
   });
 };
 
+export const postCloneCertificate = async (
+  id: number,
+  options: FetchOptions = {},
+): Promise<CreateResponse> => {
+  return useNuxtApp().$apiGateway<CreateResponse>(`/achievement/api/v1/cms/certificates/${id}/clone`, {
+    ...options,
+    method: 'post',
+  });
+};
+
 export const getSerialNumberUUID = async (
   options: FetchOptions = {},
 ): Promise<UUIDResponse> => {

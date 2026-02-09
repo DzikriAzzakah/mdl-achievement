@@ -2,7 +2,7 @@
   <div class="mb-4 flex-shrink-0 px-5">
     <div
       class="flex justify-between items-center w-full border-b-2 border-gray-50 pb-4 cursor-pointer"
-      @click="isCollapsed = !isCollapsed"
+      @click="emit('toggle')"
     >
       <h2 class="text-base font-semibold">
         Certificate Information
@@ -95,16 +95,19 @@ import { UiFileUploadCompact, UiFileUploadFiles, UiFormGroup, UiInput, UiSelect 
 interface Props {
   errors: Record<string, any>;
   typeOptions: any[];
+  isCollapsed: boolean;
 }
 
 defineProps<Props>();
+
+const emit = defineEmits<{
+  toggle: [];
+}>();
 
 const title = defineModel<string>('title', { required: true });
 const certificateType = defineModel<{ label: string; value: string; }>('certificateType', { required: true });
 const image = defineModel<File | string | null>('image', { required: true });
 const uploadedImageMeta = defineModel<any>('uploadedImageMeta');
-
-const isCollapsed = ref<boolean>(false);
 
 const displayUploadedImage = computed(() => {
   if (!image.value) {

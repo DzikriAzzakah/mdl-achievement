@@ -1,24 +1,9 @@
 import type {
-  CertificateNumberContentForm,
-  EventTitleContentForm,
-  LocationContentForm,
-  NIKContentForm,
-  ParticipantNameContentForm,
   SafeZone,
   SizeMode,
-  TextContentForm,
-  ValidThruContentForm,
+  TextContentType,
 } from '#achievement/config/types';
 import { CANVAS_HEIGHT, CANVAS_WIDTH, DEFAULT_FONT_FAMILY } from '#achievement/config/constants';
-
-type TextContentType =
-  | TextContentForm
-  | CertificateNumberContentForm
-  | LocationContentForm
-  | ParticipantNameContentForm
-  | NIKContentForm
-  | EventTitleContentForm
-  | ValidThruContentForm;
 
 export interface TextStyleConfig {
   position: {

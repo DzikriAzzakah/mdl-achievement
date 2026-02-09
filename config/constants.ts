@@ -4,6 +4,7 @@ export const CertificateContentType = {
   TEXT: 'text',
   IMAGE: 'image',
   CERTIFICATE_NUMBER: 'certificate_number',
+  MODULE_TYPE: 'module_type',
   PARTICIPANT_NAME: 'participant_name',
   NIK: 'nik',
   TITLE: 'title',
@@ -37,13 +38,6 @@ export const DEFAULT_IMAGE_DIMENSIONS = {
   height: 100,
 };
 
-export const ACCESSIBILITY_OPTIONS = [
-  { value: 'PUBLIC', label: 'Public', color: 'success' },
-  { value: 'COMPANY', label: 'Company', color: 'info' },
-  { value: 'COMPANY_STRUCTURE', label: 'Company Structure', color: 'info' },
-  { value: 'USER', label: 'User', color: 'info' },
-];
-
 export const TYPE_OPTIONS = [
   { value: 'attendance', label: 'Attendance' },
   { value: 'recognition', label: 'Recognition' },
@@ -52,7 +46,6 @@ export const TYPE_OPTIONS = [
 
 const COMMON_COLUMNS = [
   { key: 'title', label: 'Title', width: '300px', sortable: true },
-  { key: 'accessibility', label: 'Accessibility', width: '150px', sortable: true },
   { key: 'creator', label: 'Created by', width: '250px', sortable: true },
   { key: 'created_at', label: 'Created', width: '200px', sortable: true },
   { key: 'updated_at', label: 'Last Updated', width: '200px', sortable: true },
@@ -62,6 +55,7 @@ const COMMON_COLUMNS = [
 export const CERTIFICATE_COLUMNS = [
   COMMON_COLUMNS[0],
   { key: 'certificate_type', label: 'Certificate Type', width: '150px', sortable: true },
+  { key: 'is_main', label: 'Data Type', width: '150px', sortable: true },
   ...COMMON_COLUMNS.slice(1),
 ];
 
@@ -69,29 +63,24 @@ export const BADGE_COLUMNS = [...COMMON_COLUMNS];
 
 export const CREATE_STEPPER = [
   { label: 'Configuration', value: 1 },
-  { label: 'Accessibility', value: 2 },
 ];
 
 export const CERTIFICATE_TABS_EDIT = [
   { label: 'Configuration', value: 'certificate-configuration' },
-  { label: 'Accessibility', value: 'accessibility' },
 ];
 
 export const BADGE_TABS = [
   { label: 'Configuration', value: 'badge-configuration' },
   { label: 'Badge', value: 'badge-image' },
-  { label: 'Accessibility', value: 'accessibility' },
 ];
 
 export const BADGE_TABS_EDIT = [
   { label: 'Configuration', value: 'badge-configuration' },
-  { label: 'Accessibility', value: 'accessibility' },
 ];
 
 export const CERTIFICATE_TABS = [
   { label: 'Configuration', value: 'certificate-configuration' },
   { label: 'Preview', value: 'certificate-preview' },
-  { label: 'Accessibility', value: 'accessibility' },
 ];
 
 export const FormMode = {
@@ -214,6 +203,13 @@ export const CONTENT_TYPE_CONFIGS: Readonly<Record<string, ContentTypeConfig>> =
     isSource: true,
     hasCustomFields: true,
   },
+  module_type: {
+    title: 'Module Type',
+    icon: 'material-symbols:code-rounded',
+    fields: ['size', 'fontFamily', 'fontSize', 'fontWeight', 'alignment', 'fontColor', 'vertical', 'horizontal'],
+    isSource: true,
+    hasCustomFields: false,
+  },
   participant_name: {
     title: 'Full Name',
     icon: 'material-symbols:code-rounded',
@@ -257,3 +253,18 @@ export const CONTENT_TYPE_CONFIGS: Readonly<Record<string, ContentTypeConfig>> =
     hasCustomFields: false,
   },
 } as const;
+
+export const AVAILABLE_CONTENT_TYPES = [
+  { type: 'image', label: 'Image', icon: 'mdi:image' },
+  { type: 'sertificate_signee', label: 'Certificate Signee', icon: 'mdi:image' },
+  { type: 'text', label: 'Text Area', icon: 'ic:round-text-fields' },
+  { type: 'module_type', label: 'Module Type', icon: 'mdi:code-tags' },
+  { type: 'certificate_number', label: 'Certificate Number', icon: 'mdi:code-tags' },
+  { type: 'participant_name', label: 'Participant Name', icon: 'mdi:code-tags' },
+  { type: 'nik', label: 'NIK', icon: 'mdi:code-tags' },
+  { type: 'title', label: 'Event Title', icon: 'mdi:code-tags' },
+  { type: 'city', label: 'City', icon: 'mdi:code-tags' },
+  { type: 'date', label: 'Date', icon: 'mdi:code-tags' },
+  { type: 'valid_thru', label: 'Certificate Valid Thru', icon: 'mdi:code-tags' },
+  { type: 'qr_code', label: 'QR Code', icon: 'mdi:qrcode' },
+];

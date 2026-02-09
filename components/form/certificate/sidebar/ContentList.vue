@@ -2,7 +2,7 @@
   <div class="flex flex-col flex-grow min-h-0 px-5 mb-12">
     <div
       class="flex justify-between items-center w-full border-b-2 border-gray-50 pb-4 mb-4 cursor-pointer flex-shrink-0"
-      @click="isCollapsed = !isCollapsed"
+      @click="emit('toggle')"
     >
       <h2 class="text-base font-semibold">
         Contents
@@ -52,14 +52,17 @@
     </div>
   </div>
 
-  <div class="absolute bottom-0 left-0 w-full bg-white z-50">
+  <div
+    v-if="!isCollapsed"
+    class="absolute bottom-0 left-0 w-full bg-white z-50"
+  >
     <div class="w-full flex flex-col items-center justify-center border-t border-solid border-gray-50">
       <div
         v-if="isContentListOpen"
         class="w-full flex flex-col gap-1 mb-4 p-2 bg-white rounded-lg shadow-lg"
       >
         <UiButton
-          v-for="contentType in availableContentTypes"
+          v-for="contentType in AVAILABLE_CONTENT_TYPES"
           :key="contentType.type"
           color="ghost"
           :icon="contentType.icon"
@@ -87,6 +90,7 @@ import ContentCertificateNumber from '#achievement/components/form/certificate/c
 import ContentImage from '#achievement/components/form/certificate/contents/ContentImage.vue';
 import ContentQRCode from '#achievement/components/form/certificate/contents/ContentQRCode.vue';
 import ContentTextBase from '#achievement/components/form/certificate/contents/ContentTextBase.vue';
+import { AVAILABLE_CONTENT_TYPES } from '#achievement/config/constants.ts';
 import { UiButton } from '@mydigilearn-saas/web-ui';
 
 interface Props {
@@ -94,6 +98,7 @@ interface Props {
   selectedContentKey: string | null;
   safeZoneWidth: number;
   safeZoneHeight: number;
+  isCollapsed: boolean;
 }
 const props = defineProps<Props>();
 
@@ -102,24 +107,10 @@ const emit = defineEmits<{
   deleteContent: [index: number];
   updateContent: [index: number, updated: CertificateContentForm];
   contentClick: [key: string];
+  toggle: [];
 }>();
 
 const isContentListOpen = defineModel<boolean>('isContentListOpen', { default: false });
-const isCollapsed = ref<boolean>(false);
-
-const availableContentTypes = [
-  { type: 'image', label: 'Image', icon: 'mdi:image' },
-  { type: 'sertificate_signee', label: 'Certificate Signee', icon: 'mdi:image' },
-  { type: 'text', label: 'Text Area', icon: 'ic:round-text-fields' },
-  { type: 'certificate_number', label: 'Certificate Number', icon: 'mdi:code-tags' },
-  { type: 'participant_name', label: 'Participant Name', icon: 'mdi:code-tags' },
-  { type: 'nik', label: 'NIK', icon: 'mdi:code-tags' },
-  { type: 'title', label: 'Event Title', icon: 'mdi:code-tags' },
-  { type: 'city', label: 'City', icon: 'mdi:code-tags' },
-  { type: 'date', label: 'Date', icon: 'mdi:code-tags' },
-  { type: 'qr_code', label: 'QR Code', icon: 'mdi:qrcode' },
-  { type: 'valid_thru', label: 'Certificate Valid Thru', icon: 'mdi:code-tags' },
-];
 
 const COMPONENT_MAP: Record<string, any> = {
   image: ContentImage,
@@ -127,6 +118,7 @@ const COMPONENT_MAP: Record<string, any> = {
   qr_code: ContentQRCode,
   certificate_number: ContentCertificateNumber,
   text: ContentTextBase,
+  module_type: ContentTextBase,
   participant_name: ContentTextBase,
   nik: ContentTextBase,
   title: ContentTextBase,

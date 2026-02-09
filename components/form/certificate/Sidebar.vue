@@ -12,13 +12,21 @@
       v-model:uploaded-image-meta="uploadedImageMeta"
       :errors="errors"
       :type-options="typeOptions"
+      :is-collapsed="openSection !== 'info'"
+      @toggle="handleToggleSection('info')"
     />
 
     <LayoutGuidelines
       v-if="showLayoutGuidSection"
       :safe-zone="safeZone"
       :has-uploaded-image="hasUploadedImage"
+      :guideline="layoutGuideline"
+      :show-safe-zone="showSafeZone"
+      :is-collapsed="openSection !== 'layout'"
       @update:safe-zone="handleUpdateSafeZone"
+      @update:guideline="handleUpdateGuideline"
+      @update:show-safe-zone="(val) => showSafeZone = val"
+      @toggle="handleToggleSection('layout')"
     />
 
     <ContentList
@@ -28,16 +36,18 @@
       :selected-content-key="selectedContentKey"
       :safe-zone-width="calculatedSafeZoneWidth"
       :safe-zone-height="calculatedSafeZoneHeight"
+      :is-collapsed="openSection !== 'content'"
       @add-content="handleAddContent"
       @delete-content="handleDeleteContent"
       @update-content="handleUpdateContent"
       @content-click="handleContentClick"
+      @toggle="handleToggleSection('content')"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import type { CertificateContentForm, SafeZone } from '#achievement/config/types.ts';
+import type { CertificateContentForm, LayoutGuideline, SafeZone } from '#achievement/config/types.ts';
 import CertificateInfoForm from '#achievement/components/form/certificate/sidebar/CertificateInfoForm.vue';
 import ContentList from '#achievement/components/form/certificate/sidebar/ContentList.vue';
 import LayoutGuidelines from '#achievement/components/form/certificate/sidebar/LayoutGuidelines.vue';
@@ -64,8 +74,11 @@ const image = defineModel<File | string | null>('image', { required: true });
 const contents = defineModel<CertificateContentForm[]>('contents', { required: true });
 const safeZone = defineModel<SafeZone>('safeZone', { required: true });
 const uploadedImageMeta = defineModel<any>('uploadedImageMeta');
+const layoutGuideline = defineModel<LayoutGuideline>('layoutGuideline', { required: true });
+const showSafeZone = defineModel<boolean>('showSafeZone', { required: true });
 
 const isContentListOpen = ref<boolean>(false);
+const openSection = ref<'info' | 'layout' | 'content'>('info');
 
 const hasUploadedImage = computed(() => !!image.value);
 
@@ -115,6 +128,14 @@ const handleUpdateSafeZone = (zone: SafeZone) => {
     CANVAS_WIDTH,
   );
   canvas.contents.value = adjustedContents;
+};
+
+const handleUpdateGuideline = (guideline: LayoutGuideline) => {
+  store.updateLayoutGuideline(guideline);
+};
+
+const handleToggleSection = (section: 'info' | 'layout' | 'content') => {
+  openSection.value = openSection.value === section ? section : section;
 };
 </script>
 

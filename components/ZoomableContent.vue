@@ -247,12 +247,15 @@ const handleWheel = (e: WheelEvent) => {
     return;
   }
   e.preventDefault();
-  const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP;
+
+  const normalizedDelta = e.deltaY / 100;
+  const delta = -normalizedDelta * ZOOM_STEP;
+
   const newZoom = currentZoom.value + delta;
   if (newZoom < MIN_ZOOM || newZoom > MAX_ZOOM) {
     return;
   }
-  currentZoom.value = Number.parseFloat(newZoom.toFixed(2));
+  currentZoom.value = Number.parseFloat(Math.max(MIN_ZOOM, Math.min(newZoom, MAX_ZOOM)).toFixed(2));
   applyZoom(e.clientX, e.clientY);
 };
 

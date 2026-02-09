@@ -1,5 +1,5 @@
 import type { AchievementFilter } from '#achievement/config/types';
-import { ACCESSIBILITY_OPTIONS, TYPE_OPTIONS } from '#achievement/config/constants';
+import { TYPE_OPTIONS } from '#achievement/config/constants';
 
 export function useQueryUrlParams() {
   const route = useRoute();
@@ -25,9 +25,6 @@ export function useQueryUrlParams() {
       }
       if (route.query.returnTypes) {
         query.types = route.query.returnTypes;
-      }
-      if (route.query.returnAccessibility) {
-        query.accessibility = route.query.returnAccessibility;
       }
       if (route.query.returnCreatedFrom) {
         query.createdFrom = route.query.returnCreatedFrom;
@@ -78,11 +75,6 @@ export function useQueryUrlParams() {
         .map((item: any) => item.value)
         .join(',');
     }
-    if (options.filter?.accessibility?.length) {
-      query.returnAccessibility = options.filter.accessibility
-        .map((item: any) => item.value)
-        .join(',');
-    }
     if (options.filter?.created?.[0]) {
       query.returnCreatedFrom = options.filter.created[0];
     }
@@ -106,13 +98,6 @@ export function useQueryUrlParams() {
     if (query.types) {
       const types = (query.types as string).split(',');
       filter.certificateType = TYPE_OPTIONS.filter(opt => types.includes(opt.value));
-    }
-
-    if (query.accessibility) {
-      const accessibilities = (query.accessibility as string).split(',');
-      filter.accessibility = ACCESSIBILITY_OPTIONS.filter(opt =>
-        accessibilities.includes(opt.value),
-      );
     }
 
     if (query.createdFrom && query.createdTo) {

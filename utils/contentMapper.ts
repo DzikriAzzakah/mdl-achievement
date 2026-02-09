@@ -147,6 +147,18 @@ export function mapContentPayloadToForm(content: CertificateContentPayload, inde
     };
   }
 
+  if (type === CertificateContentType.MODULE_TYPE) {
+    return {
+      id,
+      type: CertificateContentType.MODULE_TYPE,
+      key: contentKey,
+      element_id: contentElementId,
+      value: null,
+      element_value: actualValue || '',
+      metadata: textMetadata,
+    };
+  }
+
   if (type === CertificateContentType.NIK) {
     return {
       id,

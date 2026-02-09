@@ -1,54 +1,12 @@
 <template>
   <div class="bg-white border border-solid border-gray-50 shadow-sm rounded-xl p-4 w-full">
-    <div
-      class="flex justify-between items-center w-full"
-      :class="{ 'border-b-2 border-gray-50 pb-2': !isCollapsed }"
-    >
-      <div class="flex items-center gap-2">
-        <Icon
-          :name="displayConfig.icon"
-          class="text-gray-500 w-5 h-5"
-        />
-        <p class="text-sm font-medium">
-          {{ displayConfig.label }}
-        </p>
-      </div>
-      <div class="flex items-center gap-2">
-        <Dropdown
-          placement="bottom-end"
-          popper-class="experience-more-actions"
-        >
-          <UiButton
-            size="md"
-            variant="transparent"
-            color="ghost"
-            icon="mdi:dots-horizontal"
-            square
-            @click.stop
-          />
-          <template #popper>
-            <div class="flex flex-col gap-2.5 w-64 items-start shadow-md p-1.5 btn-experiences-user">
-              <UiButton
-                size="md"
-                class="w-full text-left"
-                variant="transparent"
-                color="ghost"
-                icon="mdi-delete"
-                @click="handleDelete"
-              >
-                Delete
-              </UiButton>
-            </div>
-          </template>
-        </Dropdown>
-        <Icon
-          name="mdi:chevron-down"
-          class="transition-transform duration-300 cursor-pointer"
-          :class="{ 'rotate-180': isCollapsed }"
-          @click="emit('headerClick')"
-        />
-      </div>
-    </div>
+    <ContentItemHeader
+      :icon="displayConfig.icon"
+      :title="displayConfig.label"
+      :is-collapsed="isCollapsed"
+      @delete="handleDelete"
+      @toggle-collapse="emit('headerClick')"
+    />
     <div
       class="overflow-hidden transition-all duration-300 ease-in-out"
       :class="isCollapsed ? 'max-h-0' : 'max-h-[1000px]'"
@@ -83,176 +41,31 @@
             </template>
           </UiFileUploadCompact>
         </div>
-        <div class="flex items-center gap-2">
-          <UiFormGroup
-            label="Width"
-            class="flex-1 min-w-0"
-          >
-            <UiInput
-              type="number"
-              :model-value="contentItem.metadata.width"
-              size="md"
-              :disabled="!hasImage"
-              @update:model-value="updateWidth"
-            >
-              <template #suffix>
-                <span class="text-xs text-gray-500">
-                  px
-                </span>
-              </template>
-            </UiInput>
-          </UiFormGroup>
 
-          <UiFormGroup
-            label="Height"
-            class="flex-1 min-w-0"
-          >
-            <UiInput
-              type="number"
-              :model-value="contentItem.metadata.height"
-              size="md"
-              :disabled="!hasImage"
-              @update:model-value="updateHeight"
-            >
-              <template #suffix>
-                <span class="text-xs text-gray-500">
-                  px
-                </span>
-              </template>
-            </UiInput>
-          </UiFormGroup>
+        <DimensionControl
+          :width="contentItem.metadata.width"
+          :height="contentItem.metadata.height"
+          :is-aspect-ratio-locked="isAspectRatioLocked"
+          :disabled="!hasImage"
+          :aspect-ratio-tooltip="isAspectRatioLocked ? 'Unlock Aspect Ratio' : 'Lock Aspect Ratio'"
+          @update:width="updateWidth"
+          @update:height="updateHeight"
+          @toggle-aspect-ratio="toggleAspectRatioLock"
+        />
 
-          <UiFormGroup class="mt-5 flex-shrink-0">
-            <UiButton
-              v-tooltip="isAspectRatioLocked ? 'Unlock Aspect Ratio' : 'Lock Aspect Ratio'"
-              square
-              size="md"
-              variant="soft"
-              icon="mdi:aspect-ratio"
-              :color="isAspectRatioLocked ? 'primary' : 'ghost'"
-              :disabled="!hasImage"
-              @click="toggleAspectRatioLock"
-            />
-          </UiFormGroup>
-        </div>
-        <UiFormGroup label="Position">
-          <div class="space-y-2">
-            <div class="flex items-center justify-between gap-2">
-              <UiButton
-                v-tooltip="'Align Left'"
-                size="sm"
-                square
-                :disabled="!hasImage"
-                :variant="currentHorizontalAlign === 'left' ? 'solid' : 'soft'"
-                :color="currentHorizontalAlign === 'left' ? 'primary' : 'ghost'"
-                icon="fe:align-left"
-                @click="handleAlignContent('left')"
-              >
-                L
-              </UiButton>
-              <UiButton
-                v-tooltip="'Align Center'"
-                size="sm"
-                square
-                :disabled="!hasImage || isCenterRightDisabled"
-                :variant="currentHorizontalAlign === 'center' ? 'solid' : 'soft'"
-                :color="currentHorizontalAlign === 'center' ? 'primary' : 'ghost'"
-                icon="fe:align-center"
-                @click="handleAlignContent('center')"
-              >
-                C
-              </UiButton>
-              <UiButton
-                v-tooltip="'Align Right'"
-                size="sm"
-                square
-                :disabled="!hasImage || isCenterRightDisabled"
-                :variant="currentHorizontalAlign === 'right' ? 'solid' : 'soft'"
-                :color="currentHorizontalAlign === 'right' ? 'primary' : 'ghost'"
-                icon="fe:align-right"
-                @click="handleAlignContent('right')"
-              >
-                R
-              </UiButton>
-            </div>
-            <div class="flex items-center justify-between gap-2">
-              <UiButton
-                v-tooltip="'Align Top'"
-                size="sm"
-                square
-                :disabled="!hasImage"
-                :variant="currentVerticalAlign === 'top' ? 'solid' : 'soft'"
-                :color="currentVerticalAlign === 'top' ? 'primary' : 'ghost'"
-                icon="fe:align-top"
-                @click="handleAlignContent('top')"
-              >
-                T
-              </UiButton>
-              <UiButton
-                v-tooltip="'Align Middle'"
-                size="sm"
-                square
-                :disabled="!hasImage || isMiddleBottomDisabled"
-                :variant="currentVerticalAlign === 'middle' ? 'solid' : 'soft'"
-                :color="currentVerticalAlign === 'middle' ? 'primary' : 'ghost'"
-                icon="fe:align-vertically"
-                @click="handleAlignContent('middle')"
-              >
-                M
-              </UiButton>
-              <UiButton
-                v-tooltip="'Align Bottom'"
-                size="sm"
-                square
-                :disabled="!hasImage || isMiddleBottomDisabled"
-                :variant="currentVerticalAlign === 'bottom' ? 'solid' : 'soft'"
-                :color="currentVerticalAlign === 'bottom' ? 'primary' : 'ghost'"
-                icon="fe:align-bottom"
-                @click="handleAlignContent('bottom')"
-              >
-                B
-              </UiButton>
-            </div>
-          </div>
-          <div class="flex items-center gap-2 mt-2">
-            <UiFormGroup
-              label="Horizontal"
-              class="flex-1 min-w-0"
-            >
-              <UiInput
-                type="number"
-                :model-value="contentItem.metadata.horizontal"
-                size="md"
-                :disabled="!hasImage"
-                @update:model-value="updateHorizontal"
-              >
-                <template #suffix>
-                  <span class="text-xs text-gray-500">
-                    px
-                  </span>
-                </template>
-              </UiInput>
-            </UiFormGroup>
-            <UiFormGroup
-              label="Vertical"
-              class="flex-1 min-w-0"
-            >
-              <UiInput
-                type="number"
-                :model-value="contentItem.metadata.vertical"
-                size="md"
-                :disabled="!hasImage"
-                @update:model-value="updateVertical"
-              >
-                <template #suffix>
-                  <span class="text-xs text-gray-500">
-                    px
-                  </span>
-                </template>
-              </UiInput>
-            </UiFormGroup>
-          </div>
-        </UiFormGroup>
+        <PositionAlignmentControl
+          :horizontal="contentItem.metadata.horizontal"
+          :vertical="contentItem.metadata.vertical"
+          :current-horizontal-align="currentHorizontalAlign"
+          :current-vertical-align="currentVerticalAlign"
+          :horizontal-disabled="!hasImage"
+          :vertical-disabled="!hasImage"
+          :center-right-disabled="!hasImage || isCenterRightDisabled"
+          :middle-bottom-disabled="!hasImage || isMiddleBottomDisabled"
+          @align="handleAlignContent"
+          @update:horizontal="updateHorizontal"
+          @update:vertical="updateVertical"
+        />
       </div>
     </div>
   </div>
@@ -260,6 +73,9 @@
 
 <script setup lang="ts">
 import type { CertificateSigneeContentForm, ImageContentForm } from '#achievement/config/types.ts';
+import ContentItemHeader from '#achievement/components/form/certificate/shared/ContentItemHeader.vue';
+import DimensionControl from '#achievement/components/form/certificate/shared/DimensionControl.vue';
+import PositionAlignmentControl from '#achievement/components/form/certificate/shared/PositionAlignmentControl.vue';
 import { useCertificateCanvas } from '#achievement/composables/useCertificateCanvas';
 import {
   CANVAS_HEIGHT,
@@ -269,8 +85,7 @@ import {
   IMAGE_ERROR_MESSAGES,
 } from '#achievement/config/constants.ts';
 import { useCertificateStore } from '#achievement/stores/certificate';
-import { UiButton, UiFileUploadCompact, UiFileUploadFiles, UiFormGroup, UiInput } from '@mydigilearn-saas/web-ui';
-import { Dropdown } from 'floating-vue';
+import { UiFileUploadCompact, UiFileUploadFiles } from '@mydigilearn-saas/web-ui';
 
 type ContentItemType = ImageContentForm | CertificateSigneeContentForm;
 

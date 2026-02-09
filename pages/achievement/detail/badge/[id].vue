@@ -15,7 +15,6 @@
         :loading="isLoadingDetail"
       />
       <BadgeImage v-if="activeTab === 'badge-image'" />
-      <AccessibilityInformation v-if="activeTab === 'accessibility'" />
     </template>
   </TemplateManageLayout>
 </template>
@@ -23,7 +22,6 @@
 <script lang="ts" setup>
 import type { BadgeDetail } from '#achievement/config/types.ts';
 import { getBadgeDetail } from '#achievement/api/api.ts';
-import AccessibilityInformation from '#achievement/components/detail/badge/AccessibilityInformation.vue';
 import BadgeConfiguration from '#achievement/components/detail/badge/BadgeConfiguration.vue';
 import BadgeImage from '#achievement/components/detail/badge/BadgeImage.vue';
 import { BADGE_TABS } from '#achievement/config/constants.ts';
@@ -42,6 +40,9 @@ definePageMeta({
   rbac: {
     feature: PERMISSION_FEATURE_KEY,
     permissions: [PERMISSION_BADGE_DETAIL],
+    matchFn: (permissions: string[]) => {
+      return permissions.includes(`cms:${PERMISSION_FEATURE_KEY}:${PERMISSION_BADGE_DETAIL}`);
+    },
   },
 });
 

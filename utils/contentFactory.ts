@@ -6,6 +6,7 @@ import type {
   DateContentForm,
   EventTitleContentForm,
   ImageContentForm,
+  ModuleTypeContentForm,
   NIKContentForm,
   ParticipantNameContentForm,
   QRCodeContentForm,
@@ -108,6 +109,20 @@ export const contentFactories: Record<string, ContentFactory<any>> = {
       };
     },
   } as ContentFactory<CertificateNumberContentForm>,
+
+  [CertificateContentType.MODULE_TYPE]: {
+    createNew(key: string): ModuleTypeContentForm {
+      const defaultText = '{{ module_type }}';
+      return {
+        type: CertificateContentType.MODULE_TYPE,
+        key: CertificateContentType.MODULE_TYPE,
+        element_id: key,
+        value: null,
+        element_value: defaultText,
+        metadata: createTextMetadata(defaultText),
+      };
+    },
+  } as ContentFactory<ModuleTypeContentForm>,
 
   [CertificateContentType.PARTICIPANT_NAME]: {
     createNew(key: string): ParticipantNameContentForm {

@@ -120,6 +120,21 @@ export function useCanvasInteract(options: UseCanvasInteractOptions) {
     { deep: true },
   );
 
+  watch(
+    () => selectedContentKey.value,
+    (newKey) => {
+      nextTick(() => {
+        if (newKey) {
+          const el = document.getElementById(newKey);
+          targetRef.value = el;
+        }
+        else {
+          targetRef.value = null;
+        }
+      });
+    },
+  );
+
   return {
     moveableRef,
     targetRef,

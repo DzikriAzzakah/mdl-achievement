@@ -66,18 +66,6 @@
           />
         </UiFormGroup>
 
-        <UiFormGroup label="Accessibility">
-          <UiSelect
-            v-model="filters.accessibility"
-            :options="optionAccessibility"
-            option-label="label"
-            option-value="value"
-            multiple
-            :close-on-select="false"
-            :select-props="{ contentWrapperClass: '!z-[10000]' }"
-          />
-        </UiFormGroup>
-
         <UiFormGroup
           label="Created"
           class="mb-2"
@@ -138,17 +126,6 @@
           </p>
         </template>
 
-        <template #body-accessibility="{ item }">
-          <UiBadge
-            :color="getAccessibilityColor(item.accessibility)"
-            variant="soft"
-            size="sm"
-            class="capitalize font-medium text-center"
-          >
-            {{ getAccessibilityLabel(item.accessibility) }}
-          </UiBadge>
-        </template>
-
         <template #body-created_at="{ item }">
           {{ dayjs(item.created_at).format('DD MMM YYYY, HH:mm') }}
         </template>
@@ -157,8 +134,32 @@
           {{ dayjs(item.updated_at).format('DD MMM YYYY, HH:mm') }}
         </template>
 
+        <template
+          v-if="isCertificates"
+          #body-is_main="{ item }"
+        >
+          <UiBadge
+            :color="(item as Certificate).is_main ? 'error' : 'success'"
+            variant="soft"
+            size="md"
+            type="pill"
+          >
+            {{ (item as Certificate).is_main ? 'Core' : 'Non-Core' }}
+          </UiBadge>
+        </template>
+
         <template #body-action="{ item }">
           <div class="achievement-list__action">
+            <UiButton
+              v-if="showEditButton"
+              icon="mdi-content-copy"
+              variant="transparent"
+              color="ghost"
+              size="md"
+              square
+              class="achievement-list__action-button"
+              @click="handleContentCopy(item as Certificate | Badge)"
+            />
             <UiButton
               v-if="showDetailButton"
               icon="mdi-eye"
@@ -199,9 +200,9 @@
 <script setup lang="ts">
 import type { AchievementFilter, Badge, Certificate } from '#achievement/config/types.ts';
 
-import { deleteBadge, deleteCertificate, getBadgeList, getCertificateList } from '#achievement/api/api.ts';
+import { deleteBadge, deleteCertificate, getBadgeList, getCertificateList, postCloneCertificate } from '#achievement/api/api.ts';
 
-import { ACCESSIBILITY_OPTIONS, BADGE_COLUMNS, CERTIFICATE_COLUMNS, TYPE_OPTIONS } from '#achievement/config/constants.ts';
+import { BADGE_COLUMNS, CERTIFICATE_COLUMNS, TYPE_OPTIONS } from '#achievement/config/constants.ts';
 import {
   PERMISSION_BADGE_LIST,
   PERMISSION_CERTIFICATE_LIST,
@@ -304,19 +305,16 @@ const listSort = ref<ISmartTableSortData>(initialSort.value);
 
 const filters = ref<AchievementFilter>({
   certificateType: restoredFilters.certificateType || [],
-  accessibility: restoredFilters.accessibility || [],
   created: restoredFilters.created || '',
   lastUpdate: restoredFilters.lastUpdate || '',
 });
 const initialFilterKey = (
   restoredFilters.certificateType?.length
-  || restoredFilters.accessibility?.length
   || restoredFilters.created
   || restoredFilters.lastUpdate
 )
   ? JSON.stringify({
       certificateType: restoredFilters.certificateType || [],
-      accessibility: restoredFilters.accessibility || [],
       created: restoredFilters.created || '',
       lastUpdate: restoredFilters.lastUpdate || '',
     })
@@ -326,7 +324,6 @@ const filterKey = ref<string>(initialFilterKey);
 
 let oldFilters: AchievementFilter = {
   certificateType: [],
-  accessibility: [],
   created: '',
   lastUpdate: '',
 };
@@ -382,7 +379,6 @@ const { data, error, isError, isLoading: isLoadingData, refetch } = useQuery({
       page: currentPage.value,
       page_size: perPage.value,
       keyword: search.value?.trim() || undefined,
-      accessibilities: filters?.value?.accessibility?.map((e: Record<string, any>) => e?.value)?.filter((e: any) => !!e)?.join(','),
       created_at_from: created?.includes(undefined) ? undefined : created[0],
       created_at_to: created?.includes(undefined) ? undefined : created[1],
       updated_at_from: updated?.includes(undefined) ? undefined : updated[0],
@@ -461,8 +457,6 @@ const pagination = computed(() => {
   };
 });
 
-const optionAccessibility = computed(() => ACCESSIBILITY_OPTIONS);
-
 const deleteMutation = useMutation({
   mutationFn: async ({ id, type }: { id: number; type: 'certificate' | 'badge'; }) => {
     if (type === 'certificate') {
@@ -514,10 +508,6 @@ function updateUrlQuery() {
 
   if (filters.value.certificateType?.length) {
     query.types = filters.value.certificateType.map((item: any) => item.value).join(',');
-  }
-
-  if (filters.value.accessibility?.length) {
-    query.accessibility = filters.value.accessibility.map((item: any) => item.value).join(',');
   }
 
   if (filters.value.created && filters.value.created[0] && filters.value.created[1]) {
@@ -587,7 +577,6 @@ const handleCancelFilter = () => {
 function handleResetFilter() {
   filters.value = {
     certificateType: [],
-    accessibility: [],
     created: '',
     lastUpdate: '',
   };
@@ -599,7 +588,6 @@ function handleResetFilter() {
 function handleApplyFilter() {
   filterKey.value = JSON.stringify({
     certificateType: filters.value?.certificateType,
-    accessibility: filters.value?.accessibility,
     created: filters.value?.created,
     lastUpdate: filters.value?.lastUpdate,
   });
@@ -635,7 +623,6 @@ function onChangeTab(value: string) {
 
   filters.value = {
     certificateType: [],
-    accessibility: [],
     created: '',
     lastUpdate: '',
   };
@@ -703,25 +690,45 @@ function handleDeleteItem(item: Certificate | Badge) {
   });
 }
 
-function getAccessibilityColor(accessibility: string) {
-  switch (accessibility) {
-    case 'all_company':
-      return 'success';
-    case 'selected':
-      return 'info';
-    default:
-      return 'ghost';
+async function handleContentCopy(item: Certificate | Badge) {
+  if (!isCertificates.value) {
+    return;
   }
-}
 
-function getAccessibilityLabel(accessibility: string) {
-  switch (accessibility) {
-    case 'all_company':
-      return 'All Company';
-    case 'selected':
-      return 'Selected';
-    default:
-      return accessibility;
+  try {
+    showLoading('Cloning certificate', 'Please wait while we clone the certificate.');
+
+    const response = await postCloneCertificate(item.id);
+
+    if (response?.data?.id) {
+      $toast({
+        variant: 'success',
+        title: 'Success',
+        text: 'Certificate cloned successfully.',
+      });
+
+      const sortKeys = Object.keys(listSort.value);
+      const returnQuery = buildReturnQuery({
+        tab: activeTab.value,
+        search: search.value,
+        page: currentPage.value,
+        sortKey: sortKeys.length > 0 ? sortKeys[0] : undefined,
+        sortType: sortKeys.length > 0 ? listSort.value[sortKeys[0]] : undefined,
+        filter: filters.value,
+      });
+
+      router.push({ path: `/achievement/edit/certificate/${response.data.id}`, query: returnQuery });
+    }
+  }
+  catch (error: any) {
+    $toast({
+      variant: 'error',
+      title: 'Error',
+      text: getApiErrorMessage(error) || 'Failed to clone certificate.',
+    });
+  }
+  finally {
+    hideLoading();
   }
 }
 </script>

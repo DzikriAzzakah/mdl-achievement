@@ -15,7 +15,6 @@
         :loading="isLoadingDetail"
       />
       <CertificatePreview v-if="activeTab === 'certificate-preview'" />
-      <AccessibilityInformation v-if="activeTab === 'accessibility'" />
     </template>
   </TemplateManageLayout>
 </template>
@@ -23,7 +22,6 @@
 <script lang="ts" setup>
 import type { CertificateDetailResponseData } from '#achievement/config/types.ts';
 import { getCertificateDetail } from '#achievement/api/api.ts';
-import AccessibilityInformation from '#achievement/components/detail/certificate/AccessibilityInformation.vue';
 import CertificateConfiguration from '#achievement/components/detail/certificate/CertificateConfiguration.vue';
 import CertificatePreview from '#achievement/components/detail/certificate/CertificatePreview.vue';
 import { CERTIFICATE_TABS, TYPE_OPTIONS } from '#achievement/config/constants.ts';
@@ -41,6 +39,9 @@ definePageMeta({
   rbac: {
     feature: PERMISSION_FEATURE_KEY,
     permissions: [PERMISSION_CERTIFICATE_DETAIL],
+    matchFn: (permissions: string[]) => {
+      return permissions.includes(`cms:${PERMISSION_FEATURE_KEY}:${PERMISSION_CERTIFICATE_DETAIL}`);
+    },
   },
 });
 

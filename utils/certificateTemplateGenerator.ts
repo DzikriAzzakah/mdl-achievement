@@ -1,17 +1,12 @@
 import type {
   CertificateContentForm,
-  CertificateNumberContentForm,
   CertificateSigneeContentForm,
   CityContentForm,
-  DateContentForm,
-  EventTitleContentForm,
   ImageContentForm,
-  NIKContentForm,
-  ParticipantNameContentForm,
   QRCodeContentForm,
   SafeZone,
   TextContentForm,
-  ValidThruContentForm,
+  TextContentType,
 } from '#achievement/config/types';
 import { CANVAS_HEIGHT, CANVAS_WIDTH, FONT_OPTIONS } from '#achievement/config/constants';
 import { isQRCodeContent, isTextBasedContent } from '#achievement/helpers/checkContentType';
@@ -25,16 +20,6 @@ export interface ICertificateTemplateOptions {
   useActualUrls?: boolean;
   contentImageUrls?: Record<string, { url: string; originalFileName?: string; }>;
 }
-
-type TextContentType =
-  | TextContentForm
-  | CertificateNumberContentForm
-  | CityContentForm
-  | DateContentForm
-  | ParticipantNameContentForm
-  | NIKContentForm
-  | EventTitleContentForm
-  | ValidThruContentForm;
 
 function getUsedFontLinks(contents: CertificateContentForm[]): string {
   const usedFonts = new Set<string>();
@@ -83,6 +68,8 @@ function getTemplatePlaceholder(
       return '{{certificate_number}}';
     case 'participant_name':
       return '{{participant_name}}';
+    case 'module_type':
+      return '{{module_type}}';
     case 'nik':
       return '{{nik}}';
     case 'title':
